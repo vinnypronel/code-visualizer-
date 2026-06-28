@@ -1,0 +1,377 @@
+@import "tailwindcss";
+
+/* ─── Design Tokens ─────────────────────────────────────────────────── */
+:root {
+  --bg-base:        #08090c;
+  --bg-panel:       #0f111a;
+  --bg-panel-2:     #141724;
+  --bg-header:      #08090ccc;
+  --border:         #1d2433;
+  --border-active:  #3b82f6aa;
+  --accent:         #3b82f6;
+  --accent-glow:    #3b82f622;
+  --accent-2:       #8b5cf6;
+  --accent-2-glow:  #8b5cf622;
+  --accent-3:       #06b6d4;
+  --success:        #10b981;
+  --warning:        #f59e0b;
+  --danger:         #ef4444;
+  --text-primary:   #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted:     #475569;
+  --node-fill:      #131722;
+  --node-stroke:    #3b82f6;
+}
+
+@theme inline {
+  --color-background: var(--bg-base);
+  --color-foreground: var(--text-primary);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+/* ─── Base Reset ─────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body { height: 100%; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  overflow: hidden;
+}
+
+/* ─── Scrollbar ──────────────────────────────────────────────────────── */
+::-webkit-scrollbar        { width: 6px; height: 6px; }
+::-webkit-scrollbar-track  { background: transparent; }
+::-webkit-scrollbar-thumb  { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* ─── Selection ──────────────────────────────────────────────────────── */
+::selection { background: var(--accent-glow); color: var(--accent); }
+
+/* ─── Animations ─────────────────────────────────────────────────────── */
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 0 0 var(--accent-glow); }
+  50%       { box-shadow: 0 0 0 8px transparent; }
+}
+
+@keyframes node-appear {
+  from { opacity: 0; transform: scale(0.92) translateY(8px); }
+  to   { opacity: 1; transform: scale(1)   translateY(0); }
+}
+
+@keyframes slide-in-right {
+  from { opacity: 0; transform: translateX(20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes gradient-shift {
+  0%   { background-position: 0%   50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0%   50%; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px);  }
+  50%       { transform: translateY(-4px); }
+}
+
+@keyframes arrow-flow {
+  from { stroke-dashoffset: 16; }
+  to   { stroke-dashoffset: 0; }
+}
+
+/* ─── Physical Data Sliding Animation ─── */
+@keyframes slide-value {
+  0% {
+    transform: translate(var(--start-x), var(--start-y)) scale(0.85);
+    opacity: 0;
+  }
+  15% {
+    transform: translate(var(--start-x), var(--start-y)) scale(1.2);
+    opacity: 1;
+    box-shadow: 0 0 16px rgba(245, 158, 11, 0.7);
+  }
+  85% {
+    transform: translate(var(--target-x), var(--target-y)) scale(1.2);
+    opacity: 1;
+    box-shadow: 0 0 16px rgba(245, 158, 11, 0.7);
+  }
+  100% {
+    transform: translate(var(--target-x), var(--target-y)) scale(1);
+    opacity: 0;
+  }
+}
+
+.animate-slide-value {
+  position: absolute;
+  top: 0;
+  left: 0;
+  animation: slide-value 1.8s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+  z-index: 50;
+  border-radius: 6px;
+}
+
+/* ─── Spotlight Animation Effects ─── */
+@keyframes highlight-glow-blue {
+  0%, 100% { box-shadow: 0 0 4px rgba(59, 130, 246, 0.3), inset 0 0 8px rgba(59, 130, 246, 0.1); }
+  50% { box-shadow: 0 0 16px rgba(59, 130, 246, 0.7), inset 0 0 12px rgba(59, 130, 246, 0.2); }
+}
+
+@keyframes highlight-glow-purple {
+  0%, 100% { box-shadow: 0 0 4px rgba(139, 92, 246, 0.3), inset 0 0 8px rgba(139, 92, 246, 0.1); }
+  50% { box-shadow: 0 0 16px rgba(139, 92, 246, 0.7), inset 0 0 12px rgba(139, 92, 246, 0.2); }
+}
+
+@keyframes highlight-glow-green {
+  0%, 100% { box-shadow: 0 0 4px rgba(16, 185, 129, 0.3); }
+  50% { box-shadow: 0 0 16px rgba(16, 185, 129, 0.7); }
+}
+
+/* ─── Interactive Hover Highlight Glow ─── */
+@keyframes pulse-highlight-orange {
+  0%, 100% { box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.4), inset 0 0 10px rgba(245, 158, 11, 0.1); border-color: #f59e0b; }
+  50% { box-shadow: 0 0 0 14px transparent, inset 0 0 16px rgba(245, 158, 11, 0.5); border-color: #f59e0b; }
+}
+
+.hover-pulse {
+  animation: pulse-highlight-orange 1.2s infinite ease-in-out !important;
+  transform: scale(1.05) !important;
+  border-color: #f59e0b !important;
+  z-index: 50 !important;
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+}
+
+/* ─── Utility classes ───────────────────────────────────────────────── */
+.panel-glass {
+  background: rgba(15, 17, 26, 0.7);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.panel-glass-2 {
+  background: rgba(20, 23, 36, 0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: var(--accent);
+  color: #fff;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.btn-primary:hover {
+  background: #2563eb;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px var(--accent-glow);
+}
+.btn-primary:active { transform: translateY(0); }
+
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  background: transparent;
+  color: var(--text-secondary);
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  transition: all 0.2s ease;
+}
+.btn-ghost:hover {
+  background: var(--bg-panel-2);
+  color: var(--text-primary);
+  border-color: var(--border-active);
+}
+
+.tab-btn {
+  padding: 5px 14px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  transition: all 0.18s ease;
+}
+.tab-btn:hover  { color: var(--text-primary); background: var(--bg-panel-2); }
+.tab-btn.active { color: var(--accent); background: var(--accent-glow); }
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 100px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+}
+.badge-blue   { background: #1d4ed820; color: var(--accent); border: 1px solid #1d4ed840; }
+.badge-purple { background: #7c3aed20; color: var(--accent-2); border: 1px solid #7c3aed40; }
+.badge-cyan   { background: #0891b220; color: var(--accent-3); border: 1px solid #0891b240; }
+.badge-green  { background: #05966920; color: var(--success); border: 1px solid #05966940; }
+
+.gradient-text {
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 50%, var(--accent-3) 100%);
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gradient-shift 4s ease infinite;
+}
+
+.glow-border {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 1px var(--accent-glow), inset 0 0 20px var(--accent-glow);
+}
+
+.node-card {
+  animation: node-appear 0.3s ease;
+}
+
+.ai-streaming::after {
+  content: '▌';
+  animation: pulse-glow 0.8s ease-in-out infinite;
+  color: var(--accent);
+}
+
+/* ─── Canvas Dots Background ────────────────────────────────────────── */
+.canvas-bg {
+  background-color: var(--bg-base);
+  background-image:
+    radial-gradient(circle, var(--border) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* ─── Resizer Handle ────────────────────────────────────────────────── */
+.resizer {
+  width: 4px;
+  background: var(--border);
+  cursor: col-resize;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+.resizer:hover, .resizer.dragging {
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent-glow);
+}
+
+/* ─── Monaco Execution Line Highlight ───────────────────────────────── */
+.exec-highlight-line {
+  background: rgba(59, 130, 246, 0.12) !important;
+  border-left: 3.5px solid var(--accent) !important;
+  box-shadow: inset 24px 0 32px rgba(59, 130, 246, 0.04);
+}
+
+.exec-highlight-glyph {
+  width: 8px !important;
+  height: 8px !important;
+  margin-left: 5px;
+  margin-top: 5px;
+  background: var(--accent) !important;
+  border-radius: 50% !important;
+  box-shadow: 0 0 10px var(--accent);
+}
+
+/* ─── Memory View & Arrow Styles ────────────────────────────────────── */
+.ref-pointer {
+  transition: stroke 0.35s, filter 0.35s, stroke-width 0.35s;
+}
+
+.ref-pointer-active {
+  stroke-dasharray: 4, 4;
+  animation: arrow-flow 1.2s linear infinite;
+  filter: drop-shadow(0 0 4px var(--accent));
+}
+
+/* ─── Spotlight Styles ─── */
+.spotlight-active-blue {
+  border-color: #3b82f6 !important;
+  animation: highlight-glow-blue 2s infinite ease-in-out;
+  transform: scale(1.025);
+  filter: drop-shadow(0 0 6px rgba(59, 130, 246, 0.2));
+  z-index: 10;
+  transition: all 0.3s ease;
+}
+
+.spotlight-active-purple {
+  border-color: #8b5cf6 !important;
+  animation: highlight-glow-purple 2s infinite ease-in-out;
+  transform: scale(1.025);
+  filter: drop-shadow(0 0 6px rgba(139, 92, 246, 0.2));
+  z-index: 10;
+  transition: all 0.3s ease;
+}
+
+.spotlight-active-green {
+  border-color: #10b981 !important;
+  animation: highlight-glow-green 2s infinite ease-in-out;
+  transform: scale(1.025);
+  filter: drop-shadow(0 0 6px rgba(16, 185, 129, 0.2));
+  z-index: 10;
+  transition: all 0.3s ease;
+}
+
+.spotlight-dim {
+  opacity: 0.32;
+  filter: grayscale(40%) blur(0.2px);
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ─── Scrollbars inside panels ─── */
+.panel-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+.panel-scroll::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 2px;
+}
+.panel-scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* ─── Monaco Info Icon Decorator ─── */
+.monaco-info-icon {
+  text-decoration: underline wavy var(--accent-3) 1.5px !important;
+  cursor: help !important;
+}
+
+.monaco-info-icon::after {
+  content: ' ⓘ';
+  font-family: sans-serif;
+  color: var(--accent-3);
+  font-size: 10px;
+  font-weight: bold;
+  vertical-align: super;
+  margin-left: 2px;
+  opacity: 0.8;
+  display: inline-block;
+  pointer-events: none;
+}
+
+/* ─── Onboarding Tour Highlight ─── */
+.onboarding-highlight {
+  position: relative;
+  z-index: 90 !important;
+  box-shadow: 0 0 0 9999px rgba(8, 9, 12, 0.75), 0 0 15px rgba(59, 130, 246, 0.4) !important;
+  border-color: var(--accent) !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
