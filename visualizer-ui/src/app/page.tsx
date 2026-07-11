@@ -1,9 +1,12 @@
 import VisualizerExperience from "@/components/visualizer/VisualizerExperience";
+import StudyFlow from "@/components/study/StudyFlow";
+import { STUDY_MODE } from "@/lib/studyConfig";
 
 /*
- * Entry route. The study gate is added in a later commit; for now this renders
- * the working visualizer directly so behavior matches the pre-harness baseline.
+ * Entry route.
+ *   STUDY_MODE true  -> the full participant study flow.
+ *   STUDY_MODE false -> the visualizer on its own (dev and demo).
  */
 export default function Page() {
-  return <VisualizerExperience />;
+  return STUDY_MODE ? <StudyFlow /> : <VisualizerExperience />;
 }

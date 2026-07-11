@@ -32,6 +32,13 @@ interface StudyShellProps {
   children: ReactNode;
   /* Optional sticky footer (usually the primary Continue button). */
   footer?: ReactNode;
+  /*
+   * Fluid mode: the content fills the full width and height of the body (no
+   * centered max-width, no heading block). Used for the learning phase so the
+   * visualizer and the static materials both get the full canvas while keeping
+   * the exact same header, stepper, timer, and footer chrome.
+   */
+  fluid?: boolean;
 }
 
 export default function StudyShell({
@@ -41,6 +48,7 @@ export default function StudyShell({
   timer,
   children,
   footer,
+  fluid = false,
 }: StudyShellProps) {
   return (
     <div
@@ -125,20 +133,24 @@ export default function StudyShell({
       </header>
 
       {/* Body */}
-      <main className="flex-1 min-h-0 overflow-y-auto panel-scroll">
-        <div className="mx-auto w-full max-w-4xl px-6 py-8">
-          <h1 className="text-xl font-bold mb-1">{heading}</h1>
-          {subheading && (
-            <p
-              className="text-[13px] mb-6"
-              style={{ color: "var(--text-secondary)" }}
-            >
-              {subheading}
-            </p>
-          )}
-          <div className={subheading ? "" : "mt-4"}>{children}</div>
-        </div>
-      </main>
+      {fluid ? (
+        <main className="flex-1 min-h-0 overflow-hidden">{children}</main>
+      ) : (
+        <main className="flex-1 min-h-0 overflow-y-auto panel-scroll">
+          <div className="mx-auto w-full max-w-4xl px-6 py-8">
+            <h1 className="text-xl font-bold mb-1">{heading}</h1>
+            {subheading && (
+              <p
+                className="text-[13px] mb-6"
+                style={{ color: "var(--text-secondary)" }}
+              >
+                {subheading}
+              </p>
+            )}
+            <div className={subheading ? "" : "mt-4"}>{children}</div>
+          </div>
+        </main>
+      )}
 
       {/* Footer */}
       {footer && (
