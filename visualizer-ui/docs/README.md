@@ -22,10 +22,9 @@ The app currently uses the consent text transcribed from
 
 ## Questionnaire
 
-The final questionnaire is rendered inside the app and saved to Supabase with
-the participant session. It lives in `src/data/questionnaire.ts`. Replace the
-wording there if the professor provides a final questionnaire that differs from
-the current draft.
+The final questionnaire lives in Microsoft Forms. Add the public form link to
+`NEXT_PUBLIC_MSFORMS_URL` in `.env.local` for local testing and in the deployment
+environment for production.
 
 ## Note
 

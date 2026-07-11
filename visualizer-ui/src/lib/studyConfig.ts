@@ -43,3 +43,6 @@ export function conditionForSeq(seq: number): Condition {
   if (!RAND_LEARNING_TOOL) return "ai";
   return seq % 2 === 1 ? "ai" : "static";
 }
+
+/* External Microsoft Forms questionnaire URL. Public link, safe for browser. */
+export const MSFORMS_URL = process.env.NEXT_PUBLIC_MSFORMS_URL ?? "";

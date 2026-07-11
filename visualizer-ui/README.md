@@ -9,8 +9,8 @@ The app compares two learning conditions for Java program execution:
 - Static reading materials
 
 Participants move through consent, participant ID assignment, pre-test,
-learning, post-test, and an in-app questionnaire. Study data is stored in
-Supabase through server-side API routes.
+learning, post-test, and a Microsoft Forms questionnaire handoff. Study data is
+stored in Supabase through server-side API routes.
 
 ## Project Location
 
@@ -71,6 +71,7 @@ Add:
 ```env
 SUPABASE_URL=https://your-project-ref.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+NEXT_PUBLIC_MSFORMS_URL=https://forms.office.com/your-form-link
 ```
 
 Important:
@@ -79,6 +80,7 @@ Important:
 - Do not put the service role key in client-side code.
 - Use the `service_role` key, not the publishable or anon key.
 - The app writes to Supabase only through server routes.
+- `NEXT_PUBLIC_MSFORMS_URL` is the public Microsoft Forms questionnaire link.
 
 The project URL is in Supabase under **Settings -> Data API** or from the green
 **Connect** button. The service role key is in **Settings -> API Keys** under
@@ -92,21 +94,6 @@ In the Supabase SQL editor, run:
 -- Main study schema
 -- Use the contents of:
 -- supabase/migrations/0001_study_harness.sql
-```
-
-If `0001_study_harness.sql` was already run before the in-app questionnaire was
-added, also run:
-
-```sql
-alter table public.sessions
-  add column if not exists questionnaire_finished_at timestamptz,
-  add column if not exists questionnaire_responses jsonb;
-```
-
-That same add-on SQL is saved in:
-
-```text
-supabase/migrations/0002_questionnaire_responses.sql
 ```
 
 ## Run Locally
@@ -166,7 +153,6 @@ Main study files:
 src/components/study
 src/content/consent.tsx
 src/data/tests.ts
-src/data/questionnaire.ts
 src/lib/studyConfig.ts
 src/lib/studyTypes.ts
 src/app/api/session
@@ -195,12 +181,6 @@ Pre-test and post-test:
 
 ```text
 src/data/tests.ts
-```
-
-Final questionnaire:
-
-```text
-src/data/questionnaire.ts
 ```
 
 Static learning condition:
@@ -233,7 +213,8 @@ In Supabase:
 4. Check the response columns:
    - `pretest_responses`
    - `posttest_responses`
-   - `questionnaire_responses`
+
+The final questionnaire answers live in Microsoft Forms, not Supabase.
 
 ### What if the app cannot assign a participant ID?
 
@@ -270,6 +251,6 @@ Before real participants, the team should:
 
 - Run one full live test and confirm the Supabase row is complete.
 - Decide whether to delete/reset test participant rows.
-- Have the professor review the final questionnaire wording.
+- Add the real Microsoft Forms link to `NEXT_PUBLIC_MSFORMS_URL`.
 - Have the professor review the static reading materials for study fairness.
 - Deploy the app somewhere participants can access it.

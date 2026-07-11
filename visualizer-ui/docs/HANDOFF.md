@@ -13,8 +13,8 @@ interactive visualizer vs static reading materials.
 
 This task built the **study harness** that wraps the existing visualizer so real
 participants can be run: consent, participant ID assignment, a timed pre-test, a
-learning phase in one of two conditions, a timed post-test, and an in-app
-questionnaire, with everything logged to a database.
+learning phase in one of two conditions, a timed post-test, and a hand-off to an
+external questionnaire, with everything logged to a database.
 
 The Java tracer prototypes at the repository root (`parser-spike/`,
 `java-jail-spike/`, `java-trace-spike/`) are unrelated research spikes. Do not
@@ -112,9 +112,9 @@ renders each screen is `src/components/study/StudyFlow.tsx`. Order:
    `learning_continue`. Advances to `posttest`.
 5. `posttest` -> `TimedTestScreen` (posttest). Same behavior as pre-test with
    post-test content. Advances to `handoff`.
-6. `handoff` -> `HandoffScreen`. Shows the participant ID prominently, renders
-   the final questionnaire inside the app, and saves answers to the session row.
-   Logs `questionnaire_shown` on mount and `questionnaire_finished` on submit.
+6. `handoff` -> `HandoffScreen`. Shows the participant ID prominently and links
+   to the Microsoft Forms questionnaire with the instruction to enter the ID.
+   Logs `questionnaire_shown` on mount.
 
 The wrapper chrome (`StudyShell`: header, 5-stage stepper, timer slot, footer)
 is identical across both learning conditions by construction. Only the learning
@@ -160,8 +160,6 @@ Learning content:
 Tests and content:
 - `src/data/tests.ts` - `PRETEST`, `POSTTEST`, `TEST_INSTRUCTIONS`, and the
   field model (`code`, `text`, `grid` with read-only or input cells).
-- `src/data/questionnaire.ts` - in-app questionnaire items covering basic
-  demographics, experience, cognitive load, and usability.
 - `src/components/study/TestRunner.tsx` - renders a `TestDef` as read-only code
   plus editable inputs.
 - `src/content/consent.tsx` - consent content transcribed from
@@ -191,9 +189,8 @@ Not created yet. The migration defines:
   `consent_completed_at`, `pretest_started_at`, `pretest_finished_at`,
   `pretest_ended_by`, `learning_started_at`, `learning_continue_at`,
   `posttest_started_at`, `posttest_finished_at`, `posttest_ended_by`,
-  `questionnaire_shown_at`, `questionnaire_finished_at`, `pretest_responses`
-  (jsonb), `posttest_responses` (jsonb), `questionnaire_responses` (jsonb),
-  `created_at`.
+  `questionnaire_shown_at`, `pretest_responses` (jsonb), `posttest_responses`
+  (jsonb), `created_at`.
 - `assign_participant(p_randomize boolean)` RPC: atomically takes the next
   sequence value, formats the ID (`P` + zero-padded seq), computes the
   condition, inserts the row with the consent timestamp, and returns the ID,
@@ -215,6 +212,7 @@ loads `.env` from the project root, not from `src/`.
 
 - `SUPABASE_URL` - server only, required to run the flow.
 - `SUPABASE_SERVICE_ROLE_KEY` - server only, required. No `NEXT_PUBLIC_` prefix.
+- `NEXT_PUBLIC_MSFORMS_URL` - public Microsoft Forms questionnaire URL.
 
 ## 10. How to run and verify
 
@@ -229,7 +227,8 @@ From `visualizer-ui/`:
 To run the full flow live you must:
 1. Create a Supabase project.
 2. Run `supabase/migrations/0001_study_harness.sql` in it.
-3. Put `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` in `.env.local`.
+3. Put `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and
+   `NEXT_PUBLIC_MSFORMS_URL` in `.env.local`.
 
 To demo the visualizer without the study, set `STUDY_MODE = false` in
 `src/lib/studyConfig.ts`.
@@ -244,8 +243,7 @@ Open question raised with the owner and not yet resolved:
   `api/session/assign`, and `api/session/log`.
 
 Still to do (out of scope for the task as built, left as clean seams):
-- Replace `src/data/questionnaire.ts` if the professor provides a final
-  questionnaire that differs from the current draft.
+- Add the real Microsoft Forms questionnaire URL to `.env.local`.
 - Real AI (Gemini) explanations. The only seam is `resolveStepExplanation` in
   `VisualizerExperience.tsx`. The participant-facing "Gemini" labeling was left
   unchanged intentionally.
