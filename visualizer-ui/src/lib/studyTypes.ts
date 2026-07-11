@@ -59,7 +59,8 @@ export type LogEvent =
   | "learning_continue"
   | "posttest_started"
   | "posttest_finished"
-  | "questionnaire_shown";
+  | "questionnaire_shown"
+  | "questionnaire_finished";
 
 export interface LogRequestBody {
   participant_id: string;

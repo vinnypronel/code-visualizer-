@@ -27,10 +27,12 @@ create table if not exists public.sessions (
   posttest_started_at     timestamptz,
   posttest_finished_at    timestamptz,
   posttest_ended_by       text check (posttest_ended_by in ('timer', 'manual')),
-  questionnaire_shown_at  timestamptz,
-  pretest_responses       jsonb,
-  posttest_responses      jsonb,
-  created_at              timestamptz not null default now()
+  questionnaire_shown_at    timestamptz,
+  questionnaire_finished_at timestamptz,
+  pretest_responses         jsonb,
+  posttest_responses        jsonb,
+  questionnaire_responses   jsonb,
+  created_at                timestamptz not null default now()
 );
 
 -- 3. Atomic mint + row creation. Called only by the server (assign handler).

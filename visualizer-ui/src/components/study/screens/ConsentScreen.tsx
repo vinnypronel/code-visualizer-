@@ -52,12 +52,20 @@ export default function ConsentScreen() {
 
       <fieldset className="space-y-3">
         <legend className="text-[13px] font-semibold mb-2">
-          Do you agree to participate?
+          Do you agree to participate in this study?
         </legend>
         {(
           [
-            { key: "agree", label: "Yes, I agree" },
-            { key: "disagree", label: "No, I do not agree" },
+            {
+              key: "agree",
+              label:
+                "Yes, I agree - I have read and understood the information above and I voluntarily agree to participate.",
+            },
+            {
+              key: "disagree",
+              label:
+                "No, I do not agree - I do not wish to participate and will not be able to proceed with the study.",
+            },
           ] as const
         ).map((opt) => (
           <label

@@ -17,8 +17,15 @@ Then transcribe it, word for word, into `src/content/consent.tsx`:
 - Have the rendered consent screen checked against the original before running
   any participant.
 
-Until this is done, the app shows a clearly marked `[PLACEHOLDER CONSENT]`
-screen. Nothing in the placeholder is real consent language.
+The app currently uses the consent text transcribed from
+`ConsentForm_CodeViz.docx`.
+
+## Questionnaire
+
+The final questionnaire is rendered inside the app and saved to Supabase with
+the participant session. It lives in `src/data/questionnaire.ts`. Replace the
+wording there if the professor provides a final questionnaire that differs from
+the current draft.
 
 ## Note
 

@@ -40,6 +40,11 @@ function patchForEvent(
       };
     case "questionnaire_shown":
       return { questionnaire_shown_at: serverNow };
+    case "questionnaire_finished":
+      return {
+        questionnaire_finished_at: serverNow,
+        questionnaire_responses: payload.responses ?? {},
+      };
     default:
       throw new Error(`unknown event: ${String(body.event)}`);
   }

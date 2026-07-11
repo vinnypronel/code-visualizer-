@@ -34,17 +34,17 @@ export interface TestDef {
 
 /* Shared instruction block, shown verbatim at the top of both tests. */
 export const TEST_INSTRUCTIONS: string[] = [
-  "This is not a real test. It does not affect your grades.",
-  "No identifying information is collected.",
-  "Answer on your own. Do not search the web or use AI tools.",
-  "Trace step by step.",
-  "Partial answers are welcome.",
-  "You have 10 minutes.",
-  "Click Continue when done.",
+  "This is not a real test. Your responses will not affect your grade, GPA, or academic standing in any way.",
+  "This activity is solely for research purposes. No personally identifying information (such as your name or email address) is collected, and your performance will never be linked to your identity.",
+  "Please answer the questions on your own - do not search online or use AI tools.",
+  "Trace through each program step by step and fill in the table as completely as you can.",
+  "Partial responses are welcome.",
+  "You have 10 minutes to complete this section.",
+  "When you are done, click the button below to continue.",
 ];
 
 /* Builder for the 6-row recursion trace table (columns: Step #, What happened). */
-function traceTable(keyPrefix: string): Field {
+function traceTable(keyPrefix: string): Extract<Field, { kind: "grid" }> {
   const rows: GridCell[][] = [];
   for (let i = 1; i <= 6; i++) {
     rows.push([
@@ -97,6 +97,7 @@ export const PRETEST: TestDef = {
     {
       id: "q1",
       title: "Q1. Recursion Trace",
+      prompt: "Consider the following recursive method:",
       fields: [
         {
           kind: "code",
@@ -111,24 +112,29 @@ export const PRETEST: TestDef = {
         {
           kind: "text",
           key: "q1.base_case",
-          label: "1.1  Which line(s) are the base case?",
+          label: "1.1 Which line(s) of code represent the base case?",
         },
-        traceTable("q1.trace"),
+        {
+          ...traceTable("q1.trace"),
+          caption:
+            "1.2 Trace the execution of f(3). For each step, describe what happened - follow the tracing format we used in CPS 2231. Each method call and each return value counts as a separate step.",
+        },
         {
           kind: "text",
           key: "q1.base_case_step",
-          label: "1.3  Which step hits the base case?",
+          label: "1.3 At which step does it hit the base case?",
         },
         {
           kind: "text",
           key: "q1.final_value",
-          label: "1.4  Final return value of f(3)?",
+          label: "1.4 What is the final return value of f(3)?",
         },
       ],
     },
     {
       id: "q2",
       title: "Q2. Object Reference Trace",
+      prompt: "Consider the following Java program:",
       fields: [
         {
           kind: "code",
@@ -153,7 +159,7 @@ b = a;                        // Step 5`,
         ),
         {
           kind: "code",
-          caption: "2.2  After Step 5, what does this print?",
+          caption: "2.2 After Step 5, what does the following code print?",
           code: `System.out.println(b.name + ", " + b.age);
 System.out.println(c.name + ", " + c.age);`,
         },
@@ -170,6 +176,7 @@ export const POSTTEST: TestDef = {
     {
       id: "q1",
       title: "Q1. Recursion Trace",
+      prompt: "Consider the following recursive method:",
       fields: [
         {
           kind: "code",
@@ -184,24 +191,29 @@ export const POSTTEST: TestDef = {
         {
           kind: "text",
           key: "q1.base_case",
-          label: "1.1  Which line(s) are the base case?",
+          label: "1.1 Which line(s) of code represent the base case?",
         },
-        traceTable("q1.trace"),
+        {
+          ...traceTable("q1.trace"),
+          caption:
+            "1.2 Trace the execution of g(3). For each step, describe what happened - follow the tracing format we used in CPS 2231. Each method call and each return value counts as a separate step.",
+        },
         {
           kind: "text",
           key: "q1.base_case_step",
-          label: "1.3  Which step hits the base case?",
+          label: "1.3 At which step does it hit the base case?",
         },
         {
           kind: "text",
           key: "q1.final_value",
-          label: "1.4  Final return value of g(3)?",
+          label: "1.4 What is the final return value of g(3)?",
         },
       ],
     },
     {
       id: "q2",
       title: "Q2. Object Reference Trace",
+      prompt: "Consider the following Java program:",
       fields: [
         {
           kind: "code",
@@ -226,7 +238,7 @@ x = y;                            // Step 5`,
         ),
         {
           kind: "code",
-          caption: "2.2  After Step 5, what does this print?",
+          caption: "2.2 After Step 5, what does the following code print?",
           code: `System.out.println(x.title + ", " + x.pages);
 System.out.println(z.title + ", " + z.pages);`,
         },
