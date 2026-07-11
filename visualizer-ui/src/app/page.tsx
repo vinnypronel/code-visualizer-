@@ -121,6 +121,12 @@ export interface DataMovement {
   value: string; // e.g. "10"
 }
 
+export interface ActiveBlock {
+  label: string;
+  beginLine: number;
+  endLine: number;
+}
+
 export interface ExecutionStep {
   lineHighlight: number | null;
   stack: StackFrame[];
@@ -132,6 +138,8 @@ export interface ExecutionStep {
   spotlightHeapObjects?: string[];
   spotlightHeapFields?: string[];
   dataMovement?: DataMovement;
+  stdout?: string;
+  activeBlock?: ActiveBlock;
 }
 
 export interface Preset {
@@ -140,6 +148,15 @@ export interface Preset {
   code: string;
   steps: ExecutionStep[];
 }
+
+const LIVE_TRACE_BANANA: BananaDiagram = {
+  type: "variable",
+  title: "Real JDI Trace",
+  description: "Each step is a verified snapshot from java_jail's JDI tracer, showing the actual JVM state as Sample.java ran on this machine.",
+  svgMarkup: `<svg viewBox="0 0 200 120" class="w-full h-full"><rect x="15" y="18" width="170" height="84" rx="8" fill="#1e293b" stroke="#334155" stroke-width="1.5"/><text x="100" y="46" fill="#475569" font-size="9" text-anchor="middle" font-family="monospace">java_jail JDI tracer</text><text x="100" y="63" fill="#3b82f6" font-size="11" text-anchor="middle" font-weight="bold">sample_trace.json</text><text x="100" y="80" fill="#475569" font-size="9" text-anchor="middle">11 real steps · 2 methods</text></svg>`
+};
+const LT_MAIN: ActiveBlock = { label: "method main()", beginLine: 2, endLine: 7 };
+const LT_MUL:  ActiveBlock = { label: "method multiply()", beginLine: 9, endLine: 11 };
 
 const SIMULATION_PRESETS: Record<string, Preset> = {
   linkedlist: {
@@ -1013,6 +1030,46 @@ class Node {
         }
       }
     ]
+  },
+  livetrace: {
+    id: "livetrace",
+    name: "Live Trace: multiply(5, 10)",
+    code: `public class Sample {
+    public static void main(String[] args) {
+        int x = 5;
+        int y = 10;
+        int result = multiply(x, y);
+        System.out.println("Result = " + result);
+    }
+
+    public static int multiply(int a, int b) {
+        return a * b;
+    }
+}`,
+    steps: [
+      // [0] call line=3 — entering main
+      { lineHighlight: 3, stack: [{ methodName: "main(String[] args)", variables: [] }], heap: {}, arrows: [], spotlightStackVars: [], spotlightHeapObjects: [], spotlightHeapFields: [], stdout: "", activeBlock: LT_MAIN, explanation: "Entering main() — a new stack frame is created. No local variables exist yet.", bananaDiagram: LIVE_TRACE_BANANA },
+      // [1] step_line line=3 — positioned at int x = 5
+      { lineHighlight: 3, stack: [{ methodName: "main(String[] args)", variables: [] }], heap: {}, arrows: [], spotlightStackVars: [], spotlightHeapObjects: [], spotlightHeapFields: [], stdout: "", activeBlock: LT_MAIN, explanation: "Positioned at line 3 — about to execute: int x = 5.", bananaDiagram: LIVE_TRACE_BANANA },
+      // [2] step_line line=4 — x=5 assigned
+      { lineHighlight: 4, stack: [{ methodName: "main(String[] args)", variables: [{ name: "x", type: "int", value: "5", isReference: false }] }], heap: {}, arrows: [], spotlightStackVars: ["x"], spotlightHeapObjects: [], spotlightHeapFields: [], stdout: "", activeBlock: LT_MAIN, explanation: "int x = 5 executed. x appears on main's stack frame with value 5.", bananaDiagram: LIVE_TRACE_BANANA },
+      // [3] step_line line=5 — y=10 assigned, about to call multiply
+      { lineHighlight: 5, stack: [{ methodName: "main(String[] args)", variables: [{ name: "x", type: "int", value: "5", isReference: false }, { name: "y", type: "int", value: "10", isReference: false }] }], heap: {}, arrows: [], spotlightStackVars: ["y"], spotlightHeapObjects: [], spotlightHeapFields: [], stdout: "", activeBlock: LT_MAIN, explanation: "int y = 10 executed. y added to main's frame. Line 5 calls multiply(x, y) — a new frame is about to be pushed.", bananaDiagram: LIVE_TRACE_BANANA },
+      // [4] call line=10 — entering multiply, two frames
+      { lineHighlight: 10, stack: [{ methodName: "multiply(int a, int b)", variables: [{ name: "a", type: "int", value: "5", isReference: false }, { name: "b", type: "int", value: "10", isReference: false }] }, { methodName: "main(String[] args)", variables: [{ name: "x", type: "int", value: "5", isReference: false }, { name: "y", type: "int", value: "10", isReference: false }] }], heap: {}, arrows: [], spotlightStackVars: ["a", "b"], spotlightHeapObjects: [], spotlightHeapFields: [], stdout: "", activeBlock: LT_MUL, explanation: "multiply(5, 10) called — a second stack frame is pushed on top. Parameters a=5 and b=10 are local to multiply().", bananaDiagram: LIVE_TRACE_BANANA },
+      // [5] step_line line=10 — inside multiply
+      { lineHighlight: 10, stack: [{ methodName: "multiply(int a, int b)", variables: [{ name: "a", type: "int", value: "5", isReference: false }, { name: "b", type: "int", value: "10", isReference: false }] }, { methodName: "main(String[] args)", variables: [{ name: "x", type: "int", value: "5", isReference: false }, { name: "y", type: "int", value: "10", isReference: false }] }], heap: {}, arrows: [], spotlightStackVars: ["a", "b"], spotlightHeapObjects: [], spotlightHeapFields: [], stdout: "", activeBlock: LT_MUL, explanation: "Executing: return a * b → 5 × 10 = 50. The multiply frame is about to pop.", bananaDiagram: LIVE_TRACE_BANANA },
+      // [6] return line=10 — multiply returning 50
+      { lineHighlight: 10, stack: [{ methodName: "multiply(int a, int b)", variables: [{ name: "a", type: "int", value: "5", isReference: false }, { name: "b", type: "int", value: "10", isReference: false }, { name: "return value", type: "int", value: "50", isReference: false }] }, { methodName: "main(String[] args)", variables: [{ name: "x", type: "int", value: "5", isReference: false }, { name: "y", type: "int", value: "10", isReference: false }] }], heap: {}, arrows: [], spotlightStackVars: ["return value"], spotlightHeapObjects: [], spotlightHeapFields: [], stdout: "", activeBlock: LT_MUL, explanation: "multiply() returns 50. The frame will be popped — main() receives the return value and will assign it to result.", bananaDiagram: LIVE_TRACE_BANANA },
+      // [7] step_line line=5 — back in main, result not yet assigned
+      { lineHighlight: 5, stack: [{ methodName: "main(String[] args)", variables: [{ name: "x", type: "int", value: "5", isReference: false }, { name: "y", type: "int", value: "10", isReference: false }] }], heap: {}, arrows: [], spotlightStackVars: [], spotlightHeapObjects: [], spotlightHeapFields: [], stdout: "", activeBlock: LT_MAIN, explanation: "Back in main(). multiply's frame was popped. The return value 50 is being assigned to result...", bananaDiagram: LIVE_TRACE_BANANA },
+      // [8] step_line line=6 — result=50 assigned
+      { lineHighlight: 6, stack: [{ methodName: "main(String[] args)", variables: [{ name: "x", type: "int", value: "5", isReference: false }, { name: "y", type: "int", value: "10", isReference: false }, { name: "result", type: "int", value: "50", isReference: false }] }], heap: {}, arrows: [], spotlightStackVars: ["result"], spotlightHeapObjects: [], spotlightHeapFields: [], stdout: "", activeBlock: LT_MAIN, explanation: "result = 50 assigned on main's stack frame. About to call System.out.println.", bananaDiagram: LIVE_TRACE_BANANA },
+      // [9] step_line line=7 — println ran, stdout = "Result = 50"
+      { lineHighlight: 7, stack: [{ methodName: "main(String[] args)", variables: [{ name: "x", type: "int", value: "5", isReference: false }, { name: "y", type: "int", value: "10", isReference: false }, { name: "result", type: "int", value: "50", isReference: false }] }], heap: {}, arrows: [], spotlightStackVars: [], spotlightHeapObjects: [], spotlightHeapFields: [], stdout: "Result = 50", activeBlock: LT_MAIN, explanation: "System.out.println(\"Result = \" + result) printed \"Result = 50\" to stdout.", bananaDiagram: LIVE_TRACE_BANANA },
+      // [10] return line=7 — main() returning void
+      { lineHighlight: 7, stack: [{ methodName: "main(String[] args)", variables: [{ name: "x", type: "int", value: "5", isReference: false }, { name: "y", type: "int", value: "10", isReference: false }, { name: "result", type: "int", value: "50", isReference: false }] }], heap: {}, arrows: [], spotlightStackVars: [], spotlightHeapObjects: [], spotlightHeapFields: [], stdout: "Result = 50", activeBlock: LT_MAIN, explanation: "main() returns void. Program execution complete. All stack frames are cleared.", bananaDiagram: LIVE_TRACE_BANANA },
+    ]
   }
 };
 
@@ -1070,6 +1127,21 @@ function getWalkthroughMessage(presetId: string, step: number) {
         return "Line 9 executed! We update stack top field to point to [Object 3]. Node [Object 3] is now the new top, pointing down to [Object 2].";
       default:
         return "Stack trace completed. Feel free to explore how memory updates!";
+    }
+  } else if (presetId === "livetrace") {
+    switch (step) {
+      case 0: return "Real trace from java_jail — entering main(). Step forward to watch variables appear on the stack.";
+      case 1: return "Positioned at line 3, about to assign x = 5.";
+      case 2: return "x = 5 added to main's stack frame.";
+      case 3: return "y = 10 added. Next: multiply() will be called, pushing a second frame.";
+      case 4: return "multiply(5, 10) called — a second stack frame appears with parameters a=5 and b=10.";
+      case 5: return "Inside multiply() — about to compute return a * b = 50.";
+      case 6: return "multiply() returns 50. See the return value on the frame — it's about to be popped.";
+      case 7: return "Back in main(). multiply's frame was popped. Return value 50 is being assigned to result...";
+      case 8: return "result = 50 assigned. About to print.";
+      case 9: return "System.out.println ran — 'Result = 50' appears in the stdout panel below.";
+      case 10: return "main() returns void. Execution complete. This trace came directly from sample_trace.json.";
+      default: return "Live trace complete.";
     }
   }
   return "Step through the simulation to watch variable cards and memory boxes update dynamically.";
@@ -1221,6 +1293,8 @@ export default function HomePage() {
             spotlightHeapFields={currentStepData.spotlightHeapFields}
             dataMovement={currentStepData.dataMovement}
             hoveredElement={hoveredElement}
+            stdout={currentStepData.stdout}
+            activeBlock={currentStepData.activeBlock}
           />
         </div>
 

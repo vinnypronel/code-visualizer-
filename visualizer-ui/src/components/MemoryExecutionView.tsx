@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Layers, HardDrive } from "lucide-react";
-import { StackFrame, HeapObject, RefArrow, DataMovement } from "@/app/page";
+import { StackFrame, HeapObject, RefArrow, DataMovement, ActiveBlock } from "@/app/page";
 
 export function getFriendlyAddressLabel(value: string): string {
   if (!value) return value;
@@ -58,6 +58,8 @@ interface MemoryExecutionViewProps {
   spotlightHeapFields?: string[];
   dataMovement?: DataMovement;
   hoveredElement?: string | null;
+  stdout?: string;
+  activeBlock?: ActiveBlock;
 }
 
 export default function MemoryExecutionView({
@@ -71,6 +73,8 @@ export default function MemoryExecutionView({
   spotlightHeapFields = [],
   dataMovement,
   hoveredElement = null,
+  stdout,
+  activeBlock,
 }: MemoryExecutionViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [svgPaths, setSvgPaths] = useState<Array<{ id: string; d: string; color: string }>>([]);
@@ -323,6 +327,15 @@ export default function MemoryExecutionView({
             </div>
           </div>
 
+          {activeBlock && (
+            <div className="mb-3 flex items-center gap-1.5 flex-shrink-0">
+              <span className="text-[9px] uppercase tracking-wider text-slate-500 font-bold font-mono">scope</span>
+              <span className="badge badge-blue text-[9px] py-0.5 px-1.5 font-mono">
+                {activeBlock.label} · lines {activeBlock.beginLine}–{activeBlock.endLine}
+              </span>
+            </div>
+          )}
+
           <div className="space-y-4">
             {stack.map((frame, idx) => (
               <div
@@ -396,6 +409,15 @@ export default function MemoryExecutionView({
               </div>
             ))}
           </div>
+
+          {stdout && (
+            <div className="mt-4 pt-3 border-t border-slate-800 flex-shrink-0">
+              <span className="text-[9px] uppercase tracking-wider text-slate-500 font-bold font-mono block mb-1.5">stdout</span>
+              <pre className="text-[11px] font-mono text-emerald-400 bg-slate-950/60 rounded-lg px-3 py-2 border border-slate-800/40 whitespace-pre-wrap leading-relaxed">
+                {stdout}
+              </pre>
+            </div>
+          )}
         </div>
 
         {/* The Heap Zone (Right Canvas Area) */}
