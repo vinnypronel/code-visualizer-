@@ -1,36 +1,275 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Code Visualizer Study App
 
-## Getting Started
+This is the participant-facing study app for the UR2PhD Summer REU project,
+AI-Powered Interactive Code Visualization.
 
-First, run the development server:
+The app compares two learning conditions for Java program execution:
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- AI-assisted interactive visualizer
+- Static reading materials
+
+Participants move through consent, participant ID assignment, pre-test,
+learning, post-test, and an in-app questionnaire. Study data is stored in
+Supabase through server-side API routes.
+
+## Project Location
+
+The actual Next.js app is in this folder:
+
+```powershell
+visualizer-ui
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The folders at the repository root, such as `parser-spike`,
+`java-jail-spike`, and `java-trace-spike`, are research spike/prototype folders.
+They are not needed to run the current study app.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Tech Stack
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- Next.js 16
+- React 19
+- TypeScript
+- Tailwind CSS v4
+- Supabase database
+- npm package manager
 
-## Learn More
+## Clone The Repo
 
-To learn more about Next.js, take a look at the following resources:
+```powershell
+git clone https://github.com/vinnypronel/code-visualizer-.git
+cd code-visualizer-\visualizer-ui
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+If the repo is already on your computer:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```powershell
+cd "C:\Users\vinny\OneDrive\Desktop\UR2PhD SUmmer REU\Visualizer-UI\visualizer-ui"
+git pull origin main
+```
 
-## Deploy on Vercel
+## Install
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Install dependencies from inside `visualizer-ui`:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```powershell
+npm install
+```
+
+Use npm for this project. Do not use pnpm or yarn unless the team decides to
+change package managers.
+
+## Environment Variables
+
+Create this file:
+
+```text
+visualizer-ui/.env.local
+```
+
+Add:
+
+```env
+SUPABASE_URL=https://your-project-ref.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+```
+
+Important:
+
+- Do not commit `.env.local`.
+- Do not put the service role key in client-side code.
+- Use the `service_role` key, not the publishable or anon key.
+- The app writes to Supabase only through server routes.
+
+The project URL is in Supabase under **Settings -> Data API** or from the green
+**Connect** button. The service role key is in **Settings -> API Keys** under
+secret keys or legacy service role keys.
+
+## Supabase Setup
+
+In the Supabase SQL editor, run:
+
+```sql
+-- Main study schema
+-- Use the contents of:
+-- supabase/migrations/0001_study_harness.sql
+```
+
+If `0001_study_harness.sql` was already run before the in-app questionnaire was
+added, also run:
+
+```sql
+alter table public.sessions
+  add column if not exists questionnaire_finished_at timestamptz,
+  add column if not exists questionnaire_responses jsonb;
+```
+
+That same add-on SQL is saved in:
+
+```text
+supabase/migrations/0002_questionnaire_responses.sql
+```
+
+## Run Locally
+
+From inside `visualizer-ui`:
+
+```powershell
+npm run dev
+```
+
+Open:
+
+```text
+http://localhost:3000
+```
+
+If port 3000 is already busy, Next.js may offer another port. Use the URL shown
+in the terminal.
+
+## Verify Before A Study Session
+
+Run these from inside `visualizer-ui`:
+
+```powershell
+npx tsc --noEmit
+npx eslint src/app/page.tsx src/app/layout.tsx src/app/api src/components/study src/content src/data src/lib src/types
+npm run build
+```
+
+Known note: full `npx eslint src` may report older issues in the original
+visualizer components. The study-harness scoped lint command above is the one
+used for the current study flow.
+
+## Participant Flow
+
+1. Consent
+2. Participant ID assignment
+3. Pre-test
+4. Learning phase
+5. Post-test
+6. Questionnaire
+
+Odd participant sequence numbers get the AI visualizer condition. Even sequence
+numbers get the static reading-materials condition.
+
+Example:
+
+- `P001` gets AI
+- `P002` gets static
+- `P003` gets AI
+
+## Where Things Are
+
+Main study files:
+
+```text
+src/components/study
+src/content/consent.tsx
+src/data/tests.ts
+src/data/questionnaire.ts
+src/lib/studyConfig.ts
+src/lib/studyTypes.ts
+src/app/api/session
+supabase/migrations
+```
+
+Visualizer files:
+
+```text
+src/components/visualizer/VisualizerExperience.tsx
+src/components/AiExplanationPanel.tsx
+src/components/CodeEditorPanel.tsx
+src/components/MemoryExecutionView.tsx
+src/types/visualizer.ts
+```
+
+## Changing Study Content
+
+Consent:
+
+```text
+src/content/consent.tsx
+```
+
+Pre-test and post-test:
+
+```text
+src/data/tests.ts
+```
+
+Final questionnaire:
+
+```text
+src/data/questionnaire.ts
+```
+
+Static learning condition:
+
+```text
+src/components/study/StaticMaterialsStub.tsx
+```
+
+## Common Questions
+
+### Why is the browser not using the Supabase publishable key?
+
+The app intentionally does not let the browser write directly to the database.
+The browser sends study events to Next.js API routes, and those server routes
+use the service role key.
+
+### Why did one test create P001?
+
+Participant IDs are generated by a database sequence. Testing the full agree
+path creates real rows. Before running real participants, decide whether to keep
+test rows or reset the table and sequence.
+
+### How do I see collected responses?
+
+In Supabase:
+
+1. Open the project.
+2. Go to Table Editor.
+3. Open the `sessions` table.
+4. Check the response columns:
+   - `pretest_responses`
+   - `posttest_responses`
+   - `questionnaire_responses`
+
+### What if the app cannot assign a participant ID?
+
+Check:
+
+- `.env.local` exists in `visualizer-ui`
+- `SUPABASE_URL` is correct
+- `SUPABASE_SERVICE_ROLE_KEY` is the service role key
+- The migration SQL was run in Supabase
+- The dev server was restarted after changing `.env.local`
+
+## Git Workflow
+
+Before starting work:
+
+```powershell
+git pull origin main
+```
+
+After making changes:
+
+```powershell
+git status
+git add visualizer-ui
+git commit -m "your message"
+git push origin main
+```
+
+Do not add `.env.local` or service keys to git.
+
+## Current Remaining Checks
+
+Before real participants, the team should:
+
+- Run one full live test and confirm the Supabase row is complete.
+- Decide whether to delete/reset test participant rows.
+- Have the professor review the final questionnaire wording.
+- Have the professor review the static reading materials for study fairness.
+- Deploy the app somewhere participants can access it.
