@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Layers, HardDrive } from "lucide-react";
-import { StackFrame, HeapObject, RefArrow, DataMovement, ActiveBlock } from "@/app/page";
+import { StackFrame, HeapObject, RefArrow, DataMovement, ActiveBlock } from "@/types/visualizer";
 
 export function getFriendlyAddressLabel(value: string): string {
   if (!value) return value;

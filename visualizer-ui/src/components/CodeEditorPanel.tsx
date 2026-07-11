@@ -13,7 +13,7 @@ import {
   Check,
   Zap,
 } from "lucide-react";
-import { Preset } from "@/app/page";
+import { Preset } from "@/types/visualizer";
 
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), { ssr: false });
 

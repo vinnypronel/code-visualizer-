@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Sparkles, Info, ChevronDown } from "lucide-react";
-import { BananaDiagram } from "@/app/page";
+import { BananaDiagram } from "@/types/visualizer";
 
 interface AiExplanationPanelProps {
   explanation: string;
