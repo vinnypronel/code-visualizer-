@@ -44,8 +44,11 @@ export default function ConsentScreen() {
       }
     >
       <div
-        className="rounded-xl p-5 mb-6"
-        style={{ background: "var(--bg-panel)", border: "1px solid var(--border)" }}
+        className="rounded-xl p-5 mb-6 max-h-[44vh] overflow-y-auto panel-scroll"
+        style={{
+          background: "var(--bg-panel)",
+          border: "1px solid var(--border)",
+        }}
       >
         <ConsentBody />
       </div>
