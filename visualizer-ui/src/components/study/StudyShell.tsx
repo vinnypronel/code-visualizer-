@@ -62,8 +62,8 @@ export default function StudyShell({
       >
         <div className="mx-auto w-full max-w-4xl px-6 py-3 flex items-center justify-between gap-4">
           <span
-            className="text-[11px] font-mono uppercase tracking-wider"
-            style={{ color: "var(--text-muted)" }}
+            className="text-[12px] font-mono uppercase tracking-wider"
+            style={{ color: "var(--text-primary)" }}
           >
             Code Visualizer Study
           </span>
@@ -78,10 +78,10 @@ export default function StudyShell({
                 <li key={stage} className="flex items-center gap-2 flex-1">
                   <div className="flex items-center gap-2 min-w-0">
                     <span
-                      className="flex items-center justify-center rounded-full text-[10px] font-bold flex-shrink-0"
+                      className="flex items-center justify-center rounded-full text-[11px] font-bold flex-shrink-0"
                       style={{
-                        width: 20,
-                        height: 20,
+                        width: 22,
+                        height: 22,
                         background:
                           state === "active"
                             ? "var(--accent)"
@@ -92,8 +92,8 @@ export default function StudyShell({
                           state === "active"
                             ? "#fff"
                             : state === "done"
-                              ? "var(--accent)"
-                              : "var(--text-muted)",
+                              ? "#fff"
+                              : "var(--text-primary)",
                         border:
                           state === "todo"
                             ? "1px solid var(--border)"
@@ -103,12 +103,12 @@ export default function StudyShell({
                       {i + 1}
                     </span>
                     <span
-                      className="text-[11px] font-medium truncate"
+                      className="text-[12px] font-semibold truncate"
                       style={{
                         color:
                           state === "todo"
-                            ? "var(--text-muted)"
-                            : "var(--text-secondary)",
+                            ? "var(--text-primary)"
+                            : "var(--text-primary)",
                       }}
                     >
                       {stage}
