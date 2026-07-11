@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Code Visualizer — UR²PhD Research Tool",
+  title: "Code Visualizer - UR2PhD Research Tool",
   description:
     "An interactive code visualizer that parses Java source code, renders execution flow on a live canvas, and provides AI-powered explanations in real time.",
   keywords: ["code visualizer", "AST", "Java", "execution trace", "AI explanation"],
