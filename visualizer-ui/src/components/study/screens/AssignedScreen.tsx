@@ -3,8 +3,7 @@
 import StudyShell from "@/components/study/StudyShell";
 import { useStudy } from "@/components/study/StudyProvider";
 
-/* Shows the freshly minted participant ID and asks the participant to note it,
- * then advances into the pre-test. */
+/* Shows the freshly minted participant ID, then advances into the pre-test. */
 export default function AssignedScreen() {
   const { session, goTo } = useStudy();
 
@@ -12,7 +11,7 @@ export default function AssignedScreen() {
     <StudyShell
       stageIndex={1}
       heading="Your participant ID"
-      subheading="Please write this down. You will need it for the questionnaire at the end."
+      subheading="The app will keep this ID attached to your answers automatically."
       footer={
         <button className="btn-primary" onClick={() => goTo("pretest")}>
           Continue to the pre-test
@@ -34,6 +33,10 @@ export default function AssignedScreen() {
           style={{ fontSize: 44, letterSpacing: "2px", color: "var(--accent)" }}
         >
           {session.participantId ?? "----"}
+        </p>
+        <p className="text-[13px] mt-4" style={{ color: "var(--text-secondary)" }}>
+          You do not need to enter this later. It is shown here so the researcher
+          can help if there is a technical issue.
         </p>
       </div>
     </StudyShell>
