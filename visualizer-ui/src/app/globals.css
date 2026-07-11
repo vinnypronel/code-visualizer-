@@ -369,9 +369,10 @@ body {
 /* ─── Onboarding Tour Highlight ─── */
 .onboarding-highlight {
   position: relative;
-  z-index: 90 !important;
-  box-shadow: 0 0 0 9999px rgba(8, 9, 12, 0.75), 0 0 15px rgba(59, 130, 246, 0.4) !important;
+  z-index: 95 !important;
+  box-shadow: 0 0 0 3px var(--accent), 0 0 30px rgba(59, 130, 246, 0.65) !important;
   border-color: var(--accent) !important;
+  opacity: 1 !important;
+  filter: none !important;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
-

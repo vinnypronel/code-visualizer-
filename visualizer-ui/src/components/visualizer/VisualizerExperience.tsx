@@ -1005,7 +1005,7 @@ function getWalkthroughMessage(presetId: string, step: number) {
   if (presetId === "linkedlist") {
     switch (step) {
       case 0:
-        return "👋 Welcome! Let's trace how node linking works in memory. Click the Next Step button (arrow) below the code editor to begin.";
+        return "Welcome. Start by reading the code, then use the Next Step button below the code editor to trace one line at a time.";
       case 1:
         return "Nice! Line 3 executed. Notice how local variable head was added to the Stack, pointing to [Object 1] in Object Storage (The Heap).";
       case 2:
@@ -1020,7 +1020,7 @@ function getWalkthroughMessage(presetId: string, step: number) {
   } else if (presetId === "arraylist") {
     switch (step) {
       case 0:
-        return "👋 Welcome! Let's trace how a row of boxes (arrays) work in memory. Click the Next Step button on the bottom left to begin.";
+        return "Welcome. Start by reading the code, then use the Next Step button on the bottom left to trace one line at a time.";
       case 1:
         return "Great! Line 3 executed. Notice how a reference list appeared on the Stack pointing to a row of 3 slots [Object 1] in Object Storage.";
       case 2:
@@ -1039,7 +1039,7 @@ function getWalkthroughMessage(presetId: string, step: number) {
   } else if (presetId === "stack") {
     switch (step) {
       case 0:
-        return "👋 Welcome! Let's trace how push operations work in a LIFO stack. Click the Next Step button on the bottom left to begin.";
+        return "Welcome. Start by reading the code, then use the Next Step button on the bottom left to trace one line at a time.";
       case 1:
         return "Line 3 executed. We create a stack tracker [Object 1] in Object Storage, pointing to null because it's empty.";
       case 2:
@@ -1111,12 +1111,10 @@ export default function VisualizerExperience() {
   const [hoveredElement, setHoveredElement] = useState<string | null>(null);
   const [isTourOpen, setIsTourOpen] = useState(false);
 
-  // Auto-start tour for first-time visitors
+  // Start the orientation tour when the learning tool opens.
   useEffect(() => {
-    const hasSeen = localStorage.getItem("has_seen_onboarding");
-    if (hasSeen !== "true") {
-      setIsTourOpen(true);
-    }
+    const timeout = setTimeout(() => setIsTourOpen(true), 250);
+    return () => clearTimeout(timeout);
   }, []);
 
   const activePreset = SIMULATION_PRESETS[presetId] || SIMULATION_PRESETS.linkedlist;

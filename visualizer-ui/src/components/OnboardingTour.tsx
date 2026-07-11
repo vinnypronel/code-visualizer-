@@ -14,25 +14,25 @@ interface TourStep {
 const steps: TourStep[] = [
   {
     title: "Java Code Editor",
-    content: "Here is your Java code. We've preloaded a common example to help you visualize memory. You can edit this code dynamically or choose a preset!",
+    content: "Start here. This is the Java program being traced. The highlighted line changes as you step through the program.",
     selector: "#onboarding-editor-panel",
     placement: "right",
   },
   {
-    title: "The Stack & Heap",
-    content: "This is your computer's memory bank. As code runs, local variable cards will appear on the Stack workbench (left), and objects/arrays will grow in the Heap storage room (right).",
+    title: "Memory View",
+    content: "Watch this area as the program runs. Local variables appear on the Stack, and objects created with new appear in the Heap.",
     selector: "#onboarding-memory-view",
     placement: "bottom",
   },
   {
     title: "Gemini CS Tutor",
-    content: "Your AI coach will explain exactly what is happening in plain English at every single step. Look here to understand the physical analogies of the code execution.",
+    content: "Read this panel when a step feels confusing. It explains what just happened in plain language.",
     selector: "#onboarding-tutor-panel",
     placement: "left",
   },
   {
     title: "Playback Controls",
-    content: "Ready to start? Click this flashing Next Step button to run the very first line of code and watch memory update in real time!",
+    content: "Use these controls to move through the trace. Click the right arrow for one step at a time, or use Run & Visualize to play automatically.",
     selector: "#onboarding-playback-controls",
     placement: "top",
   },
@@ -132,7 +132,6 @@ export default function OnboardingTour({ isOpen, onClose }: OnboardingTourProps)
   };
 
   const handleComplete = () => {
-    localStorage.setItem("has_seen_onboarding", "true");
     onClose();
     setActiveStep(0);
   };
@@ -140,9 +139,12 @@ export default function OnboardingTour({ isOpen, onClose }: OnboardingTourProps)
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 pointer-events-none">
+    <div className="fixed inset-0 z-[80] pointer-events-none">
       {/* Background dimmer layer */}
-      <div className="absolute inset-0 bg-slate-950/20 backdrop-blur-[1px] pointer-events-auto" onClick={handleComplete} />
+      <div
+        className="absolute inset-0 bg-slate-950/80 backdrop-blur-[2px] pointer-events-auto"
+        onClick={handleComplete}
+      />
 
       <AnimatePresence mode="wait">
         <motion.div
@@ -151,11 +153,11 @@ export default function OnboardingTour({ isOpen, onClose }: OnboardingTourProps)
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.94, y: -10 }}
           transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-          className="absolute w-[640px] rounded-3xl border border-white/10 py-14 px-10 shadow-2xl pointer-events-auto"
+          className="absolute z-[100] w-[560px] rounded-2xl border border-white/10 py-8 px-8 shadow-2xl pointer-events-auto"
           style={{
             top: tooltipPos.top,
             left: tooltipPos.left,
-            background: "rgba(15, 17, 26, 0.85)",
+            background: "rgba(15, 17, 26, 0.95)",
             backdropFilter: "blur(24px)",
             boxShadow: "0 20px 40px -10px rgba(0, 0, 0, 0.7), inset 0 1px 0 0 rgba(255, 255, 255, 0.05)",
           }}
@@ -163,7 +165,7 @@ export default function OnboardingTour({ isOpen, onClose }: OnboardingTourProps)
           {/* Header */}
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center text-violet-400">
-              <span className="text-xs font-bold uppercase tracking-wider font-mono">Guided Tour</span>
+              <span className="text-xs font-bold uppercase tracking-wider font-mono">Learning Screen Walkthrough</span>
             </div>
             <button
               onClick={handleComplete}
@@ -174,12 +176,12 @@ export default function OnboardingTour({ isOpen, onClose }: OnboardingTourProps)
           </div>
 
           {/* Title */}
-          <h4 className="text-2xl font-bold text-slate-100 mb-5">
+          <h4 className="text-xl font-bold text-slate-100 mb-4">
             {steps[activeStep].title}
           </h4>
 
           {/* Body */}
-          <p className="text-base text-slate-400 leading-relaxed mb-10">
+          <p className="text-sm text-slate-300 leading-relaxed mb-8">
             {steps[activeStep].content}
           </p>
 
