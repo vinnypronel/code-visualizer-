@@ -14,25 +14,31 @@ interface TourStep {
 const steps: TourStep[] = [
   {
     title: "Java Code Editor",
-    content: "Start here. This is the Java program being traced. The highlighted line changes as you step through the program.",
+    content: "Start by reading this code. As you step forward, one line is highlighted so you can see exactly what is running.",
     selector: "#onboarding-editor-panel",
     placement: "right",
   },
   {
-    title: "Memory View",
-    content: "Watch this area as the program runs. Local variables appear on the Stack, and objects created with new appear in the Heap.",
-    selector: "#onboarding-memory-view",
-    placement: "bottom",
+    title: "Stack",
+    content: "This side shows local variables for the current method. Think of it as the work area for the line that is running now.",
+    selector: "#onboarding-stack-zone",
+    placement: "right",
+  },
+  {
+    title: "Heap",
+    content: "Objects created with new appear here. Reference variables point from the Stack to objects in this storage area.",
+    selector: "#onboarding-heap-zone",
+    placement: "left",
   },
   {
     title: "Gemini CS Tutor",
-    content: "Read this panel when a step feels confusing. It explains what just happened in plain language.",
+    content: "Read this when a step feels confusing. It explains the current line in simpler language.",
     selector: "#onboarding-tutor-panel",
     placement: "left",
   },
   {
     title: "Playback Controls",
-    content: "Use these controls to move through the trace. Click the right arrow for one step at a time, or use Run & Visualize to play automatically.",
+    content: "Use the right arrow to move one step at a time. Use Run & Visualize only when you want the trace to play by itself.",
     selector: "#onboarding-playback-controls",
     placement: "top",
   },
@@ -75,33 +81,47 @@ export default function OnboardingTour({ isOpen, onClose }: OnboardingTourProps)
 
       if (el) {
         const rect = el.getBoundingClientRect();
+        const tooltipWidth = 360;
+        const tooltipHeight = 220;
+        const gap = 18;
         let top = 0;
         let left = 0;
 
         if (stepData.placement === "right") {
-          top = rect.top + rect.height / 2 - 170;
-          left = rect.right + 24;
+          top = rect.top + rect.height / 2 - tooltipHeight / 2;
+          left = rect.right + gap;
+          if (left + tooltipWidth > window.innerWidth - 16) {
+            left = rect.left - tooltipWidth - gap;
+          }
         } else if (stepData.placement === "left") {
-          top = rect.top + rect.height / 2 - 170;
-          left = rect.left - 664; // 640 width + 24 gap
+          top = rect.top + rect.height / 2 - tooltipHeight / 2;
+          left = rect.left - tooltipWidth - gap;
+          if (left < 16) {
+            left = rect.right + gap;
+          }
         } else if (stepData.placement === "bottom") {
-          top = rect.bottom - 360; // place inside bounds but floating lower
-          left = rect.left + rect.width / 2 - 320; // centered: 640 / 2
+          top = rect.bottom + gap;
+          left = rect.left + rect.width / 2 - tooltipWidth / 2;
+          if (top + tooltipHeight > window.innerHeight - 16) {
+            top = rect.top - tooltipHeight - gap;
+          }
         } else if (stepData.placement === "top") {
-          top = rect.top - 360;
-          left = rect.left + rect.width / 2 - 320; // centered: 640 / 2
+          top = rect.top - tooltipHeight - gap;
+          left = rect.left + rect.width / 2 - tooltipWidth / 2;
+          if (top < 16) {
+            top = rect.bottom + gap;
+          }
         }
 
-        // Clamp screen boundaries for a 640px wide tooltip
-        left = Math.max(20, Math.min(window.innerWidth - 660, left));
-        top = Math.max(70, Math.min(window.innerHeight - 380, top));
+        left = Math.max(16, Math.min(window.innerWidth - tooltipWidth - 16, left));
+        top = Math.max(70, Math.min(window.innerHeight - tooltipHeight - 16, top));
 
         setTooltipPos({ top, left });
       } else {
         // Fallback to screen center
         setTooltipPos({
-          top: window.innerHeight / 2 - 180,
-          left: window.innerWidth / 2 - 320,
+          top: window.innerHeight / 2 - 122,
+          left: window.innerWidth / 2 - 180,
         });
       }
     };
@@ -153,7 +173,7 @@ export default function OnboardingTour({ isOpen, onClose }: OnboardingTourProps)
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.94, y: -10 }}
           transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-          className="absolute z-[100] w-[560px] rounded-2xl border border-white/10 py-8 px-8 shadow-2xl pointer-events-auto"
+          className="absolute z-[100] w-[360px] rounded-xl border border-white/10 py-5 px-5 shadow-2xl pointer-events-auto"
           style={{
             top: tooltipPos.top,
             left: tooltipPos.left,
@@ -163,7 +183,7 @@ export default function OnboardingTour({ isOpen, onClose }: OnboardingTourProps)
           }}
         >
           {/* Header */}
-          <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center justify-between mb-4">
             <div className="flex items-center text-violet-400">
               <span className="text-xs font-bold uppercase tracking-wider font-mono">Learning Screen Walkthrough</span>
             </div>
@@ -176,12 +196,12 @@ export default function OnboardingTour({ isOpen, onClose }: OnboardingTourProps)
           </div>
 
           {/* Title */}
-          <h4 className="text-xl font-bold text-slate-100 mb-4">
+          <h4 className="text-lg font-bold text-slate-100 mb-3">
             {steps[activeStep].title}
           </h4>
 
           {/* Body */}
-          <p className="text-sm text-slate-300 leading-relaxed mb-8">
+          <p className="text-sm text-slate-300 leading-relaxed mb-6">
             {steps[activeStep].content}
           </p>
 

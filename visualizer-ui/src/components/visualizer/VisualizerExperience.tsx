@@ -1133,7 +1133,7 @@ export default function VisualizerExperience() {
           }
           return prev + 1;
         });
-      }, 2500); // Give plenty of time to view slide transitions
+      }, 5000); // Slow enough for students to read each explanation.
     }
     return () => {
       if (timer) clearInterval(timer);

@@ -314,6 +314,7 @@ export default function MemoryExecutionView({
         
         {/* The Stack Zone (Left Column) */}
         <div
+          id="onboarding-stack-zone"
           className="w-[280px] flex-shrink-0 flex flex-col border-r px-4 py-4 overflow-y-auto bg-slate-950/80"
           style={{ borderColor: "var(--border)" }}
         >
@@ -421,7 +422,10 @@ export default function MemoryExecutionView({
         </div>
 
         {/* The Heap Zone (Right Canvas Area) */}
-        <div className="flex-1 relative overflow-y-auto px-6 py-6 min-h-0">
+        <div
+          id="onboarding-heap-zone"
+          className="flex-1 relative overflow-y-auto px-6 py-6 min-h-0"
+        >
           <div className="absolute top-4 left-6 flex items-center gap-1.5 pointer-events-none">
             <HardDrive size={13} className="text-slate-400" />
             <div>
