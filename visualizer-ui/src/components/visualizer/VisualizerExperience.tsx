@@ -154,6 +154,26 @@ class Node {
         spotlightStackVars: ["head"],
         spotlightHeapObjects: ["101"],
         spotlightHeapFields: ["101-val"],
+        callouts: [
+          {
+            target: "stack-head",
+            title: "Reference variable",
+            body: "head does not store the whole Node. It stores an address tag that points to [Object 1] in the Heap.",
+            tone: "blue"
+          },
+          {
+            target: "heap-101-val",
+            title: "Value inside the object",
+            body: "This Node has its own val field. The number 10 is stored inside the Heap object.",
+            tone: "green"
+          },
+          {
+            target: "heap-101-next",
+            title: "No next node yet",
+            body: "null means this next field is not pointing to another Node right now.",
+            tone: "amber"
+          }
+        ],
         explanation: "We just created a new Node object, which we'll call [Object 1], in our Object Storage (The Heap). The variable head on the Stack now holds a remote control pointing to [Object 1]. The node contains val 10, and its next slot is currently empty (null).",
         bananaDiagram: {
           type: "reference",
@@ -202,6 +222,26 @@ class Node {
         spotlightStackVars: ["temp"],
         spotlightHeapObjects: ["102"],
         spotlightHeapFields: ["102-val"],
+        callouts: [
+          {
+            target: "stack-head",
+            title: "Still points to Object 1",
+            body: "head keeps pointing to the first Node. Creating temp did not move or copy Object 1.",
+            tone: "blue"
+          },
+          {
+            target: "stack-temp",
+            title: "Second reference variable",
+            body: "temp is another address tag on the Stack. It points to [Object 2].",
+            tone: "purple"
+          },
+          {
+            target: "heap-102-val",
+            title: "Value in Object 2",
+            body: "This separate Node stores 20 in its val field. It is a different object from the Node holding 10.",
+            tone: "green"
+          }
+        ],
         explanation: "We create a second Node object, which we'll call [Object 2], in our Object Storage with val 20. A new variable temp is added to the Stack, holding a matching remote control pointing to [Object 2].",
         bananaDiagram: {
           type: "reference",
@@ -251,6 +291,26 @@ class Node {
         spotlightStackVars: ["temp", "head"],
         spotlightHeapObjects: ["101", "102"],
         spotlightHeapFields: ["101-next"],
+        callouts: [
+          {
+            target: "stack-temp",
+            title: "What gets copied",
+            body: "The object is not copied. Only temp's address tag, [Object 2], is copied.",
+            tone: "purple"
+          },
+          {
+            target: "heap-101-next",
+            title: "The link field",
+            body: "Object 1's next field now points to [Object 2]. This is what connects the two Nodes into a chain.",
+            tone: "amber"
+          },
+          {
+            target: "heap-102-val",
+            title: "End of the chain for now",
+            body: "Object 2 still has next = null, so the list stops here.",
+            tone: "green"
+          }
+        ],
         dataMovement: {
           from: "stack-temp",
           to: "heap-101-next",
@@ -306,6 +366,32 @@ class Node {
         spotlightStackVars: ["val", "head"],
         spotlightHeapObjects: ["101"],
         spotlightHeapFields: ["101-val"],
+        callouts: [
+          {
+            target: "stack-head",
+            title: "Follow head first",
+            body: "For head.val, Java first follows head's address tag to [Object 1] in the Heap.",
+            tone: "blue"
+          },
+          {
+            target: "heap-101-val",
+            title: "Read this Heap value",
+            body: "Inside [Object 1], the val field stores 10. This is the value Java reads.",
+            tone: "green"
+          },
+          {
+            target: "stack-val",
+            title: "Copied onto the Stack",
+            body: "The new local variable val stores the number 10 directly. It does not point to an object.",
+            tone: "amber"
+          },
+          {
+            target: "heap-101-next",
+            title: "Reference still points onward",
+            body: "next still points to [Object 2]. Reading head.val does not change the linked list.",
+            tone: "purple"
+          }
+        ],
         dataMovement: {
           from: "heap-101-val",
           to: "stack-val",
@@ -1242,6 +1328,7 @@ export default function VisualizerExperience() {
             spotlightHeapObjects={currentStepData.spotlightHeapObjects}
             spotlightHeapFields={currentStepData.spotlightHeapFields}
             dataMovement={currentStepData.dataMovement}
+            callouts={currentStepData.callouts}
             hoveredElement={hoveredElement}
             stdout={currentStepData.stdout}
             activeBlock={currentStepData.activeBlock}

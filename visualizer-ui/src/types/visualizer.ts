@@ -55,6 +55,13 @@ export interface DataMovement {
   value: string; // e.g. "10"
 }
 
+export interface MemoryCallout {
+  target: string; // e.g. "stack-head", "heap-101-val", "heap-101-next"
+  title: string;
+  body: string;
+  tone?: "blue" | "purple" | "green" | "amber";
+}
+
 export interface ActiveBlock {
   label: string;
   beginLine: number;
@@ -72,6 +79,7 @@ export interface ExecutionStep {
   spotlightHeapObjects?: string[];
   spotlightHeapFields?: string[];
   dataMovement?: DataMovement;
+  callouts?: MemoryCallout[];
   stdout?: string;
   activeBlock?: ActiveBlock;
 }

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Layers, HardDrive } from "lucide-react";
-import { StackFrame, HeapObject, RefArrow, DataMovement, ActiveBlock } from "@/types/visualizer";
+import { StackFrame, HeapObject, RefArrow, DataMovement, ActiveBlock, MemoryCallout } from "@/types/visualizer";
 
 export function getFriendlyAddressLabel(value: string): string {
   if (!value) return value;
@@ -57,6 +57,7 @@ interface MemoryExecutionViewProps {
   spotlightHeapObjects?: string[];
   spotlightHeapFields?: string[];
   dataMovement?: DataMovement;
+  callouts?: MemoryCallout[];
   hoveredElement?: string | null;
   stdout?: string;
   activeBlock?: ActiveBlock;
@@ -72,6 +73,7 @@ export default function MemoryExecutionView({
   spotlightHeapObjects = [],
   spotlightHeapFields = [],
   dataMovement,
+  callouts = [],
   hoveredElement = null,
   stdout,
   activeBlock,
@@ -79,6 +81,9 @@ export default function MemoryExecutionView({
   const containerRef = useRef<HTMLDivElement>(null);
   const [svgPaths, setSvgPaths] = useState<Array<{ id: string; d: string; color: string }>>([]);
   const [anim, setAnim] = useState<{ value: string; x1: number; y1: number; x2: number; y2: number } | null>(null);
+  const [calloutPositions, setCalloutPositions] = useState<
+    Array<{ callout: MemoryCallout; top: number; left: number }>
+  >([]);
 
   // Check if current step has any active spotlight focal points
   const hasSpotlight =
@@ -128,25 +133,90 @@ export default function MemoryExecutionView({
     setSvgPaths(calculated);
   }, [arrows]);
 
+  const updateCalloutPositions = useCallback(() => {
+    if (!containerRef.current || callouts.length === 0) {
+      setCalloutPositions([]);
+      return;
+    }
+
+    const container = containerRef.current;
+    const containerRect = container.getBoundingClientRect();
+    const width = 220;
+    const gap = 10;
+    const estimatedHeight = 92;
+    const nextPositions: Array<{ callout: MemoryCallout; top: number; left: number }> = [];
+
+    callouts.forEach((callout, index) => {
+      const targetEl =
+        container.querySelector(`[data-ref-source="${callout.target}"]`) ||
+        container.querySelector(`[data-ref-target="${callout.target}"]`);
+
+      if (!targetEl) return;
+
+      const targetRect = targetEl.getBoundingClientRect();
+      let left = callout.target.startsWith("stack-")
+        ? targetRect.left - containerRect.left - width - gap
+        : targetRect.right - containerRect.left + gap;
+      let top = targetRect.top - containerRect.top - 4;
+
+      if (left < 12) {
+        left = targetRect.right - containerRect.left + gap;
+      }
+
+      if (left + width > containerRect.width - 12) {
+        left = targetRect.left - containerRect.left - width - gap;
+      }
+
+      left = Math.max(12, Math.min(containerRect.width - width - 12, left));
+      top = Math.max(64, Math.min(containerRect.height - estimatedHeight - 12, top + index * 4));
+
+      nextPositions.push({ callout, left, top });
+    });
+
+    nextPositions
+      .sort((a, b) => a.top - b.top)
+      .forEach((position, index, positions) => {
+        for (let prevIndex = 0; prevIndex < index; prevIndex += 1) {
+          const previous = positions[prevIndex];
+          const horizontallyClose = Math.abs(position.left - previous.left) < width * 0.75;
+          const verticallyClose = position.top < previous.top + estimatedHeight + 8;
+
+          if (horizontallyClose && verticallyClose) {
+            position.top = previous.top + estimatedHeight + 8;
+          }
+        }
+
+        position.top = Math.min(position.top, containerRect.height - estimatedHeight - 12);
+      });
+
+    setCalloutPositions(nextPositions);
+  }, [callouts]);
+
   // Recalculate reference paths on step updates
   useEffect(() => {
     const timer = setTimeout(() => {
       updatePaths();
+      updateCalloutPositions();
     }, 50);
     return () => clearTimeout(timer);
-  }, [currentStep, stack, heap, arrows, updatePaths]);
+  }, [currentStep, stack, heap, arrows, callouts, updatePaths, updateCalloutPositions]);
 
   // Recalculate paths on resize events
   useEffect(() => {
-    window.addEventListener("resize", updatePaths);
-    const observer = new ResizeObserver(() => updatePaths());
+    const handleResize = () => {
+      updatePaths();
+      updateCalloutPositions();
+    };
+
+    window.addEventListener("resize", handleResize);
+    const observer = new ResizeObserver(handleResize);
     if (containerRef.current) observer.observe(containerRef.current);
 
     return () => {
-      window.removeEventListener("resize", updatePaths);
+      window.removeEventListener("resize", handleResize);
       observer.disconnect();
     };
-  }, [updatePaths]);
+  }, [updatePaths, updateCalloutPositions]);
 
   // Handle micro-animations for data movement (value sliding)
   useEffect(() => {
@@ -283,6 +353,18 @@ export default function MemoryExecutionView({
           {anim.value}
         </div>
       )}
+
+      {/* Plain-English teaching callouts anchored to memory items */}
+      <div className="absolute inset-0 z-30 pointer-events-none">
+        {calloutPositions.map(({ callout, top, left }) => (
+          <MemoryCalloutBox
+            key={`${callout.target}-${callout.title}`}
+            callout={callout}
+            top={top}
+            left={left}
+          />
+        ))}
+      </div>
 
       {/* Panel Headers */}
       <div
@@ -564,5 +646,38 @@ export default function MemoryExecutionView({
         </div>
       </div>
     </div>
+  );
+}
+
+function MemoryCalloutBox({
+  callout,
+  top,
+  left,
+}: {
+  callout: MemoryCallout;
+  top: number;
+  left: number;
+}) {
+  const toneClass =
+    callout.tone === "purple"
+      ? "border-purple-400/40 bg-purple-950/30 text-purple-100"
+      : callout.tone === "green"
+        ? "border-emerald-400/40 bg-emerald-950/25 text-emerald-100"
+        : callout.tone === "amber"
+          ? "border-amber-300/40 bg-amber-950/25 text-amber-100"
+          : "border-blue-400/40 bg-blue-950/30 text-blue-100";
+
+  return (
+    <aside
+      className={`absolute w-[220px] rounded-lg border px-2.5 py-2 shadow-lg shadow-black/35 backdrop-blur-sm ${toneClass}`}
+      style={{ top, left }}
+    >
+      <p className="text-[9px] font-bold uppercase tracking-wider font-mono">
+        {callout.title}
+      </p>
+      <p className="mt-1 text-[10px] leading-relaxed text-slate-100/90">
+        {callout.body}
+      </p>
+    </aside>
   );
 }
