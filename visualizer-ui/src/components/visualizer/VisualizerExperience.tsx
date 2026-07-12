@@ -7,6 +7,8 @@ import AiExplanationPanel from "@/components/AiExplanationPanel";
 import OnboardingTour from "@/components/OnboardingTour";
 import type { BananaDiagram, ActiveBlock, Preset } from "@/types/visualizer";
 
+const AUTO_PLAY_STEP_DELAY_MS = 10000;
+
 /* Lazy-load panels that use browser APIs */
 const CodeEditorPanel = dynamic(() => import("@/components/CodeEditorPanel"), {
   ssr: false,
@@ -1133,7 +1135,7 @@ export default function VisualizerExperience() {
           }
           return prev + 1;
         });
-      }, 5000); // Slow enough for students to read each explanation.
+      }, AUTO_PLAY_STEP_DELAY_MS);
     }
     return () => {
       if (timer) clearInterval(timer);
