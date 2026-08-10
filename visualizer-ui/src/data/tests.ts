@@ -38,9 +38,9 @@ export const TEST_INSTRUCTIONS: string[] = [
   "This activity is solely for research purposes. No personally identifying information (such as your name or email address) is collected, and your performance will never be linked to your identity.",
   "Please answer the questions on your own - do not search online or use AI tools.",
   "Trace through each program step by step and fill in the table as completely as you can.",
-  "Partial responses are welcome.",
+  "Complete every response field before continuing.",
   "You have 10 minutes to complete this section.",
-  "When you are done, click the button below to continue.",
+  "When every response is complete, click the button below to continue.",
 ];
 
 /* Builder for the 6-row recursion trace table (columns: Step #, What happened). */
@@ -184,7 +184,7 @@ export const POSTTEST: TestDef = {
     if (n == 0){
         return 1;
     } else {
-        return g(n - 2) + n;
+        return g(n - 1) + n;
     }
 }`,
         },

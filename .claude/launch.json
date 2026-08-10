@@ -1,0 +1,13 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "visualizer-ui",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "cwd": "visualizer-ui",
+      "port": 3000,
+      "autoPort": true
+    }
+  ]
+}

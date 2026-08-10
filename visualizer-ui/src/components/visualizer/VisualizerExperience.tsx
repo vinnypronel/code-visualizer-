@@ -2,12 +2,20 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import dynamic from "next/dynamic";
-import TopBar from "@/components/TopBar";
+import { CheckCircle2, ChevronRight, RotateCcw } from "lucide-react";
 import AiExplanationPanel from "@/components/AiExplanationPanel";
 import OnboardingTour from "@/components/OnboardingTour";
-import type { BananaDiagram, ActiveBlock, Preset } from "@/types/visualizer";
-
-const AUTO_PLAY_STEP_DELAY_MS = 10000;
+import InteractiveWalkthrough from "@/components/InteractiveWalkthrough";
+import PostLessonPanel from "@/components/visualizer/PostLessonPanel";
+import {
+  LESSON_PRESET_ID,
+  SHOW_PRESET_SELECTOR,
+  TRACE_REQUEST_TIMEOUT_MS,
+  hasGuidedWalkthrough,
+  showPostLessonTools,
+} from "@/lib/studyConfig";
+import type { RunState } from "@/components/CodeEditorPanel";
+import type { BananaDiagram, ActiveBlock, ExecutionStep, Preset } from "@/types/visualizer";
 
 /* Lazy-load panels that use browser APIs */
 const CodeEditorPanel = dynamic(() => import("@/components/CodeEditorPanel"), {
@@ -1062,27 +1070,27 @@ class Node {
     }
 }`,
     steps: [
-      // [0] call line=3 — entering main
-      { lineHighlight: 3, stack: [{ methodName: "main(String[] args)", variables: [] }], heap: {}, arrows: [], spotlightStackVars: [], spotlightHeapObjects: [], spotlightHeapFields: [], stdout: "", activeBlock: LT_MAIN, explanation: "Entering main() — a new stack frame is created. No local variables exist yet.", bananaDiagram: LIVE_TRACE_BANANA },
-      // [1] step_line line=3 — positioned at int x = 5
-      { lineHighlight: 3, stack: [{ methodName: "main(String[] args)", variables: [] }], heap: {}, arrows: [], spotlightStackVars: [], spotlightHeapObjects: [], spotlightHeapFields: [], stdout: "", activeBlock: LT_MAIN, explanation: "Positioned at line 3 — about to execute: int x = 5.", bananaDiagram: LIVE_TRACE_BANANA },
-      // [2] step_line line=4 — x=5 assigned
+      // [0] call line=3, entering main
+      { lineHighlight: 3, stack: [{ methodName: "main(String[] args)", variables: [] }], heap: {}, arrows: [], spotlightStackVars: [], spotlightHeapObjects: [], spotlightHeapFields: [], stdout: "", activeBlock: LT_MAIN, explanation: "Entering main(). A new stack frame is created. No local variables exist yet.", bananaDiagram: LIVE_TRACE_BANANA },
+      // [1] step_line line=3, positioned at int x = 5
+      { lineHighlight: 3, stack: [{ methodName: "main(String[] args)", variables: [] }], heap: {}, arrows: [], spotlightStackVars: [], spotlightHeapObjects: [], spotlightHeapFields: [], stdout: "", activeBlock: LT_MAIN, explanation: "Positioned at line 3, about to execute: int x = 5.", bananaDiagram: LIVE_TRACE_BANANA },
+      // [2] step_line line=4, x=5 assigned
       { lineHighlight: 4, stack: [{ methodName: "main(String[] args)", variables: [{ name: "x", type: "int", value: "5", isReference: false }] }], heap: {}, arrows: [], spotlightStackVars: ["x"], spotlightHeapObjects: [], spotlightHeapFields: [], stdout: "", activeBlock: LT_MAIN, explanation: "int x = 5 executed. x appears on main's stack frame with value 5.", bananaDiagram: LIVE_TRACE_BANANA },
-      // [3] step_line line=5 — y=10 assigned, about to call multiply
-      { lineHighlight: 5, stack: [{ methodName: "main(String[] args)", variables: [{ name: "x", type: "int", value: "5", isReference: false }, { name: "y", type: "int", value: "10", isReference: false }] }], heap: {}, arrows: [], spotlightStackVars: ["y"], spotlightHeapObjects: [], spotlightHeapFields: [], stdout: "", activeBlock: LT_MAIN, explanation: "int y = 10 executed. y added to main's frame. Line 5 calls multiply(x, y) — a new frame is about to be pushed.", bananaDiagram: LIVE_TRACE_BANANA },
-      // [4] call line=10 — entering multiply, two frames
-      { lineHighlight: 10, stack: [{ methodName: "multiply(int a, int b)", variables: [{ name: "a", type: "int", value: "5", isReference: false }, { name: "b", type: "int", value: "10", isReference: false }] }, { methodName: "main(String[] args)", variables: [{ name: "x", type: "int", value: "5", isReference: false }, { name: "y", type: "int", value: "10", isReference: false }] }], heap: {}, arrows: [], spotlightStackVars: ["a", "b"], spotlightHeapObjects: [], spotlightHeapFields: [], stdout: "", activeBlock: LT_MUL, explanation: "multiply(5, 10) called — a second stack frame is pushed on top. Parameters a=5 and b=10 are local to multiply().", bananaDiagram: LIVE_TRACE_BANANA },
-      // [5] step_line line=10 — inside multiply
+      // [3] step_line line=5, y=10 assigned, about to call multiply
+      { lineHighlight: 5, stack: [{ methodName: "main(String[] args)", variables: [{ name: "x", type: "int", value: "5", isReference: false }, { name: "y", type: "int", value: "10", isReference: false }] }], heap: {}, arrows: [], spotlightStackVars: ["y"], spotlightHeapObjects: [], spotlightHeapFields: [], stdout: "", activeBlock: LT_MAIN, explanation: "int y = 10 executed. y added to main's frame. Line 5 calls multiply(x, y), so a new frame is about to be pushed.", bananaDiagram: LIVE_TRACE_BANANA },
+      // [4] call line=10, entering multiply, two frames
+      { lineHighlight: 10, stack: [{ methodName: "multiply(int a, int b)", variables: [{ name: "a", type: "int", value: "5", isReference: false }, { name: "b", type: "int", value: "10", isReference: false }] }, { methodName: "main(String[] args)", variables: [{ name: "x", type: "int", value: "5", isReference: false }, { name: "y", type: "int", value: "10", isReference: false }] }], heap: {}, arrows: [], spotlightStackVars: ["a", "b"], spotlightHeapObjects: [], spotlightHeapFields: [], stdout: "", activeBlock: LT_MUL, explanation: "multiply(5, 10) called, so a second stack frame is pushed on top. Parameters a=5 and b=10 are local to multiply().", bananaDiagram: LIVE_TRACE_BANANA },
+      // [5] step_line line=10, inside multiply
       { lineHighlight: 10, stack: [{ methodName: "multiply(int a, int b)", variables: [{ name: "a", type: "int", value: "5", isReference: false }, { name: "b", type: "int", value: "10", isReference: false }] }, { methodName: "main(String[] args)", variables: [{ name: "x", type: "int", value: "5", isReference: false }, { name: "y", type: "int", value: "10", isReference: false }] }], heap: {}, arrows: [], spotlightStackVars: ["a", "b"], spotlightHeapObjects: [], spotlightHeapFields: [], stdout: "", activeBlock: LT_MUL, explanation: "Executing: return a * b → 5 × 10 = 50. The multiply frame is about to pop.", bananaDiagram: LIVE_TRACE_BANANA },
-      // [6] return line=10 — multiply returning 50
-      { lineHighlight: 10, stack: [{ methodName: "multiply(int a, int b)", variables: [{ name: "a", type: "int", value: "5", isReference: false }, { name: "b", type: "int", value: "10", isReference: false }, { name: "return value", type: "int", value: "50", isReference: false }] }, { methodName: "main(String[] args)", variables: [{ name: "x", type: "int", value: "5", isReference: false }, { name: "y", type: "int", value: "10", isReference: false }] }], heap: {}, arrows: [], spotlightStackVars: ["return value"], spotlightHeapObjects: [], spotlightHeapFields: [], stdout: "", activeBlock: LT_MUL, explanation: "multiply() returns 50. The frame will be popped — main() receives the return value and will assign it to result.", bananaDiagram: LIVE_TRACE_BANANA },
-      // [7] step_line line=5 — back in main, result not yet assigned
+      // [6] return line=10, multiply returning 50
+      { lineHighlight: 10, stack: [{ methodName: "multiply(int a, int b)", variables: [{ name: "a", type: "int", value: "5", isReference: false }, { name: "b", type: "int", value: "10", isReference: false }, { name: "return value", type: "int", value: "50", isReference: false }] }, { methodName: "main(String[] args)", variables: [{ name: "x", type: "int", value: "5", isReference: false }, { name: "y", type: "int", value: "10", isReference: false }] }], heap: {}, arrows: [], spotlightStackVars: ["return value"], spotlightHeapObjects: [], spotlightHeapFields: [], stdout: "", activeBlock: LT_MUL, explanation: "multiply() returns 50. The frame will be popped, and main() receives the return value and will assign it to result.", bananaDiagram: LIVE_TRACE_BANANA },
+      // [7] step_line line=5, back in main, result not yet assigned
       { lineHighlight: 5, stack: [{ methodName: "main(String[] args)", variables: [{ name: "x", type: "int", value: "5", isReference: false }, { name: "y", type: "int", value: "10", isReference: false }] }], heap: {}, arrows: [], spotlightStackVars: [], spotlightHeapObjects: [], spotlightHeapFields: [], stdout: "", activeBlock: LT_MAIN, explanation: "Back in main(). multiply's frame was popped. The return value 50 is being assigned to result...", bananaDiagram: LIVE_TRACE_BANANA },
-      // [8] step_line line=6 — result=50 assigned
+      // [8] step_line line=6, result=50 assigned
       { lineHighlight: 6, stack: [{ methodName: "main(String[] args)", variables: [{ name: "x", type: "int", value: "5", isReference: false }, { name: "y", type: "int", value: "10", isReference: false }, { name: "result", type: "int", value: "50", isReference: false }] }], heap: {}, arrows: [], spotlightStackVars: ["result"], spotlightHeapObjects: [], spotlightHeapFields: [], stdout: "", activeBlock: LT_MAIN, explanation: "result = 50 assigned on main's stack frame. About to call System.out.println.", bananaDiagram: LIVE_TRACE_BANANA },
-      // [9] step_line line=7 — println ran, stdout = "Result = 50"
+      // [9] step_line line=7, println ran, stdout = "Result = 50"
       { lineHighlight: 7, stack: [{ methodName: "main(String[] args)", variables: [{ name: "x", type: "int", value: "5", isReference: false }, { name: "y", type: "int", value: "10", isReference: false }, { name: "result", type: "int", value: "50", isReference: false }] }], heap: {}, arrows: [], spotlightStackVars: [], spotlightHeapObjects: [], spotlightHeapFields: [], stdout: "Result = 50", activeBlock: LT_MAIN, explanation: "System.out.println(\"Result = \" + result) printed \"Result = 50\" to stdout.", bananaDiagram: LIVE_TRACE_BANANA },
-      // [10] return line=7 — main() returning void
+      // [10] return line=7, main() returning void
       { lineHighlight: 7, stack: [{ methodName: "main(String[] args)", variables: [{ name: "x", type: "int", value: "5", isReference: false }, { name: "y", type: "int", value: "10", isReference: false }, { name: "result", type: "int", value: "50", isReference: false }] }], heap: {}, arrows: [], spotlightStackVars: [], spotlightHeapObjects: [], spotlightHeapFields: [], stdout: "Result = 50", activeBlock: LT_MAIN, explanation: "main() returns void. Program execution complete. All stack frames are cleared.", bananaDiagram: LIVE_TRACE_BANANA },
     ]
   }
@@ -1093,7 +1101,78 @@ function getWalkthroughMessage(presetId: string, step: number) {
   if (presetId === "linkedlist") {
     switch (step) {
       case 0:
-        return "Welcome. Start by reading the code, then use the Next Step button below the code editor to trace one line at a time.";
+        return "Entered main(). No variables or objects have been created yet.";
+      case 1:
+        return "Created a Node with value 10. head now points to it.";
+      case 2:
+        return "Created a second Node with value 20. temp points to it.";
+      case 3:
+        return "Changed head.next from null to the same Node referenced by temp.";
+      case 4:
+        return "Read head.val and stored the value 10 in a new variable named val.";
+      default:
+        return "Tracing completed. Feel free to reset, edit code, or try another example preset!";
+    }
+  } else if (presetId === "arraylist") {
+    switch (step) {
+      case 0:
+        return "Welcome. Start by reading the code, then use the Next Step button on the bottom left to trace one line at a time.";
+      case 1:
+        return "Great! Line 3 executed. Notice how a reference list appeared on the Stack pointing to a row of 3 slots [Object 1] in Object Storage.";
+      case 2:
+        return "Line 4 executed! We followed the reference list to find [Object 1] and wrote 5 into its first slot (index 0).";
+      case 3:
+        return "Line 5 executed! We wrote 10 into the second slot (index 1) of our array [Object 1].";
+      case 4:
+        return "Line 6 executed! A new variable size is added to the Stack to keep track of how many elements are in our list.";
+      case 5:
+        return "Line 8 executed! Since arrays cannot change size, we allocate a brand new, longer row of 6 slots [Object 2] at temp.";
+      case 6:
+        return "Line 9 executed! We copy the value 5 from index 0 of the old array [Object 1] to index 0 of the new array [Object 2].";
+      default:
+        return "ArrayList trace completed. Try stepping back or choosing another preset!";
+    }
+  } else if (presetId === "stack") {
+    switch (step) {
+      case 0:
+        return "Welcome. Start by reading the code, then use the Next Step button on the bottom left to trace one line at a time.";
+      case 1:
+        return "Line 3 executed. We create a stack tracker [Object 1] in Object Storage, pointing to null because it's empty.";
+      case 2:
+        return "Line 4 executed. A new node [Object 2] is created in Object Storage, holding the value 42.";
+      case 3:
+        return "Line 5 executed! The stack's top field of [Object 1] is updated to point to node [Object 2]. Now we have our first element in the stack.";
+      case 4:
+        return "Line 7 executed. A second node [Object 3] is created in Object Storage, holding the value 84.";
+      case 5:
+        return "Line 8 executed! We point [Object 3]'s next field to the current stack top [Object 2]. This preserves the old stack.";
+      case 6:
+        return "Line 9 executed! We update stack top field to point to [Object 3]. Node [Object 3] is now the new top, pointing down to [Object 2].";
+      default:
+        return "Stack trace completed. Feel free to explore how memory updates!";
+    }
+  } else if (presetId === "livetrace") {
+    switch (step) {
+      case 0: return "Real trace from java_jail, entering main(). Step forward to watch variables appear on the stack.";
+      case 1: return "Positioned at line 3, about to assign x = 5.";
+      case 2: return "x = 5 added to main's stack frame.";
+      case 3: return "y = 10 added. Next: multiply() will be called, pushing a second frame.";
+      case 4: return "multiply(5, 10) called, and a second stack frame appears with parameters a=5 and b=10.";
+      case 5: return "Inside multiply(), about to compute return a * b = 50.";
+      case 6: return "multiply() returns 50. See the return value on the frame before it is popped.";
+      case 7: return "Back in main(). multiply's frame was popped. Return value 50 is being assigned to result...";
+      case 8: return "result = 50 assigned. About to print.";
+      case 9: return "System.out.println ran, so 'Result = 50' appears in the stdout panel below.";
+      case 10: return "main() returns void. Execution complete. This trace came directly from sample_trace.json.";
+      default: return "Live trace complete.";
+    }
+  }
+  return "Step through the simulation to watch variable cards and memory boxes update dynamically.";
+}
+
+/* ─── AI Explanation Seam ───────────────────────────────────────────────────
+ * SEAM: real Gemini explanations plug in HERE and nowhere else.
+ * Today the tutor panel is scripted: the explanation shown for a step is simply
       case 1:
         return "Nice! Line 3 executed. Notice how local variable head was added to the Stack, pointing to [Object 1] in Object Storage (The Heap).";
       case 2:
@@ -1145,16 +1224,16 @@ function getWalkthroughMessage(presetId: string, step: number) {
     }
   } else if (presetId === "livetrace") {
     switch (step) {
-      case 0: return "Real trace from java_jail — entering main(). Step forward to watch variables appear on the stack.";
+      case 0: return "Real trace from java_jail, entering main(). Step forward to watch variables appear on the stack.";
       case 1: return "Positioned at line 3, about to assign x = 5.";
       case 2: return "x = 5 added to main's stack frame.";
       case 3: return "y = 10 added. Next: multiply() will be called, pushing a second frame.";
-      case 4: return "multiply(5, 10) called — a second stack frame appears with parameters a=5 and b=10.";
-      case 5: return "Inside multiply() — about to compute return a * b = 50.";
-      case 6: return "multiply() returns 50. See the return value on the frame — it's about to be popped.";
+      case 4: return "multiply(5, 10) called, and a second stack frame appears with parameters a=5 and b=10.";
+      case 5: return "Inside multiply(), about to compute return a * b = 50.";
+      case 6: return "multiply() returns 50. See the return value on the frame before it is popped.";
       case 7: return "Back in main(). multiply's frame was popped. Return value 50 is being assigned to result...";
       case 8: return "result = 50 assigned. About to print.";
-      case 9: return "System.out.println ran — 'Result = 50' appears in the stdout panel below.";
+      case 9: return "System.out.println ran, so 'Result = 50' appears in the stdout panel below.";
       case 10: return "main() returns void. Execution complete. This trace came directly from sample_trace.json.";
       default: return "Live trace complete.";
     }
@@ -1181,59 +1260,343 @@ function resolveStepExplanation(
   return fallbackExplanation;
 }
 
-/* ─── Visualizer Experience ─────────────────────────────────────────────────
- * This is the working mock-driven visualizer, extracted verbatim from the
- * original page.tsx (formerly `HomePage`). The study harness WRAPS this
- * component; its internals are intentionally unchanged.
+function getWhyItMatters(presetId: string, step: number, fallback: string): string {
+  if (presetId !== "linkedlist") return fallback;
+
+  return [
+    "Java begins running this example inside the main method.",
+    "head stores a reference to the Node; it does not contain the Node itself.",
+    "Each new expression creates a separate object in memory.",
+    "Assigning a reference connects the first Node to the second Node.",
+    "Reading a field copies its value without changing the object.",
+  ][step] ?? fallback;
+}
+
+/* ─── Running the participant's own code ─────────────────────────────────────
+ * The tracer lives behind POST /api/trace and is owned elsewhere. Everything
+ * here is written against its published contract and nothing else:
+ *   200 { ok: true, preset }
+ *   200 { ok: false, kind, error }   kind: compile | runtime | limit | config | internal
+ *   403                              execution disabled
+ * Anything outside that, including the endpoint not existing yet, falls through
+ * to a plain message rather than an endless spinner.
  */
-export default function VisualizerExperience() {
+
+const CUSTOM_CODE_DIAGRAM: BananaDiagram = {
+  type: "variable",
+  title: "Your program",
+  description:
+    "This trace came from the Java you wrote. Each step is one line of your program, with the variables and objects it left in memory.",
+  svgMarkup: `<svg viewBox="0 0 200 120" class="w-full h-full"><rect x="15" y="20" width="170" height="80" rx="8" fill="#1e293b" stroke="#334155" stroke-width="1.5"/><text x="100" y="55" fill="#94a3b8" font-size="10" text-anchor="middle" font-family="monospace">your code</text><text x="100" y="74" fill="#3b82f6" font-size="10" text-anchor="middle">traced line by line</text></svg>`,
+};
+
+interface RunFailureCopy {
+  title: string;
+  detail?: string;
+  verbatim?: string;
+}
+
+/*
+ * A compile error message is the single most useful thing a student can see, so
+ * the server's text is passed through verbatim and in full. The surrounding
+ * copy only says calmly whose problem it is and what to do next.
+ */
+function describeTraceFailure(kind: string, error?: string): RunFailureCopy {
+  const verbatim = error && error.trim() ? error : undefined;
+
+  switch (kind) {
+    case "compile":
+      return {
+        title: "Your code did not compile.",
+        detail: "Java stopped before running anything. The message below is exactly what the compiler said, and it usually names the line to fix.",
+        verbatim,
+      };
+    case "runtime":
+      return {
+        title: "Your code compiled, but it stopped while running.",
+        detail: "Java started your program and then hit an error partway through. Here is exactly what Java reported.",
+        verbatim,
+      };
+    case "limit":
+      return {
+        title: "Your program was too big to trace.",
+        detail: "This usually means a loop that never ends, or a program with far more steps than the visualizer can show. Try a shorter program.",
+        verbatim,
+      };
+    case "config":
+      return {
+        title: "The code runner is not set up on this machine yet.",
+        detail: "That is a setup problem on our side, not a mistake in your code. You can still switch between the built-in examples and step through them.",
+        verbatim,
+      };
+    default:
+      return {
+        title: "Something went wrong while running your code.",
+        detail: "That is a problem on our side, not a mistake in your code. Try running it again.",
+        verbatim,
+      };
+  }
+}
+
+/*
+ * Fill in the fields the visualizer panels always read. A traced step legitimately
+ * has no teaching diagram attached, and the explanation panel requires one, so a
+ * neutral diagram stands in rather than letting the panel crash.
+ */
+function normalizeTracedPreset(preset: Preset): Preset {
+  return {
+    ...preset,
+    steps: preset.steps.map((step: ExecutionStep) => ({
+      ...step,
+      arrows: step.arrows ?? [],
+      heap: step.heap ?? {},
+      stack: step.stack ?? [],
+      explanation: step.explanation ?? "",
+      bananaDiagram: step.bananaDiagram ?? CUSTOM_CODE_DIAGRAM,
+    })),
+  };
+}
+
+function looksLikePreset(value: unknown): value is Preset {
+  if (!value || typeof value !== "object") return false;
+  const candidate = value as Partial<Preset>;
+  return (
+    typeof candidate.id === "string" &&
+    typeof candidate.code === "string" &&
+    Array.isArray(candidate.steps) &&
+    candidate.steps.length > 0
+  );
+}
+
+type LessonPhase = "intro" | "ready" | "result" | "complete";
+
+const LESSON_STEP_TITLES: Record<string, string[]> = {
+  linkedlist: ["Create the first Node", "Create the second Node", "Link the Nodes", "Read a field"],
+  arraylist: ["Create the array", "Write the first value", "Write the second value", "Track the size", "Create a larger array", "Copy a value"],
+  stack: ["Create the stack", "Create the first Node", "Set the first top", "Create the second Node", "Preserve the old top", "Set the new top"],
+  livetrace: ["Assign x", "Assign y", "Call multiply", "Enter multiply", "Compute the result", "Return the result", "Resume main", "Store the result", "Print output", "Finish execution"],
+};
+
+const LESSON_GOALS: Record<string, string> = {
+  linkedlist: "Follow four Java lines to see how two Node objects are created, connected, and read.",
+  arraylist: "Follow Java as it creates an array, stores values, and grows its storage.",
+  stack: "Follow each reference change that builds a last-in, first-out stack.",
+  livetrace: "Follow a real JVM trace through variables, a method call, a return value, and output.",
+};
+
+const LESSON_RECAPS: Record<string, Array<{ label: string; text: string }>> = {
+  linkedlist: [
+    { label: "Created", text: "Two separate Node objects." },
+    { label: "Connected", text: "head.next points to the same Node as temp." },
+    { label: "Read", text: "head.val copied 10 into val." },
+  ],
+  arraylist: [
+    { label: "Created", text: "An array and a larger replacement array." },
+    { label: "Stored", text: "Values 5 and 10 in indexed slots." },
+    { label: "Copied", text: "A value from the old storage into the new storage." },
+  ],
+  stack: [
+    { label: "Created", text: "A stack and two Node objects." },
+    { label: "Preserved", text: "The previous top through a next reference." },
+    { label: "Updated", text: "The newest Node became the stack top." },
+  ],
+  livetrace: [
+    { label: "Called", text: "multiply with x and y as arguments." },
+    { label: "Returned", text: "The computed value 50 to main." },
+    { label: "Printed", text: "Result = 50 to standard output." },
+  ],
+};
+
+function getLessonStepTitle(presetId: string, lessonStep: number): string {
+  return LESSON_STEP_TITLES[presetId]?.[lessonStep - 1] ?? `Program step ${lessonStep}`;
+}
+
+function getReadyPrompt(presetId: string, lessonStep: number): string {
+  if (presetId === "linkedlist") {
+    return [
+      "Watch for a new variable, a new Node, and the arrow connecting them.",
+      "Watch for a second variable and a separate Node object.",
+      "Watch the next field change from null to a reference arrow.",
+      "Watch Java copy 10 from the first Node into the variable val.",
+    ][lessonStep - 1] ?? "Watch the memory view for the marked change.";
+  }
+  return "Watch the Variables and Objects areas for the marked change.";
+}
+
+function LessonProgress({ presetId, current, total, phase }: { presetId: string; current: number; total: number; phase: LessonPhase }) {
+  return (
+    <ol id="onboarding-lesson-progress" className="lesson-progress" aria-label="Lesson progress">
+      {Array.from({ length: total }, (_, index) => {
+        const step = index + 1;
+        const state = step < current || phase === "complete" ? "done" : step === current ? "active" : "upcoming";
+        return (
+          <li key={step} className={`lesson-progress-item lesson-progress-${state}`} aria-current={state === "active" ? "step" : undefined}>
+            <span className="lesson-progress-number">{state === "done" ? "✓" : step}</span>
+            <span className="lesson-progress-title">{getLessonStepTitle(presetId, step)}</span>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
+function LessonIntro({
+  preset,
+  presets,
+  onPresetChange,
+  onBegin,
+}: {
+  preset: Preset;
+  presets: Preset[];
+  onPresetChange: (id: string) => void;
+  onBegin: () => void;
+}) {
+  const total = Math.max(1, preset.steps.length - 1);
+
+  return (
+    <section className="lesson-intro">
+      <div className="lesson-intro-inner">
+        <div className="lesson-kicker">Guided Java Lesson: Code Visualizer</div>
+        {SHOW_PRESET_SELECTOR && (
+          <label className="lesson-example-select">
+            <span>Example</span>
+            <select value={preset.id} onChange={(event) => onPresetChange(event.target.value)}>
+              {presets.map((option) => <option key={option.id} value={option.id}>{option.name}</option>)}
+            </select>
+          </label>
+        )}
+        <h1>{preset.name}</h1>
+        <p className="lesson-goal">{LESSON_GOALS[preset.id] ?? `Trace this example through ${total} program changes.`}</p>
+        <LessonProgress presetId={preset.id} current={1} total={total} phase="intro" />
+        <button type="button" className="btn-primary lesson-begin-button" onClick={onBegin}>
+          Begin Lesson <ChevronRight size={17} />
+        </button>
+      </div>
+    </section>
+  );
+}
+
+function LessonComplete({
+  presetId,
+  examples,
+  isCustomCode,
+  onRestart,
+  onLoadExample,
+  onEditCode,
+  onContinueToNextStage,
+}: {
+  presetId: string;
+  examples: Array<{ id: string; name: string }>;
+  isCustomCode: boolean;
+  onRestart: () => void;
+  onLoadExample: (id: string) => void;
+  onEditCode: () => void;
+  onContinueToNextStage?: () => void;
+}) {
+  const linkedList = presetId === "linkedlist" && !isCustomCode;
+  const recap = isCustomCode ? [] : LESSON_RECAPS[presetId] ?? [];
+
+  return (
+    <section className="lesson-complete">
+      <div className="lesson-complete-inner">
+        <CheckCircle2 size={34} className="text-emerald-400" />
+        <span className="lesson-kicker">Lesson complete</span>
+        <h1>
+          {linkedList
+            ? "You built and traced a linked list"
+            : isCustomCode
+              ? "You traced the code you wrote"
+              : "You completed the Java trace"}
+        </h1>
+        {linkedList && (
+          <div className="lesson-chain" aria-label="head points to a Node containing 10, whose next field points to a Node containing 20">
+            <span className="lesson-chain-variable">head</span><span className="lesson-chain-arrow">→</span>
+            <span className="lesson-chain-node">Node <strong>10</strong></span><span className="lesson-chain-arrow">→</span>
+            <span className="lesson-chain-node">Node <strong>20</strong></span>
+          </div>
+        )}
+        {recap.length > 0 && (
+          <div className="lesson-recap">
+            {recap.map((item) => <p key={item.label}><strong>{item.label}:</strong> {item.text}</p>)}
+          </div>
+        )}
+        <p className="lesson-finish-note">
+          {onContinueToNextStage
+            ? "The required lesson is finished. Continue to the post-test when you are ready."
+            : "The lesson is finished."}
+        </p>
+        <div className="flex flex-wrap items-center justify-center gap-3">
+          {onContinueToNextStage && (
+            <button type="button" className="btn-primary" onClick={onContinueToNextStage}>
+              Continue to post-test <ChevronRight size={15} aria-hidden="true" />
+            </button>
+          )}
+          <button type="button" className="btn-ghost" onClick={onRestart}><RotateCcw size={15} /> Review Lesson</button>
+        </div>
+
+        {/*
+          Post-lesson tools. They live here and only here, because the lesson is
+          over by the time this screen renders, so nothing a participant does
+          from this point can affect what the post-test measures.
+        */}
+        <PostLessonPanel
+          examples={examples}
+          activeExampleId={isCustomCode ? examples[0]?.id ?? presetId : presetId}
+          onLoadExample={onLoadExample}
+          onEditCode={onEditCode}
+        />
+      </div>
+    </section>
+  );
+}
+
+interface VisualizerExperienceProps {
+  /*
+   * Called when the lesson reaches its terminal "complete" phase. The study
+   * harness uses this to tell whether a participant actually finished the
+   * intervention. The lesson state machine stays local to this component, so
+   * the parent gets a notification rather than owning the state.
+   */
+  onLessonComplete?: () => void;
+  onContinueToNextStage?: () => void;
+}
+
+export default function VisualizerExperience({
+  onLessonComplete,
+  onContinueToNextStage,
+}: VisualizerExperienceProps = {}) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [leftW, setLeftW]   = useState(540); // px
-  const [rightW, setRightW] = useState(360); // px
 
-  const [presetId, setPresetId]       = useState<string>("linkedlist");
+  const [presetId, setPresetId]       = useState<string>(LESSON_PRESET_ID);
   const [currentStep, setCurrentStep] = useState<number>(0);
-  const [isPlaying, setIsPlaying]     = useState<boolean>(false);
-  const [typedCode, setTypedCode]     = useState<string>("");
+  const [lessonPhase, setLessonPhase] = useState<LessonPhase>("intro");
+  const [isTourOpen, setIsTourOpen]   = useState(false);
+  const [isWalkthroughActive, setIsWalkthroughActive] = useState<boolean>(false);
 
-  const [hoveredElement, setHoveredElement] = useState<string | null>(null);
-  const [isTourOpen, setIsTourOpen] = useState(false);
+  /*
+   * Everything below is post-lesson only. `hasFinishedLesson` latches once the
+   * lesson reaches its terminal phase, so the tools stay reachable after the
+   * participant leaves the completion screen to explore, and stay unreachable
+   * before they get there.
+   */
+  const [hasFinishedLesson, setHasFinishedLesson] = useState(false);
+  const [customPreset, setCustomPreset] = useState<Preset | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [draftCode, setDraftCode] = useState<string>("");
+  const [runState, setRunState] = useState<RunState>({ status: "idle" });
+  const runAbortRef = useRef<AbortController | null>(null);
 
-  // Start the orientation tour when the learning tool opens.
-  useEffect(() => {
-    const timeout = setTimeout(() => setIsTourOpen(true), 250);
-    return () => clearTimeout(timeout);
-  }, []);
-
-  const activePreset = SIMULATION_PRESETS[presetId] || SIMULATION_PRESETS.linkedlist;
+  const activePreset = customPreset ?? SIMULATION_PRESETS[presetId] ?? SIMULATION_PRESETS[LESSON_PRESET_ID];
   const currentStepData = activePreset.steps[currentStep] || activePreset.steps[0];
   const totalSteps = activePreset.steps.length;
-
-  // Handle auto-playback loop
-  useEffect(() => {
-    let timer: ReturnType<typeof setInterval> | null = null;
-    if (isPlaying) {
-      timer = setInterval(() => {
-        setCurrentStep(prev => {
-          if (prev >= totalSteps - 1) {
-            setIsPlaying(false);
-            return prev;
-          }
-          return prev + 1;
-        });
-      }, AUTO_PLAY_STEP_DELAY_MS);
-    }
-    return () => {
-      if (timer) clearInterval(timer);
-    };
-  }, [isPlaying, totalSteps]);
-
-  // Sync typed code with preset selection
-  useEffect(() => {
-    setTypedCode(activePreset.code);
-    setCurrentStep(0);
-    setIsPlaying(false);
-  }, [presetId, activePreset.code]);
+  const totalLessonSteps = Math.max(1, totalSteps - 1);
+  const focusStepIndex = lessonPhase === "ready"
+    ? Math.min(currentStep + 1, totalSteps - 1)
+    : currentStep;
+  const focusStepData = activePreset.steps[focusStepIndex] || currentStepData;
+  const lessonStep = lessonPhase === "ready" ? currentStep + 1 : currentStep;
+  const showResult = lessonPhase === "result";
 
   const clamp = (v: number, lo: number, hi: number) => Math.min(Math.max(v, lo), hi);
 
@@ -1241,75 +1604,348 @@ export default function VisualizerExperience() {
     setLeftW(w => clamp(w + dx, 280, 680));
   }, []);
 
-  const handleRightDrag = useCallback((dx: number) => {
-    setRightW(w => clamp(w - dx, 280, 640));
+  const isCustomCode = customPreset !== null;
+  const guideAvailable = hasGuidedWalkthrough(presetId, isCustomCode);
+  const postLessonToolsAvailable = showPostLessonTools(lessonPhase, hasFinishedLesson);
+
+  /* Cancel an in-flight trace request whenever we leave or replace the run. */
+  const abortPendingRun = useCallback(() => {
+    runAbortRef.current?.abort();
+    runAbortRef.current = null;
   }, []);
+
+  useEffect(() => abortPendingRun, [abortPendingRun]);
 
   const handleReset = useCallback(() => {
+    abortPendingRun();
     setCurrentStep(0);
-    setIsPlaying(false);
-  }, []);
+    setIsTourOpen(false);
+    setIsWalkthroughActive(false);
+    setIsEditing(false);
+    setRunState({ status: "idle" });
+    /*
+     * Replaying a traced program keeps that program. Discarding it here would
+     * silently throw away code the user just wrote, which is the one thing a
+     * restart button must never do. A traced program has no lesson intro of its
+     * own, so it restarts straight at its first step. Leaving custom code is an
+     * explicit act: pick a built-in example from the switcher.
+     */
+    setLessonPhase(customPreset ? "ready" : "intro");
+  }, [abortPendingRun, customPreset]);
 
   const handleStepBack = useCallback(() => {
-    setIsPlaying(false);
-    setCurrentStep(prev => Math.max(0, prev - 1));
-  }, []);
-
-  const handleStepForward = useCallback(() => {
-    setIsPlaying(false);
-    setCurrentStep(prev => Math.min(totalSteps - 1, prev + 1));
-  }, [totalSteps]);
-
-  const handleRun = useCallback(() => {
-    // Restart animation walk from the beginning
+    if (lessonPhase === "ready" && currentStep > 0) {
+      setLessonPhase("result");
+      return;
+    }
+    if (lessonPhase === "result" && currentStep > 1) {
+      setCurrentStep(prev => prev - 1);
+      return;
+    }
     setCurrentStep(0);
-    setIsPlaying(true);
-  }, []);
+    setLessonPhase("ready");
+  }, [currentStep, lessonPhase]);
+
+  const handlePrimary = useCallback(() => {
+    if (lessonPhase === "ready") {
+      setCurrentStep(prev => Math.min(totalSteps - 1, prev + 1));
+      setLessonPhase("result");
+      return;
+    }
+    if (lessonPhase === "result") {
+      if (currentStep >= totalSteps - 1) {
+        setLessonPhase("complete");
+        /* Latch here rather than in an effect: finishing the lesson is the one
+         * event that unlocks the post-lesson tools, and it happens here. */
+        setHasFinishedLesson(true);
+        onLessonComplete?.();
+      } else {
+        setLessonPhase("ready");
+      }
+    }
+  }, [currentStep, lessonPhase, onLessonComplete, totalSteps]);
+
+  /*
+   * Loading an example. `inPlace` is what the post-lesson switcher uses: the
+   * new example opens in the workspace at its own step 1 instead of bouncing
+   * back to the intro screen, which would read as the whole lesson restarting.
+   * The intro picker keeps the original behaviour, since that is where it is.
+   */
+  const handlePresetChange = useCallback((id: string, options?: { inPlace?: boolean }) => {
+    abortPendingRun();
+    setCustomPreset(null);
+    setIsEditing(false);
+    setRunState({ status: "idle" });
+    setPresetId(id);
+    setCurrentStep(0);
+    setLessonPhase(options?.inPlace ? "ready" : "intro");
+    /* The guide narrates one example only, so it never carries across. */
+    if (!hasGuidedWalkthrough(id)) setIsWalkthroughActive(false);
+  }, [abortPendingRun]);
+
+  const handleStartEdit = useCallback(() => {
+    abortPendingRun();
+    setDraftCode(activePreset.code);
+    setIsEditing(true);
+    setRunState({ status: "idle" });
+    setIsWalkthroughActive(false);
+    setIsTourOpen(false);
+    setCurrentStep(0);
+    setLessonPhase("ready");
+  }, [abortPendingRun, activePreset.code]);
+
+  const handleCancelEdit = useCallback(() => {
+    abortPendingRun();
+    setIsEditing(false);
+    setDraftCode("");
+    setRunState({ status: "idle" });
+  }, [abortPendingRun]);
+
+  const handleRunCode = useCallback(async () => {
+    const code = draftCode;
+    if (!code.trim()) {
+      setRunState({
+        status: "error",
+        title: "There is no code to run.",
+        detail: "Type some Java into the editor first, then run it.",
+      });
+      return;
+    }
+
+    abortPendingRun();
+    const controller = new AbortController();
+    runAbortRef.current = controller;
+    /* Never leave the user staring at a spinner: the request is given a hard
+     * deadline, and a timeout is reported like any other failure. */
+    let timedOut = false;
+    const timeoutId = setTimeout(() => {
+      timedOut = true;
+      controller.abort();
+    }, TRACE_REQUEST_TIMEOUT_MS);
+
+    setRunState({ status: "running" });
+
+    try {
+      const response = await fetch("/api/trace", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code }),
+        signal: controller.signal,
+      });
+
+      if (response.status === 403) {
+        setRunState({
+          status: "error",
+          title: "Running your own code is turned off right now.",
+          detail: "You can still switch between the built-in examples and step through them.",
+        });
+        return;
+      }
+
+      if (response.status === 404) {
+        setRunState({
+          status: "error",
+          title: "The code runner is not available yet.",
+          detail: "This part of the visualizer is still being connected. Everything else still works: you can switch examples and step through them.",
+        });
+        return;
+      }
+
+      if (!response.ok) {
+        setRunState({
+          status: "error",
+          title: "The code runner could not be reached.",
+          detail: `The server answered with status ${response.status}. Wait a moment and try again.`,
+        });
+        return;
+      }
+
+      let payload: unknown;
+      try {
+        payload = await response.json();
+      } catch {
+        setRunState({
+          status: "error",
+          title: "The code runner sent back something unexpected.",
+          detail: "The answer was not in the format the visualizer understands. Try running it again.",
+        });
+        return;
+      }
+
+      const body = (payload ?? {}) as { ok?: boolean; preset?: unknown; kind?: string; error?: string };
+
+      if (body.ok !== true) {
+        setRunState({ status: "error", ...describeTraceFailure(body.kind ?? "internal", body.error) });
+        return;
+      }
+
+      if (!looksLikePreset(body.preset)) {
+        setRunState({
+          status: "error",
+          title: "Your code ran, but no steps came back.",
+          detail: "The visualizer needs at least one step to show. Try a program with a main method that creates a variable or an object.",
+        });
+        return;
+      }
+
+      const traced = normalizeTracedPreset(body.preset);
+      setCustomPreset(traced);
+      setPresetId(traced.id);
+      setIsEditing(false);
+      setDraftCode("");
+      setRunState({ status: "idle" });
+      /* No narration exists for code the user wrote, so the guide stays off. */
+      setIsWalkthroughActive(false);
+      setCurrentStep(0);
+      setLessonPhase("ready");
+    } catch (error) {
+      if (controller.signal.aborted && !timedOut) return; // superseded or unmounted
+      if (timedOut || (error instanceof DOMException && error.name === "AbortError")) {
+        setRunState({
+          status: "error",
+          title: "The code runner took too long to answer.",
+          detail: "Nothing was changed. Try running it again, or try a shorter program.",
+        });
+        return;
+      }
+      setRunState({
+        status: "error",
+        title: "Could not reach the code runner.",
+        detail: "Check that you are still connected, then try running it again.",
+      });
+    } finally {
+      clearTimeout(timeoutId);
+      if (runAbortRef.current === controller) runAbortRef.current = null;
+    }
+  }, [abortPendingRun, draftCode]);
+
+  // Report the terminal lesson phase upward. "Review Lesson" resets back to
+  // "intro", so this can fire again on a second pass; the listener is expected
+  // to be idempotent.
+  useEffect(() => {
+    if (lessonPhase === "complete") onLessonComplete?.();
+  }, [lessonPhase, onLessonComplete]);
+
+  const activeLineNumber = focusStepData.lineHighlight ?? 1;
+  const activeLineText = activePreset.code
+    .split("\n")[Math.max(0, activeLineNumber - 1)]
+    ?.trim() ?? "";
+
+  /* Traced code has no scripted narration, so its own step explanation and a
+   * neutral diagram stand in for the authored lesson copy. */
+  const stepDiagram = focusStepData.bananaDiagram ?? CUSTOM_CODE_DIAGRAM;
+  const stepExplanation = isCustomCode
+    ? (focusStepData.explanation || "Step through your program to watch the Variables and Objects areas change.")
+    : resolveStepExplanation(presetId, focusStepIndex, getWalkthroughMessage(presetId, focusStepIndex));
+
+  if (lessonPhase === "intro") {
+    return (
+      <LessonIntro
+        preset={activePreset}
+        presets={Object.values(SIMULATION_PRESETS)}
+        onPresetChange={handlePresetChange}
+        onBegin={() => {
+          setLessonPhase("ready");
+          setIsTourOpen(true);
+        }}
+      />
+    );
+  }
+
+  if (lessonPhase === "complete") {
+    return (
+      <LessonComplete
+        presetId={presetId}
+        isCustomCode={isCustomCode}
+        examples={Object.values(SIMULATION_PRESETS).map((preset) => ({ id: preset.id, name: preset.name }))}
+        onRestart={handleReset}
+        onLoadExample={(id) => handlePresetChange(id, { inPlace: true })}
+        onEditCode={handleStartEdit}
+        onContinueToNextStage={onContinueToNextStage}
+      />
+    );
+  }
 
   return (
-    <div className="flex flex-col h-full overflow-hidden select-none bg-slate-950 text-slate-100 font-sans">
-      {/* Top Bar Header */}
-      <TopBar onStartTour={() => setIsTourOpen(true)} />
-
-      {/* State-Driven Walkthrough Banner */}
-      <div className="bg-slate-900/50 backdrop-blur-md border-b border-slate-850 px-5 py-2.5 flex items-center justify-between text-xs text-slate-300 font-medium z-20">
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] uppercase font-mono tracking-wider text-slate-500 font-bold">Guided Walkthrough</span>
-          <span className="text-slate-700 font-normal">|</span>
-          <p className="text-slate-200 font-sans tracking-wide leading-relaxed">
-            {getWalkthroughMessage(presetId, currentStep)}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="badge badge-purple text-[9.5px] font-semibold py-0.5">
-            Step {currentStep + 1} of {totalSteps}
+    <div className="flex flex-col h-full overflow-hidden select-none font-sans" style={{ background: "var(--bg-base)", color: "var(--text-primary)" }}>
+      <LessonProgress presetId={presetId} current={lessonStep} total={totalLessonSteps} phase={lessonPhase} />
+      {/* This bar names the highlighted line only. The step number and title live in
+        * the progress rail above, and the run state lives in the explanation panel
+        * below, so neither is repeated here. */}
+      <div className="visualizer-context-bar">
+        <div className="min-w-0">
+          <span className="visualizer-context-label">
+            {isEditing ? "Editing your code" : "Highlighted line"}
           </span>
+          <code className="visualizer-context-code">
+            {isEditing ? "Run my code when you are ready" : activeLineText}
+          </code>
         </div>
+
+        {/*
+          Post-lesson controls. `showPostLessonTools` keeps this off the screen
+          for the whole measured lesson: a participant only reaches it after the
+          completion screen, and a production build has no other way in.
+        */}
+        {postLessonToolsAvailable && !isEditing && (
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <label className="lesson-example-select" style={{ fontSize: 10 }}>
+              <span>Example</span>
+              <select
+                value={isCustomCode ? "" : presetId}
+                onChange={(event) => {
+                  if (event.target.value) handlePresetChange(event.target.value, { inPlace: true });
+                }}
+                style={{ minWidth: 220, padding: "3px 8px", fontSize: 11 }}
+                aria-label="Switch to another example"
+              >
+                {isCustomCode && <option value="">Your code</option>}
+                {Object.values(SIMULATION_PRESETS).map((option) => (
+                  <option key={option.id} value={option.id}>{option.name}</option>
+                ))}
+              </select>
+            </label>
+            {hasFinishedLesson && (
+              <button
+                type="button"
+                className="lesson-guide-button"
+                onClick={() => setLessonPhase("complete")}
+              >
+                Back to summary
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Main Workspace Layout */}
-      <div ref={containerRef} className="flex flex-1 min-h-0 overflow-hidden relative">
+      <div ref={containerRef} className="visualizer-main flex flex-1 min-h-0 overflow-hidden relative">
         
         {/* Left Panel: Monaco Code Editor */}
         <div
-          className="flex flex-col overflow-hidden flex-shrink-0"
-          style={{ width: leftW, borderRight: "1px solid var(--border)" }}
+          className="visualizer-code-panel flex flex-col overflow-hidden flex-shrink-0"
+          style={{ "--code-panel-width": `${leftW}px` } as React.CSSProperties}
         >
           <CodeEditorPanel
-            code={typedCode}
-            onChange={setTypedCode}
-            activeLine={currentStepData.lineHighlight}
-            presetId={presetId}
-            onPresetChange={setPresetId}
-            presets={Object.values(SIMULATION_PRESETS)}
-            currentStep={currentStep}
-            totalSteps={totalSteps}
-            isPlaying={isPlaying}
-            setIsPlaying={setIsPlaying}
+            code={isEditing ? draftCode : activePreset.code}
+            /* No line highlight while editing: the steps belong to the old
+             * program until the new one has actually been traced. */
+            activeLine={isEditing ? null : focusStepData.lineHighlight}
+            primaryLabel={showResult ? (currentStep === totalSteps - 1 ? "Finish Lesson" : "Continue") : "Run This Line"}
+            primaryAriaLabel={showResult ? (currentStep === totalSteps - 1 ? "Finish lesson" : "Continue to next step") : "Run highlighted line"}
+            canGoBack={currentStep > 0}
             onStepBack={handleStepBack}
-            onStepForward={handleStepForward}
+            onPrimary={handlePrimary}
             onReset={handleReset}
-            onRun={handleRun}
+            onOpenGuide={() => setIsTourOpen(true)}
+            showGuideButton={guideAvailable}
+            canEdit={postLessonToolsAvailable}
+            isEditing={isEditing}
+            runState={runState}
+            onStartEdit={handleStartEdit}
+            onCancelEdit={handleCancelEdit}
+            onCodeChange={setDraftCode}
+            onRunCode={handleRunCode}
           />
         </div>
 
@@ -1317,48 +1953,53 @@ export default function VisualizerExperience() {
         <Resizer onDrag={handleLeftDrag} />
 
         {/* Center Panel: Memory & Execution View */}
-        <div className="flex flex-col flex-1 min-w-0 overflow-hidden relative bg-slate-950 canvas-bg">
+        <div className="flex flex-col flex-1 min-w-0 overflow-hidden relative canvas-bg">
           <MemoryExecutionView
             stack={currentStepData.stack}
             heap={currentStepData.heap}
             arrows={currentStepData.arrows}
             currentStep={currentStep}
             totalSteps={totalSteps}
-            spotlightStackVars={currentStepData.spotlightStackVars}
-            spotlightHeapObjects={currentStepData.spotlightHeapObjects}
-            spotlightHeapFields={currentStepData.spotlightHeapFields}
-            dataMovement={currentStepData.dataMovement}
-            callouts={currentStepData.callouts}
-            hoveredElement={hoveredElement}
+            spotlightStackVars={showResult ? currentStepData.spotlightStackVars : []}
+            spotlightHeapObjects={showResult ? currentStepData.spotlightHeapObjects : []}
+            spotlightHeapFields={showResult ? currentStepData.spotlightHeapFields : []}
+            dataMovement={showResult ? currentStepData.dataMovement : undefined}
+            callouts={[]}
+            hoveredElement={null}
             stdout={currentStepData.stdout}
-            activeBlock={currentStepData.activeBlock}
-          />
-        </div>
-
-        {/* Column Resizer (Right) */}
-        <Resizer onDrag={handleRightDrag} />
-
-        {/* Right Panel: AI conversational Tutor Panel */}
-        <div
-          id="onboarding-tutor-panel"
-          className="flex flex-col overflow-hidden flex-shrink-0"
-          style={{ width: rightW, borderLeft: "1px solid var(--border)" }}
-        >
-          <AiExplanationPanel
-            explanation={resolveStepExplanation(presetId, currentStep, currentStepData.explanation)}
-            diagram={currentStepData.bananaDiagram}
-            currentStep={currentStep}
-            totalSteps={totalSteps}
-            onHoverElement={setHoveredElement}
-            presetId={presetId}
+            activeBlock={undefined}
           />
         </div>
       </div>
 
-      {/* Onboarding Tour Component */}
-      <OnboardingTour isOpen={isTourOpen} onClose={() => setIsTourOpen(false)} />
+      {/* No key remount here: the panel keeps its own collapse choice across steps
+        * and handles the ready to result transition internally. */}
+      <AiExplanationPanel
+        explanation={stepExplanation}
+        diagram={stepDiagram}
+        currentStep={lessonStep}
+        totalSteps={totalLessonSteps}
+        showResult={showResult}
+        readyPrompt={isCustomCode ? "Watch the Variables and Objects areas for the marked change." : getReadyPrompt(presetId, lessonStep)}
+        whyItMatters={isCustomCode ? stepDiagram.description : getWhyItMatters(presetId, focusStepIndex, stepDiagram.description)}
+      />
 
-      {/* Footer Status Indicators */}
+      <OnboardingTour
+        isOpen={isTourOpen}
+        onClose={() => setIsTourOpen(false)}
+        /* The walkthrough only opens for examples it has narration for. */
+        onStartWalkthrough={() => setIsWalkthroughActive(guideAvailable)}
+      />
+
+      <InteractiveWalkthrough
+        isActive={isWalkthroughActive && guideAvailable}
+        currentLessonStep={lessonStep}
+        lessonPhase={lessonPhase}
+        presetId={presetId}
+        isCustomCode={isCustomCode}
+      />
+
+      {false && <>{/* Legacy developer status footer, hidden from participants. */}
       <footer
         className="flex items-center justify-between px-5 flex-shrink-0 border-t"
         style={{
@@ -1382,7 +2023,7 @@ export default function VisualizerExperience() {
           <span style={{ opacity: 0.2 }}>|</span>
           <span>UR²PhD CS Education Research</span>
         </div>
-      </footer>
+      </footer></>}
     </div>
   );
 }

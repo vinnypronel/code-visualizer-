@@ -28,6 +28,8 @@ function patchForEvent(
       };
     case "learning_started":
       return { learning_started_at: serverNow };
+    case "learning_completed":
+      return { learning_completed_at: serverNow };
     case "learning_continue":
       return { learning_continue_at: serverNow };
     case "posttest_started":

@@ -47,7 +47,7 @@ function Section({
   );
 }
 
-export default function StaticMaterialsStub() {
+export default function StaticMaterialsStub({ onContinue }: { onContinue: () => void }) {
   return (
     <div className="h-full w-full overflow-y-auto panel-scroll">
       <div className="mx-auto w-full max-w-3xl px-6 py-10 space-y-6">
@@ -143,6 +143,21 @@ b = a;`}</CodeBlock>
             <li>For print statements, use the values that exist after the final step.</li>
           </ul>
         </Section>
+
+        <div
+          className="flex flex-col items-start justify-between gap-4 border-t py-6 sm:flex-row sm:items-center"
+          style={{ borderColor: "var(--border)" }}
+        >
+          <div>
+            <h2 className="text-[15px] font-bold">Reading complete</h2>
+            <p className="mt-1 text-[13px]" style={{ color: "var(--text-secondary)" }}>
+              You reached the end of the required learning materials.
+            </p>
+          </div>
+          <button type="button" className="btn-primary" onClick={onContinue}>
+            Continue to post-test
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -7,7 +7,7 @@
  * component guarantees that identical behavior.
  */
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import StudyShell, { TimerChip } from "@/components/study/StudyShell";
 import TestRunner from "@/components/study/TestRunner";
 import { useStudy } from "@/components/study/StudyProvider";
@@ -43,6 +43,25 @@ export default function TimedTestScreen({
 
   const responses =
     which === "pretest" ? session.pretestResponses : session.posttestResponses;
+  const responseKeys = useMemo(
+    () =>
+      def.questions.flatMap((question) =>
+        question.fields.flatMap((field) => {
+          if (field.kind === "text") return [field.key];
+          if (field.kind === "grid") {
+            return field.rows.flatMap((row) =>
+              row.flatMap((cell) => (cell.t === "in" ? [cell.key] : [])),
+            );
+          }
+          return [];
+        }),
+      ),
+    [def],
+  );
+  const completedResponses = responseKeys.filter(
+    (key) => responses[key]?.trim().length > 0,
+  ).length;
+  const testComplete = completedResponses === responseKeys.length;
 
   // Log the start of this test exactly once when it opens.
   useEffect(() => {
@@ -78,9 +97,23 @@ export default function TimedTestScreen({
         />
       }
       footer={
-        <button className="btn-primary" onClick={() => finish("manual")}>
-          Continue
-        </button>
+        <>
+          <span
+            id={`${which}-completion-progress`}
+            className="mr-auto text-[12px]"
+            style={{ color: "var(--text-secondary)" }}
+          >
+            {completedResponses} of {responseKeys.length} responses completed
+          </span>
+          <button
+            className="btn-primary"
+            disabled={!testComplete}
+            aria-describedby={`${which}-completion-progress`}
+            onClick={() => finish("manual")}
+          >
+            Continue
+          </button>
+        </>
       }
     >
       <TestRunner

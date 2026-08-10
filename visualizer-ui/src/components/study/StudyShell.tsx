@@ -57,79 +57,147 @@ export default function StudyShell({
     >
       {/* Header: study name + phase stepper + timer slot */}
       <header
-        className="flex-shrink-0 border-b"
+        className="flex-shrink-0 border-b select-none"
         style={{ borderColor: "var(--border)", background: "var(--bg-header)" }}
       >
-        <div className="mx-auto w-full max-w-4xl px-6 py-3 flex items-center justify-between gap-4">
-          <span
-            className="text-[12px] font-mono uppercase tracking-wider"
-            style={{ color: "var(--text-primary)" }}
-          >
-            Code Visualizer Study
-          </span>
-          <div className="min-h-[24px] flex items-center">{timer}</div>
+        <div className={`w-full ${fluid ? "px-4 py-1.5" : "max-w-4xl mx-auto px-3 sm:px-6 py-1"} flex items-center justify-between gap-4 min-h-[34px]`}>
+          <div className="flex items-center gap-4 flex-1 min-w-0">
+            <span
+              className="text-[11px] font-mono uppercase tracking-wider font-semibold whitespace-nowrap"
+              style={{ color: "var(--text-primary)" }}
+            >
+              Code Visualizer Study
+            </span>
+
+            {fluid && (
+              <ol className="hidden md:flex items-center gap-1.5 flex-1 max-w-xl mx-auto">
+                {STAGES.map((stage, i) => {
+                  const state =
+                    i < stageIndex ? "done" : i === stageIndex ? "active" : "todo";
+                  return (
+                    <li key={stage} className="flex items-center gap-1.5 flex-1">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span
+                          className="flex items-center justify-center rounded-full text-[10px] font-bold flex-shrink-0"
+                          style={{
+                            width: 18,
+                            height: 18,
+                            background:
+                              state === "active"
+                                ? "var(--accent)"
+                                : state === "done"
+                                  ? "var(--accent-glow)"
+                                  : "transparent",
+                            color:
+                              state === "active"
+                                ? "#fff"
+                                : state === "done"
+                                  ? "var(--accent)"
+                                  : "var(--text-secondary)",
+                            border:
+                              state === "todo"
+                                ? "1px solid var(--border)"
+                                : "1px solid transparent",
+                          }}
+                        >
+                          {i + 1}
+                        </span>
+                        <span
+                          className="text-[11px] font-semibold truncate"
+                          style={{
+                            color:
+                              state === "active"
+                                ? "var(--accent)"
+                                : "var(--text-secondary)",
+                          }}
+                        >
+                          {stage}
+                        </span>
+                      </div>
+                      {i < STAGES.length - 1 && (
+                        <span
+                          className="flex-1 h-px"
+                          style={{
+                            background:
+                              i < stageIndex
+                                ? "var(--accent)"
+                                : "var(--border)",
+                          }}
+                        />
+                      )}
+                    </li>
+                  );
+                })}
+              </ol>
+            )}
+          </div>
+
+          <div className="min-h-[20px] flex items-center ml-auto flex-shrink-0">{timer}</div>
         </div>
-        <div className="mx-auto w-full max-w-4xl px-6 pb-3">
-          <ol className="flex items-center gap-2">
-            {STAGES.map((stage, i) => {
-              const state =
-                i < stageIndex ? "done" : i === stageIndex ? "active" : "todo";
-              return (
-                <li key={stage} className="flex items-center gap-2 flex-1">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span
-                      className="flex items-center justify-center rounded-full text-[11px] font-bold flex-shrink-0"
-                      style={{
-                        width: 22,
-                        height: 22,
-                        background:
-                          state === "active"
-                            ? "var(--accent)"
-                            : state === "done"
-                              ? "var(--accent-glow)"
-                              : "transparent",
-                        color:
-                          state === "active"
-                            ? "#fff"
-                            : state === "done"
+
+        {!fluid && (
+          <div className="mx-auto w-full max-w-4xl px-3 sm:px-6 pb-1.5">
+            <ol className="flex items-center gap-1 sm:gap-2">
+              {STAGES.map((stage, i) => {
+                const state =
+                  i < stageIndex ? "done" : i === stageIndex ? "active" : "todo";
+                return (
+                  <li key={stage} className="flex items-center gap-2 flex-1">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <span
+                        className="flex items-center justify-center rounded-full text-[10px] font-bold flex-shrink-0"
+                        style={{
+                          width: 18,
+                          height: 18,
+                          background:
+                            state === "active"
+                              ? "var(--accent)"
+                              : state === "done"
+                                ? "var(--accent-glow)"
+                                : "transparent",
+                          color:
+                            state === "active"
                               ? "#fff"
+                              : state === "done"
+                                ? "var(--accent)"
+                                : "var(--text-primary)",
+                          border:
+                            state === "todo"
+                              ? "1px solid var(--border)"
+                              : "1px solid transparent",
+                        }}
+                      >
+                        {i + 1}
+                      </span>
+                      <span
+                        className="hidden sm:inline text-[11px] font-semibold truncate"
+                        style={{
+                          color:
+                            state === "todo"
+                              ? "var(--text-primary)"
                               : "var(--text-primary)",
-                        border:
-                          state === "todo"
-                            ? "1px solid var(--border)"
-                            : "1px solid transparent",
-                      }}
-                    >
-                      {i + 1}
-                    </span>
-                    <span
-                      className="text-[12px] font-semibold truncate"
-                      style={{
-                        color:
-                          state === "todo"
-                            ? "var(--text-primary)"
-                            : "var(--text-primary)",
-                      }}
-                    >
-                      {stage}
-                    </span>
-                  </div>
-                  {i < STAGES.length - 1 && (
-                    <span
-                      className="flex-1 h-px"
-                      style={{
-                        background:
-                          i < stageIndex
-                            ? "var(--accent)"
-                            : "var(--border)",
-                      }}
-                    />
-                  )}
-                </li>
-              );
-            })}
-          </ol>
-        </div>
+                        }}
+                      >
+                        {stage}
+                      </span>
+                    </div>
+                    {i < STAGES.length - 1 && (
+                      <span
+                        className="flex-1 h-px"
+                        style={{
+                          background:
+                            i < stageIndex
+                              ? "var(--accent)"
+                              : "var(--border)",
+                        }}
+                      />
+                    )}
+                  </li>
+                );
+              })}
+            </ol>
+          </div>
+        )}
       </header>
 
       {/* Body */}
@@ -137,11 +205,11 @@ export default function StudyShell({
         <main className="flex-1 min-h-0 overflow-hidden">{children}</main>
       ) : (
         <main className="flex-1 min-h-0 overflow-y-auto panel-scroll">
-          <div className="mx-auto w-full max-w-4xl px-6 py-8">
+          <div className="mx-auto w-full max-w-4xl px-6 py-5 sm:py-6">
             <h1 className="text-xl font-bold mb-1">{heading}</h1>
             {subheading && (
               <p
-                className="text-[13px] mb-6"
+                className="text-[13px] mb-4"
                 style={{ color: "var(--text-secondary)" }}
               >
                 {subheading}
@@ -158,7 +226,7 @@ export default function StudyShell({
           className="flex-shrink-0 border-t"
           style={{ borderColor: "var(--border)", background: "var(--bg-panel)" }}
         >
-          <div className="mx-auto w-full max-w-4xl px-6 py-3 flex items-center justify-end gap-3">
+          <div className="mx-auto w-full max-w-4xl px-6 py-2 flex items-center justify-end gap-3">
             {footer}
           </div>
         </footer>
@@ -168,8 +236,7 @@ export default function StudyShell({
 }
 
 /*
- * A compact, layout-stable timer chip. Uses tabular-nums and a fixed min-width
- * so the digits never shift the header as they tick.
+ * A compact, layout-stable timer text display (unboxed as requested).
  */
 export function TimerChip({
   label,
@@ -181,25 +248,15 @@ export function TimerChip({
   urgent?: boolean;
 }) {
   return (
-    <span
-      className="badge"
+    <div
+      className="flex items-center gap-1.5 font-mono text-[11px] tracking-wider"
       style={{
-        background: urgent ? "#f59e0b1a" : "var(--bg-panel-2)",
         color: urgent ? "var(--warning)" : "var(--text-secondary)",
-        border: `1px solid ${urgent ? "#f59e0b55" : "var(--border)"}`,
         fontVariantNumeric: "tabular-nums",
-        gap: 6,
       }}
     >
-      <span
-        className="uppercase"
-        style={{ fontSize: 9, letterSpacing: "0.5px", opacity: 0.8 }}
-      >
-        {label}
-      </span>
-      <span style={{ minWidth: 42, textAlign: "right", fontWeight: 700 }}>
-        {value}
-      </span>
-    </span>
+      <span className="uppercase text-[10px] font-semibold opacity-90" style={{ color: "var(--text-muted)" }}>{label}</span>
+      <span className="font-bold text-xs ml-0.5" style={{ color: "var(--text-primary)" }}>{value}</span>
+    </div>
   );
 }

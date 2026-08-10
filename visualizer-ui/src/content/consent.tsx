@@ -5,7 +5,7 @@
 
 export const CONSENT_META = {
   irbProtocol: "IRB Protocol #: IRB-FY2026-314",
-  version: "Version 1.0 | [Approval Date] | Kean University",
+  version: "Version 1.0 | 7/1/26 | Kean University",
   title: "INFORMED CONSENT FORM",
 } as const;
 
@@ -41,7 +41,7 @@ export function ConsentBody() {
         </p>
         <p>
           <span className="font-semibold" style={{ color: "var(--text-primary)" }}>
-            Researcher (PI):
+            Principal Investigator (PI) / Faculty Mentor:
           </span>{" "}
           Yan Ma
         </p>
@@ -49,7 +49,7 @@ export function ConsentBody() {
           <span className="font-semibold" style={{ color: "var(--text-primary)" }}>
             Student Researchers:
           </span>{" "}
-          Kiana Becca Nunez and Vincent Pronel
+          Vincent Pronel and Kiana Becca Nunez
         </p>
         <p>
           <span className="font-semibold" style={{ color: "var(--text-primary)" }}>

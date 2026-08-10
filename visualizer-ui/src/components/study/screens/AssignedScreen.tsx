@@ -11,7 +11,7 @@ export default function AssignedScreen() {
     <StudyShell
       stageIndex={1}
       heading="Your participant ID"
-      subheading="The app will keep this ID attached to your answers automatically."
+      subheading="Please write this down. You will need it for the questionnaire at the end."
       footer={
         <button className="btn-primary" onClick={() => goTo("pretest")}>
           Continue to the pre-test
@@ -35,8 +35,10 @@ export default function AssignedScreen() {
           {session.participantId ?? "----"}
         </p>
         <p className="text-[13px] mt-4" style={{ color: "var(--text-secondary)" }}>
-          You do not need to enter this later. It is shown here so the researcher
-          can help if there is a technical issue.
+          Your answers in this app are recorded under this ID automatically. The
+          short questionnaire at the very end is hosted outside this app, and it
+          will ask you to type this ID in, so keep it somewhere handy. It is also
+          shown again on the final screen.
         </p>
       </div>
     </StudyShell>

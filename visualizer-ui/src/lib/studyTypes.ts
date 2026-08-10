@@ -56,6 +56,14 @@ export type LogEvent =
   | "pretest_started"
   | "pretest_finished"
   | "learning_started"
+  /*
+   * Fired once when the AI-condition lesson reaches its terminal state. A row
+   * with learning_continue_at set but learning_completed_at null is a
+   * participant who moved on without finishing the intervention, which is how
+   * the researcher excludes them. Static-condition rows have no lesson, so the
+   * column stays null for them by design; read it together with `condition`.
+   */
+  | "learning_completed"
   | "learning_continue"
   | "posttest_started"
   | "posttest_finished"

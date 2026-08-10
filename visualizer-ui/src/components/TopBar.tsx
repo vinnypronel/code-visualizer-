@@ -74,17 +74,17 @@ export default function TopBar({ onStartTour }: TopBarProps) {
 
         <button
           onClick={onStartTour}
-          className="btn-ghost text-xs px-2.5 py-1.5 flex items-center gap-1.5 text-violet-400 hover:text-violet-300 hover:border-violet-550/30 transition-all font-semibold"
+          className="btn-ghost text-xs px-2.5 py-1.5 flex items-center gap-1.5 text-emerald-400 hover:text-emerald-300 hover:border-emerald-500/30 transition-all font-semibold"
           title="Start Onboarding Tour"
         >
-          <Sparkles size={13} className="text-violet-400 animate-pulse" />
+          <Sparkles size={13} className="text-emerald-400 animate-pulse" />
           <span>Quick Tour</span>
         </button>
 
         <div className="w-px h-5" style={{ background: "var(--border)" }} />
 
         <button className="btn-ghost text-xs px-2 py-1.5" title="Experimental features">
-          <FlaskConical size={13} style={{ color: "var(--accent-2)" }} />
+          <FlaskConical size={13} style={{ color: "var(--accent)" }} />
         </button>
 
         <button className="btn-ghost text-xs px-2 py-1.5" title="Repository">
@@ -110,7 +110,7 @@ export default function TopBar({ onStartTour }: TopBarProps) {
         <div
           className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
           style={{
-            background: "linear-gradient(135deg, var(--accent-2), var(--accent))",
+            background: "linear-gradient(135deg, var(--accent), var(--accent-2))",
             color: "white",
             cursor: "pointer",
           }}

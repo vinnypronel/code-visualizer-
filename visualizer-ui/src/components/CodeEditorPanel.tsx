@@ -4,54 +4,80 @@ import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import {
   Code2,
-  Play,
-  Pause,
   ChevronLeft,
   ChevronRight,
   RotateCcw,
   Copy,
   Check,
-  Zap,
+  HelpCircle,
+  Pencil,
+  Play,
+  X,
+  AlertCircle,
+  Loader2,
 } from "lucide-react";
-import { Preset } from "@/types/visualizer";
 
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), { ssr: false });
 
+/*
+ * State of a "Run my code" attempt.
+ *
+ * `title` is the calm one-line summary a first-year student reads first.
+ * `detail` is plain-language advice. `verbatim` is the compiler or JVM message
+ * exactly as it came back, never reworded and never truncated, because for a
+ * compile error that text is the single most useful thing on the screen.
+ */
+export type RunState =
+  | { status: "idle" }
+  | { status: "running" }
+  | { status: "error"; title: string; detail?: string; verbatim?: string };
+
 interface CodeEditorPanelProps {
   code: string;
-  onChange: (val: string) => void;
   activeLine: number | null;
-  presetId: string;
-  onPresetChange: (id: string) => void;
-  presets: Preset[];
-  currentStep: number;
-  totalSteps: number;
-  isPlaying: boolean;
-  setIsPlaying: (playing: boolean) => void;
+  primaryLabel: string;
+  primaryAriaLabel: string;
+  canGoBack: boolean;
   onStepBack: () => void;
-  onStepForward: () => void;
+  onPrimary: () => void;
   onReset: () => void;
-  onRun: () => void;
+  onOpenGuide: () => void;
+  /* Guide button is hidden for examples the walkthrough has no narration for. */
+  showGuideButton?: boolean;
+  /*
+   * Editing. All of this is off during the measured lesson: the parent only
+   * passes `canEdit` once the lesson is complete (or in development), and
+   * Monaco stays read-only unless `isEditing` is explicitly true.
+   */
+  canEdit?: boolean;
+  isEditing?: boolean;
+  runState?: RunState;
+  onStartEdit?: () => void;
+  onCancelEdit?: () => void;
+  onCodeChange?: (value: string) => void;
+  onRunCode?: () => void;
 }
 
 export default function CodeEditorPanel({
   code,
-  onChange,
   activeLine,
-  presetId,
-  onPresetChange,
-  presets,
-  currentStep,
-  totalSteps,
-  isPlaying,
-  setIsPlaying,
+  primaryLabel,
+  primaryAriaLabel,
+  canGoBack,
   onStepBack,
-  onStepForward,
+  onPrimary,
   onReset,
-  onRun,
+  onOpenGuide,
+  showGuideButton = true,
+  canEdit = false,
+  isEditing = false,
+  runState = { status: "idle" },
+  onStartEdit,
+  onCancelEdit,
+  onCodeChange,
+  onRunCode,
 }: CodeEditorPanelProps) {
   const [copied, setCopied] = useState(false);
-  const [showPulse, setShowPulse] = useState(false);
   const editorRef = useRef<any>(null);
   const monacoRef = useRef<any>(null);
   const decorationsRef = useRef<any>(null);
@@ -61,17 +87,6 @@ export default function CodeEditorPanel({
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
   };
-
-  // Gentle pulse cue timer: triggers when user has been idle on Step 1 (index 0) for 5 seconds
-  useEffect(() => {
-    setShowPulse(false);
-    if (currentStep === 0 && !isPlaying) {
-      const timer = setTimeout(() => {
-        setShowPulse(true);
-      }, 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [currentStep, isPlaying]);
 
   const handleEditorMount = (editor: any, monaco: any) => {
     editorRef.current = editor;
@@ -174,32 +189,22 @@ export default function CodeEditorPanel({
   }, [code]);
 
   return (
-    <div id="onboarding-editor-panel" className="flex flex-col h-full bg-slate-950" style={{ background: "var(--bg-panel)" }}>
+    <div id="onboarding-editor-panel" className="flex flex-col h-full bg-slate-950" style={{ background: "#1e1e1e" }}>
       {/* Header Panel */}
       <div
         className="flex items-center justify-between px-4 py-3 border-b flex-shrink-0"
         style={{ borderColor: "var(--border)" }}
       >
         <div className="flex items-center gap-2">
-          <Code2 size={16} className="text-blue-500" />
-          <span className="text-xs font-semibold text-slate-200">Java Code Editor</span>
+          <Code2 size={16} className="text-emerald-400" />
+          <span className="text-xs font-semibold text-slate-200">Java Code</span>
         </div>
 
-        {/* Preset Selector */}
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] text-slate-500 font-mono">Example:</span>
-          <select
-            value={presetId}
-            onChange={(e) => onPresetChange(e.target.value)}
-            className="bg-slate-900/80 border border-slate-800 text-slate-300 text-xs rounded-lg px-2 py-1 outline-none cursor-pointer focus:border-blue-500/50 hover:bg-slate-900 transition-colors"
-          >
-            {presets.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </select>
-        </div>
+        {isEditing ? (
+          <span className="text-[10px] text-amber-300">You are editing. Change the code, then run it.</span>
+        ) : (
+          <span className="text-[10px] text-slate-500">Highlighted line is the current lesson step</span>
+        )}
       </div>
 
       {/* Monaco Code Window */}
@@ -208,9 +213,11 @@ export default function CodeEditorPanel({
           height="100%"
           language="java"
           value={code}
-          onChange={(val) => onChange(val ?? "")}
           theme="vs-dark"
           onMount={handleEditorMount}
+          onChange={(value) => {
+            if (isEditing) onCodeChange?.(value ?? "");
+          }}
           options={{
             fontSize: 13,
             fontFamily: "'Geist Mono', 'Fira Code', 'Cascadia Code', monospace",
@@ -223,7 +230,8 @@ export default function CodeEditorPanel({
             renderLineHighlight: "gutter",
             cursorBlinking: "smooth",
             smoothScrolling: true,
-            readOnly: false, // Students can edit code if they want
+            /* Read-only unless the user has explicitly entered edit mode. */
+            readOnly: !isEditing,
             padding: { top: 12, bottom: 12 },
             scrollbar: {
               verticalScrollbarSize: 6,
@@ -240,80 +248,118 @@ export default function CodeEditorPanel({
         </button>
       </div>
 
-      {/* Playback Controls Panel (Directly below code editor) */}
+      {/*
+        Result of a run, kept directly under the editor so the message and the
+        code it refers to are read together. A compile error is shown verbatim
+        and in full.
+      */}
+      {runState.status === "error" && (
+        <div
+          className="flex-shrink-0 border-t px-4 py-3"
+          style={{ borderColor: "var(--border)", background: "var(--bg-panel)", maxHeight: "38%", overflowY: "auto" }}
+          role="alert"
+          aria-live="polite"
+        >
+          <div className="flex items-start gap-2">
+            <AlertCircle size={15} className="flex-shrink-0 mt-[1px]" style={{ color: "#b45309" }} aria-hidden="true" />
+            <div className="min-w-0">
+              <p className="text-[12.5px] font-semibold" style={{ color: "var(--text-primary)" }}>
+                {runState.title}
+              </p>
+              {runState.detail && (
+                <p className="mt-1 text-[11.5px] leading-relaxed" style={{ color: "var(--text-secondary)" }}>
+                  {runState.detail}
+                </p>
+              )}
+              {runState.verbatim && (
+                <pre
+                  className="mt-2 whitespace-pre-wrap break-words rounded-md border p-2.5 text-[11px] leading-relaxed"
+                  style={{
+                    borderColor: "var(--border)",
+                    background: "var(--bg-panel-2)",
+                    color: "var(--text-primary)",
+                    fontFamily: "'Geist Mono', 'Fira Code', monospace",
+                  }}
+                >
+                  {runState.verbatim}
+                </pre>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       <div
-        className="flex flex-col gap-2.5 px-4 py-3 border-t flex-shrink-0"
+        className="code-step-controls flex items-center justify-between gap-3 px-4 py-3 border-t flex-shrink-0"
         style={{ borderColor: "var(--border)", background: "var(--bg-panel-2)" }}
       >
-        <div className="flex items-center justify-between">
-          {/* Simulation Progress Tracker */}
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] uppercase tracking-wider text-slate-500 font-bold">Timeline</span>
-            <span className="badge badge-blue font-mono text-[10px]">
-              Step {currentStep + 1} / {totalSteps}
-            </span>
-          </div>
+        {isEditing ? (
+          <>
+            <button
+              type="button"
+              className="lesson-guide-button"
+              onClick={onCancelEdit}
+              disabled={runState.status === "running"}
+            >
+              <X size={14} aria-hidden="true" /> Cancel editing
+            </button>
 
-          {/* Quick Run & Visualize button */}
-          <button
-            onClick={onRun}
-            className="btn-primary text-xs py-1.5 px-3 flex items-center gap-1.5 text-white"
-            style={{ background: "linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%)" }}
-          >
-            <Zap size={12} fill="currentColor" />
-            <span>Run &amp; Visualize</span>
-          </button>
-        </div>
+            <button
+              type="button"
+              onClick={onRunCode}
+              disabled={runState.status === "running"}
+              className="btn-primary min-w-[138px] justify-center"
+              aria-label="Run my code"
+            >
+              {runState.status === "running" ? (
+                <>
+                  <Loader2 size={15} className="animate-spin" aria-hidden="true" />
+                  <span>Running…</span>
+                </>
+              ) : (
+                <>
+                  <Play size={15} aria-hidden="true" />
+                  <span>Run my code</span>
+                </>
+              )}
+            </button>
+          </>
+        ) : (
+          <>
+            {/* The lesson progress rail above the workspace is the single step counter,
+              * so this footer only carries the controls. */}
+            <div className="flex items-center gap-2">
+              {showGuideButton && (
+                <button type="button" className="lesson-guide-button" onClick={onOpenGuide}>
+                  <HelpCircle size={14} aria-hidden="true" /> Guide
+                </button>
+              )}
+              {canEdit && (
+                <button type="button" className="lesson-guide-button" onClick={onStartEdit}>
+                  <Pencil size={14} aria-hidden="true" /> Edit the code
+                </button>
+              )}
+            </div>
 
-        {/* Step-by-Step Navigation Controls */}
-        <div className="flex items-center justify-center gap-2 py-1 bg-slate-950/60 rounded-xl border border-slate-800/40">
-          {/* Reset */}
-          <button
-            onClick={onReset}
-            disabled={currentStep === 0 && !isPlaying}
-            className="p-2 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-slate-900 disabled:opacity-30 disabled:hover:bg-transparent transition-all"
-            title="Reset to Start"
-          >
-            <RotateCcw size={14} />
-          </button>
-
-          <div className="w-px h-4 bg-slate-800" />
-
-          {/* Step Back */}
-          <button
-            onClick={onStepBack}
-            disabled={currentStep === 0}
-            className="p-2 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-slate-900 disabled:opacity-30 disabled:hover:bg-transparent transition-all"
-            title="Step Back"
-          >
-            <ChevronLeft size={16} />
-          </button>
-
-          {/* Play/Pause */}
-          <button
-            onClick={() => setIsPlaying(!isPlaying)}
-            className="p-2.5 rounded-full bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-500/20 hover:scale-105 active:scale-95 transition-all"
-            title={isPlaying ? "Pause Simulation" : "Auto Play Trace"}
-          >
-            {isPlaying ? <Pause size={14} fill="currentColor" /> : <Play size={14} fill="currentColor" className="translate-x-0.5" />}
-          </button>
-
-          {/* Step Forward */}
-          <button
-            id="onboarding-playback-controls"
-            onClick={() => {
-              setShowPulse(false);
-              onStepForward();
-            }}
-            disabled={currentStep === totalSteps - 1}
-            className={`p-2 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-slate-900 disabled:opacity-30 disabled:hover:bg-transparent transition-all ${
-              showPulse ? "animate-pulse ring-2 ring-blue-500/50 bg-blue-500/10 text-blue-400 font-bold" : ""
-            }`}
-            title="Step Forward"
-          >
-            <ChevronRight size={16} />
-          </button>
-        </div>
+            <div className="flex items-center gap-2">
+              <button onClick={onReset} className="icon-button" title="Restart lesson" aria-label="Restart lesson">
+                <RotateCcw size={15} />
+              </button>
+              <button id="onboarding-step-back" onClick={onStepBack} disabled={!canGoBack} className="icon-button" title="Previous step" aria-label="Previous step">
+                <ChevronLeft size={16} />
+              </button>
+              <button
+                id="onboarding-playback-controls"
+                onClick={onPrimary}
+                className="btn-primary min-w-[138px] justify-center"
+                aria-label={primaryAriaLabel}
+              >
+                <span>{primaryLabel}</span>
+                <ChevronRight size={16} aria-hidden="true" />
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

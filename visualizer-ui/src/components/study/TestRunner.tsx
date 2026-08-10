@@ -53,6 +53,7 @@ function TextInput({
       <span className="block text-[13px] font-medium mb-1.5">{label}</span>
       <input
         type="text"
+        required
         value={value}
         placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
@@ -127,6 +128,7 @@ function GridField({
                     >
                       <input
                         type="text"
+                        required
                         value={responses[cell.key] ?? ""}
                         placeholder={cell.placeholder}
                         onChange={(e) => onChange(cell.key, e.target.value)}

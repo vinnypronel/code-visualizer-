@@ -12,6 +12,8 @@ import AssignedScreen from "@/components/study/screens/AssignedScreen";
 import TimedTestScreen from "@/components/study/screens/TimedTestScreen";
 import LearningScreen from "@/components/study/screens/LearningScreen";
 import HandoffScreen from "@/components/study/screens/HandoffScreen";
+import DevJumpBar from "@/components/study/DevJumpBar";
+import type { SessionState } from "@/lib/studyTypes";
 import { PRETEST, POSTTEST } from "@/data/tests";
 import {
   PRETEST_DURATION_SECONDS,
@@ -21,7 +23,16 @@ import {
 export default function StudyFlow() {
   const { session } = useStudy();
 
-  switch (session.phase) {
+  return (
+    <>
+      {renderPhase(session.phase)}
+      <DevJumpBar />
+    </>
+  );
+}
+
+function renderPhase(phase: SessionState["phase"]) {
+  switch (phase) {
     case "consent":
       return <ConsentScreen />;
     case "declined":

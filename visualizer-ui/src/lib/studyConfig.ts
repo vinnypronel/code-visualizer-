@@ -35,6 +35,66 @@ export const POSTTEST_DURATION_SECONDS = 10 * 60;
 export const LEARNING_RECOMMENDED_MINUTES = 15;
 
 /*
+ * The one lesson preset every participant sees.
+ *
+ * Two reasons this is pinned. The post-test only measures the linked-list
+ * content, and the guided walkthrough narrates the linked-list source lines
+ * verbatim, so any other preset would leave the guide describing code that is
+ * not on screen. The other presets stay in the visualizer for development.
+ */
+export const LESSON_PRESET_ID = "linkedlist";
+
+/*
+ * Whether the lesson intro renders the example picker. Same guard DevJumpBar
+ * uses: a developer can still switch presets locally, and a production build
+ * compiles the control out, so a participant can never leave the measured
+ * lesson.
+ */
+export const SHOW_PRESET_SELECTOR = process.env.NODE_ENV !== "production";
+
+/*
+ * Post-lesson tools: swapping to another built-in example, and editing the Java
+ * and running it for real.
+ *
+ * These are deliberately unavailable while the measured lesson is in progress.
+ * The post-test asks about linked lists, so a participant who spends the
+ * learning phase on the Stack example, or on code they wrote themselves,
+ * produces data we cannot use. They unlock only once the lesson has reached its
+ * terminal "complete" phase, at which point the measurement is already done and
+ * exploring is a good thing.
+ *
+ * A developer keeps them everywhere, using the same guard as the preset picker,
+ * so a production build compiles the mid-lesson path out entirely.
+ */
+export function showPostLessonTools(lessonPhase: string, hasFinishedLesson: boolean): boolean {
+  return lessonPhase === "complete" || hasFinishedLesson || SHOW_PRESET_SELECTOR;
+}
+
+/*
+ * Preset ids the interactive guided walkthrough has narration written for.
+ *
+ * The walkthrough calls out specific source lines ("Run line 3: Node head =
+ * new Node(10);"), so pointing it at any other example would have it
+ * confidently describe code that is not on screen. That is worse than showing
+ * no guide at all. Add an id here only once InteractiveWalkthrough actually
+ * carries steps for it.
+ */
+export const WALKTHROUGH_PRESET_IDS: readonly string[] = ["linkedlist"];
+
+/*
+ * Whether the guided walkthrough has content for this preset. Code the
+ * participant wrote and ran themselves never has narration, so it is always
+ * false there, regardless of the id the tracer hands back.
+ */
+export function hasGuidedWalkthrough(presetId: string, isCustomCode = false): boolean {
+  if (isCustomCode) return false;
+  return WALKTHROUGH_PRESET_IDS.includes(presetId);
+}
+
+/* How long the browser waits on /api/trace before giving up, in milliseconds. */
+export const TRACE_REQUEST_TIMEOUT_MS = 25_000;
+
+/*
  * Deterministic condition assignment from the atomic sequence number.
  * Shared by the client (to render the right branch) and the server (to store
  * the condition when the participant row is created).
@@ -43,6 +103,12 @@ export function conditionForSeq(seq: number): Condition {
   if (!RAND_LEARNING_TOOL) return "ai";
   return seq % 2 === 1 ? "ai" : "static";
 }
+
+/*
+ * Rough time the external questionnaire takes, shown on the handoff screen.
+ * PLACEHOLDER: confirm the real number against the Microsoft Form.
+ */
+export const QUESTIONNAIRE_MINUTES = 5;
 
 /* External Microsoft Forms questionnaire URL. Public link, safe for browser. */
 export const MSFORMS_URL = process.env.NEXT_PUBLIC_MSFORMS_URL ?? "";

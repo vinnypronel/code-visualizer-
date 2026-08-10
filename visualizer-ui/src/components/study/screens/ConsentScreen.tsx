@@ -22,77 +22,83 @@ export default function ConsentScreen() {
       stageIndex={0}
       heading={CONSENT_META.title}
       subheading="Please read the following before deciding whether to take part."
-      footer={
-        <>
-          {assignError && (
-            <span className="text-[12px]" style={{ color: "var(--danger)" }}>
-              {assignError}
-            </span>
-          )}
-          <button
-            className="btn-primary"
-            disabled={choice === null || isAssigning}
-            style={{
-              opacity: choice === null || isAssigning ? 0.5 : 1,
-              cursor: choice === null || isAssigning ? "not-allowed" : "pointer",
-            }}
-            onClick={onContinue}
-          >
-            {isAssigning ? "Please wait..." : "Continue"}
-          </button>
-        </>
-      }
     >
-      <div
-        className="rounded-xl p-5 mb-6 max-h-[44vh] overflow-y-auto panel-scroll"
-        style={{
-          background: "var(--bg-panel)",
-          border: "1px solid var(--border)",
-        }}
-      >
-        <ConsentBody />
-      </div>
+      <div className="flex flex-col justify-between max-w-[1060px] mx-auto">
+        {/* Expanded Scrollable Consent Form Text Box - Bigger Vertically */}
+        <div
+          className="rounded-lg p-5 h-[430px] max-h-[52vh] overflow-y-auto panel-scroll flex-shrink-0"
+          style={{
+            background: "var(--bg-panel)",
+            border: "1px solid var(--border)",
+          }}
+        >
+          <ConsentBody />
+        </div>
 
-      <fieldset className="space-y-3">
-        <legend className="text-[13px] font-semibold mb-2">
-          Do you agree to participate in this study?
-        </legend>
-        {(
-          [
-            {
-              key: "agree",
-              label:
-                "Yes, I agree - I have read and understood the information above and I voluntarily agree to participate.",
-            },
-            {
-              key: "disagree",
-              label:
-                "No, I do not agree - I do not wish to participate and will not be able to proceed with the study.",
-            },
-          ] as const
-        ).map((opt) => (
-          <label
-            key={opt.key}
-            className="flex items-center gap-3 rounded-lg px-4 py-3 cursor-pointer transition-colors"
-            style={{
-              background:
-                choice === opt.key ? "var(--accent-glow)" : "var(--bg-panel-2)",
-              border: `1px solid ${
-                choice === opt.key ? "var(--border-active)" : "var(--border)"
-              }`,
-            }}
-          >
-            <input
-              type="radio"
-              name="consent"
-              value={opt.key}
-              checked={choice === opt.key}
-              onChange={() => setChoice(opt.key)}
-            />
-            <span className="text-[13px]">{opt.label}</span>
-          </label>
-        ))}
-      </fieldset>
+        {/* Agreement Question Section Pushed Down + Continue Button Moved Farther Right */}
+        <div className="mt-5 flex flex-col md:flex-row items-start md:items-end justify-between gap-6">
+          <fieldset className="space-y-2 flex-1 w-full min-w-0">
+            <legend className="text-[13.5px] font-semibold mb-2" style={{ color: "var(--text-primary)" }}>
+              Do you agree to participate in this study?
+            </legend>
+            {(
+              [
+                {
+                  key: "agree",
+                  label:
+                    "Yes, I agree - I have read and understood the information above and I voluntarily agree to participate.",
+                },
+                {
+                  key: "disagree",
+                  label:
+                    "No, I do not agree - I do not wish to participate and will not be able to proceed with the study.",
+                },
+              ] as const
+            ).map((opt) => (
+              <label
+                key={opt.key}
+                className="flex items-center gap-3 rounded-lg px-4 py-2.5 cursor-pointer transition-colors"
+                style={{
+                  background:
+                    choice === opt.key ? "var(--accent-glow)" : "var(--bg-panel-2)",
+                  border: `1px solid ${
+                    choice === opt.key ? "var(--border-active)" : "var(--border)"
+                  }`,
+                }}
+              >
+                <input
+                  type="radio"
+                  name="consent"
+                  value={opt.key}
+                  checked={choice === opt.key}
+                  onChange={() => setChoice(opt.key)}
+                />
+                <span className="text-[13px]">{opt.label}</span>
+              </label>
+            ))}
+          </fieldset>
+
+          {/* Continue Button Moved Farther Right */}
+          <div className="flex flex-col items-end gap-2 flex-shrink-0 self-end pb-0.5 pl-4">
+            {assignError && (
+              <span className="text-[12px]" style={{ color: "var(--danger)" }}>
+                {assignError}
+              </span>
+            )}
+            <button
+              className="btn-primary min-w-[140px] justify-center text-xs py-2.5 px-6 shadow-lg"
+              disabled={choice === null || isAssigning}
+              style={{
+                opacity: choice === null || isAssigning ? 0.5 : 1,
+                cursor: choice === null || isAssigning ? "not-allowed" : "pointer",
+              }}
+              onClick={onContinue}
+            >
+              {isAssigning ? "Please wait..." : "Continue"}
+            </button>
+          </div>
+        </div>
+      </div>
     </StudyShell>
   );
 }
