@@ -23,22 +23,22 @@ export default function ConsentScreen() {
       heading={CONSENT_META.title}
       subheading="Please read the following before deciding whether to take part."
     >
-      <div className="flex flex-col lg:flex-row items-start gap-8 max-w-[1360px] -ml-1 sm:-ml-3 mr-auto">
+      <div className="flex flex-col lg:flex-row items-start gap-8 max-w-[1380px] -ml-3 sm:-ml-6 mr-auto">
         {/* Scrollable Consent Form Text Box - Moved Left & Longer Vertically */}
         <div
-          className="w-full lg:w-[650px] max-w-[650px] rounded-xl overflow-hidden shadow-sm flex-shrink-0"
+          className="w-full lg:w-[680px] max-w-[680px] rounded-xl overflow-hidden shadow-sm flex-shrink-0"
           style={{
             background: "#ffffff",
             border: "1.5px solid #64748b",
           }}
         >
-          <div className="p-5 h-[560px] max-h-[70vh] overflow-y-auto panel-scroll">
+          <div className="p-5 h-[590px] max-h-[74vh] overflow-y-auto panel-scroll">
             <ConsentBody />
           </div>
         </div>
 
-        {/* Agreement Question Section Moved to the Right a Bunch */}
-        <div className="flex-1 w-full min-w-[320px] flex flex-col justify-between self-stretch pt-1">
+        {/* Agreement Question Section Moved to the Right - Wider Horizontally & Shorter Vertically */}
+        <div className="w-full max-w-[560px] flex flex-col justify-between self-stretch pt-1">
           <fieldset className="space-y-2.5 w-full">
             <legend className="text-[14px] font-extrabold mb-2" style={{ color: "#0f172a" }}>
               Do you agree to participate in this study?
@@ -62,7 +62,7 @@ export default function ConsentScreen() {
               return (
                 <label
                   key={opt.key}
-                  className="flex items-center gap-3 rounded-lg px-4 py-3 cursor-pointer transition-all shadow-sm"
+                  className="flex items-center gap-3 rounded-lg px-4 py-2.5 cursor-pointer transition-all shadow-sm"
                   style={{
                     background: isSelected
                       ? isAgree
@@ -87,9 +87,9 @@ export default function ConsentScreen() {
                     value={opt.key}
                     checked={isSelected}
                     onChange={() => setChoice(opt.key)}
-                    className={`w-4 h-4 ${isAgree ? "accent-emerald-600" : "accent-red-600"}`}
+                    className={`w-4 h-4 flex-shrink-0 ${isAgree ? "accent-emerald-600" : "accent-red-600"}`}
                   />
-                  <span className="text-[13px] font-semibold">{opt.label}</span>
+                  <span className="text-[13px] font-semibold leading-snug">{opt.label}</span>
                 </label>
               );
             })}
