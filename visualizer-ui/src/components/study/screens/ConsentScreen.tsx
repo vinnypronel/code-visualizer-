@@ -24,12 +24,12 @@ export default function ConsentScreen() {
       subheading="Please read the following before deciding whether to take part."
     >
       <div className="flex flex-col justify-between max-w-[1060px] mx-auto">
-        {/* Expanded Scrollable Consent Form Text Box - Bigger Vertically */}
+        {/* Expanded Scrollable Consent Form Text Box - Darker Crisp Outline */}
         <div
-          className="rounded-lg p-5 h-[430px] max-h-[52vh] overflow-y-auto panel-scroll flex-shrink-0"
+          className="rounded-lg p-5 h-[430px] max-h-[52vh] overflow-y-auto panel-scroll flex-shrink-0 shadow-sm"
           style={{
-            background: "var(--bg-panel)",
-            border: "1px solid var(--border)",
+            background: "#ffffff",
+            border: "1.5px solid #64748b",
           }}
         >
           <ConsentBody />
@@ -37,8 +37,8 @@ export default function ConsentScreen() {
 
         {/* Agreement Question Section Pushed Down + Continue Button Moved Farther Right */}
         <div className="mt-5 flex flex-col md:flex-row items-start md:items-end justify-between gap-6">
-          <fieldset className="space-y-2 flex-1 w-full min-w-0">
-            <legend className="text-[13.5px] font-semibold mb-2" style={{ color: "var(--text-primary)" }}>
+          <fieldset className="space-y-2.5 flex-1 w-full min-w-0">
+            <legend className="text-[14px] font-extrabold mb-2" style={{ color: "#0f172a" }}>
               Do you agree to participate in this study?
             </legend>
             {(
@@ -57,13 +57,15 @@ export default function ConsentScreen() {
             ).map((opt) => (
               <label
                 key={opt.key}
-                className="flex items-center gap-3 rounded-lg px-4 py-2.5 cursor-pointer transition-colors"
+                className="flex items-center gap-3 rounded-lg px-4 py-3 cursor-pointer transition-all shadow-sm"
                 style={{
                   background:
-                    choice === opt.key ? "var(--accent-glow)" : "var(--bg-panel-2)",
-                  border: `1px solid ${
-                    choice === opt.key ? "var(--border-active)" : "var(--border)"
-                  }`,
+                    choice === opt.key ? "#ecfdf5" : "#ffffff",
+                  border:
+                    choice === opt.key
+                      ? "2px solid #059669"
+                      : "1.5px solid #64748b",
+                  color: choice === opt.key ? "#047857" : "#0f172a",
                 }}
               >
                 <input
@@ -72,8 +74,9 @@ export default function ConsentScreen() {
                   value={opt.key}
                   checked={choice === opt.key}
                   onChange={() => setChoice(opt.key)}
+                  className="accent-emerald-600 w-4 h-4"
                 />
-                <span className="text-[13px]">{opt.label}</span>
+                <span className="text-[13px] font-semibold">{opt.label}</span>
               </label>
             ))}
           </fieldset>
