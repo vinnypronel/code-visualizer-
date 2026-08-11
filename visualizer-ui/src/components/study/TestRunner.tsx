@@ -20,14 +20,15 @@ function CodeBlock({ code, caption }: { code: string; caption?: string }) {
   return (
     <div className="my-3">
       {caption && (
-        <p className="text-[13px] font-medium mb-2">{caption}</p>
+        <p className="text-[13px] font-semibold mb-2" style={{ color: "#0f172a" }}>{caption}</p>
       )}
       <pre
         className="font-mono text-[12.5px] leading-relaxed rounded-lg p-4 overflow-x-auto"
         style={{
           background: "var(--bg-base)",
-          border: "1px solid var(--border)",
-          color: "var(--text-primary)",
+          border: "1px solid #94a3b8",
+          color: "#000000",
+          fontWeight: 500,
           whiteSpace: "pre",
         }}
       >
@@ -50,18 +51,18 @@ function TextInput({
 }) {
   return (
     <label className="block my-3">
-      <span className="block text-[13px] font-medium mb-1.5">{label}</span>
+      <span className="block text-[13px] font-semibold mb-1.5" style={{ color: "#0f172a" }}>{label}</span>
       <input
         type="text"
         required
         value={value}
         placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-md px-3 py-2 text-[13px] outline-none"
+        className="w-full rounded-md px-3 py-2 text-[13px] font-semibold outline-none transition-colors focus:border-slate-500"
         style={{
-          background: "var(--bg-panel-2)",
-          border: "1px solid var(--border)",
-          color: "var(--text-primary)",
+          background: "#ffffff",
+          border: "1px solid #94a3b8",
+          color: "#000000",
         }}
       />
     </label>
@@ -83,19 +84,19 @@ function GridField({
 }) {
   return (
     <div className="my-4">
-      {caption && <p className="text-[13px] font-medium mb-2">{caption}</p>}
-      <div className="overflow-x-auto">
+      {caption && <p className="text-[13px] font-semibold mb-2" style={{ color: "#0f172a" }}>{caption}</p>}
+      <div className="overflow-x-auto rounded-lg border shadow-sm" style={{ borderColor: "#64748b" }}>
         <table className="w-full border-collapse text-[12.5px]">
           <thead>
             <tr>
               {columns.map((c) => (
                 <th
                   key={c}
-                  className="text-left font-semibold px-3 py-2"
+                  className="text-left font-bold px-3.5 py-2.5"
                   style={{
-                    background: "var(--bg-panel-2)",
-                    border: "1px solid var(--border)",
-                    color: "var(--text-secondary)",
+                    background: "#f1f5f9",
+                    border: "1px solid #94a3b8",
+                    color: "#0f172a",
                     whiteSpace: "nowrap",
                   }}
                 >
@@ -111,11 +112,12 @@ function GridField({
                   cell.t === "ro" ? (
                     <td
                       key={ci}
-                      className="px-3 py-2 font-mono"
+                      className="px-3.5 py-2.5 font-mono font-bold"
                       style={{
-                        border: "1px solid var(--border)",
-                        color: "var(--text-muted)",
+                        border: "1px solid #94a3b8",
+                        color: "#0f172a",
                         whiteSpace: "nowrap",
+                        background: "#f8fafc",
                       }}
                     >
                       {cell.text}
@@ -124,7 +126,7 @@ function GridField({
                     <td
                       key={ci}
                       className="p-0"
-                      style={{ border: "1px solid var(--border)" }}
+                      style={{ border: "1px solid #94a3b8" }}
                     >
                       <input
                         type="text"
@@ -132,8 +134,8 @@ function GridField({
                         value={responses[cell.key] ?? ""}
                         placeholder={cell.placeholder}
                         onChange={(e) => onChange(cell.key, e.target.value)}
-                        className="w-full px-3 py-2 text-[12.5px] outline-none bg-transparent"
-                        style={{ color: "var(--text-primary)" }}
+                        className="w-full px-3.5 py-2.5 text-[12.5px] font-bold outline-none bg-white focus:bg-emerald-50/40"
+                        style={{ color: "#000000" }}
                       />
                     </td>
                   ),
@@ -189,13 +191,13 @@ export default function TestRunner({
         className="rounded-xl p-4 mb-6"
         style={{
           background: "var(--bg-panel)",
-          border: "1px solid var(--border)",
+          border: "1px solid #94a3b8",
         }}
       >
-        <ul className="space-y-1.5 text-[12.5px]" style={{ color: "var(--text-secondary)" }}>
+        <ul className="space-y-1.5 text-[12.5px] font-medium" style={{ color: "#0f172a" }}>
           {TEST_INSTRUCTIONS.map((line) => (
             <li key={line} className="flex gap-2">
-              <span style={{ color: "var(--text-muted)" }}>-</span>
+              <span style={{ color: "#475569" }}>-</span>
               <span>{line}</span>
             </li>
           ))}
@@ -206,11 +208,11 @@ export default function TestRunner({
       <div className="space-y-8">
         {def.questions.map((q) => (
           <section key={q.id}>
-            <h2 className="text-[15px] font-bold mb-1">{q.title}</h2>
+            <h2 className="text-[16px] font-extrabold mb-1" style={{ color: "#0f172a" }}>{q.title}</h2>
             {q.prompt && (
               <p
-                className="text-[13px] mb-2"
-                style={{ color: "var(--text-secondary)" }}
+                className="text-[13px] font-semibold mb-2"
+                style={{ color: "#334155" }}
               >
                 {q.prompt}
               </p>
