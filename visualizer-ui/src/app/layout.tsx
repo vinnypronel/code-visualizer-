@@ -18,6 +18,14 @@ export const metadata: Metadata = {
   description:
     "An interactive code visualizer that parses Java source code, renders execution flow on a live canvas, and provides AI-powered explanations in real time.",
   keywords: ["code visualizer", "AST", "Java", "execution trace", "AI explanation"],
+  icons: {
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/favicon.svg", type: "image/svg+xml" },
+    ],
+    shortcut: "/icon.svg",
+    apple: "/icon.svg",
+  },
 };
 
 export default function RootLayout({
