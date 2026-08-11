@@ -60,99 +60,91 @@ export default function StudyShell({
         className="relative flex-shrink-0 border-b select-none"
         style={{ borderColor: "var(--border)", background: "var(--bg-header)" }}
       >
-        <div className={`w-full ${fluid ? "px-4 py-1.5" : "max-w-4xl mx-auto px-3 sm:px-6 py-1"} flex items-center justify-between gap-4 min-h-[38px]`}>
-          <div className="flex items-center gap-3 flex-1 min-w-0">
+        <div className="w-full px-4 sm:px-8 py-2 flex items-center justify-between gap-4 min-h-[52px]">
+          <div className="flex items-center gap-3 flex-shrink-0">
             {/* Left Logo: Kean University */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/kean-logo.png"
               alt="Kean University"
-              className="h-6 sm:h-7 w-auto object-contain flex-shrink-0"
+              className="h-9 sm:h-10 w-auto object-contain flex-shrink-0"
             />
             <span
-              className="text-[11px] font-mono uppercase tracking-wider font-extrabold whitespace-nowrap hidden sm:inline"
+              className="text-xs sm:text-sm font-mono uppercase tracking-wider font-extrabold whitespace-nowrap hidden sm:inline"
               style={{ color: "var(--text-primary)" }}
             >
               Code Visualizer Study
             </span>
-
-            {fluid && (
-              <ol className="hidden md:flex items-center gap-1.5 flex-1 max-w-xl mx-auto">
-                {STAGES.map((stage, i) => {
-                  const state =
-                    i < stageIndex ? "done" : i === stageIndex ? "active" : "todo";
-                  return (
-                    <li key={stage} className="flex items-center gap-1.5 flex-1">
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        <span
-                          className="flex items-center justify-center rounded-full text-[10px] font-bold flex-shrink-0"
-                          style={{
-                            width: 18,
-                            height: 18,
-                            background:
-                              state === "active"
-                                ? "var(--accent)"
-                                : state === "done"
-                                  ? "var(--accent-glow)"
-                                  : "transparent",
-                            color:
-                              state === "active"
-                                ? "#fff"
-                                : state === "done"
-                                  ? "var(--accent)"
-                                  : "var(--text-secondary)",
-                            border:
-                              state === "todo"
-                                ? "1px solid var(--border)"
-                                : "1px solid transparent",
-                          }}
-                        >
-                          {i + 1}
-                        </span>
-                        <span
-                          className="text-[11px] font-semibold truncate"
-                          style={{
-                            color:
-                              state === "active"
-                                ? "var(--accent)"
-                                : "var(--text-secondary)",
-                          }}
-                        >
-                          {stage}
-                        </span>
-                      </div>
-                      {i < STAGES.length - 1 && (
-                        <span
-                          className="flex-1 h-px"
-                          style={{
-                            background:
-                              i < stageIndex
-                                ? "var(--accent)"
-                                : "var(--border)",
-                          }}
-                        />
-                      )}
-                    </li>
-                  );
-                })}
-              </ol>
-            )}
           </div>
 
-          <div
-            className={`min-h-[20px] flex items-center gap-3 flex-shrink-0 ${
-              fluid
-                ? "ml-auto"
-                : ""
-            }`}
-          >
+          <ol className="hidden md:flex items-center gap-2 flex-1 max-w-xl mx-auto px-4">
+            {STAGES.map((stage, i) => {
+              const state =
+                i < stageIndex ? "done" : i === stageIndex ? "active" : "todo";
+              return (
+                <li key={stage} className="flex items-center gap-2 flex-1">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <span
+                      className="flex items-center justify-center rounded-full text-[10px] font-bold flex-shrink-0"
+                      style={{
+                        width: 20,
+                        height: 20,
+                        background:
+                          state === "active"
+                            ? "var(--accent)"
+                            : state === "done"
+                              ? "var(--accent-glow)"
+                              : "transparent",
+                        color:
+                          state === "active"
+                            ? "#fff"
+                            : state === "done"
+                              ? "var(--accent)"
+                              : "var(--text-secondary)",
+                        border:
+                          state === "todo"
+                            ? "1px solid var(--border)"
+                            : "1px solid transparent",
+                      }}
+                    >
+                      {i + 1}
+                    </span>
+                    <span
+                      className="text-[11.5px] font-semibold truncate"
+                      style={{
+                        color:
+                          state === "active"
+                            ? "var(--accent)"
+                            : "var(--text-secondary)",
+                      }}
+                    >
+                      {stage}
+                    </span>
+                  </div>
+                  {i < STAGES.length - 1 && (
+                    <span
+                      className="flex-1 h-px"
+                      style={{
+                        background:
+                          i < stageIndex
+                            ? "var(--accent)"
+                            : "var(--border)",
+                      }}
+                    />
+                  )}
+                </li>
+              );
+            })}
+          </ol>
+
+          <div className="flex items-center gap-3.5 flex-shrink-0 ml-auto">
             {timer}
             {/* Right Logo: UR2PhD */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/ur2phd-logo.png"
               alt="UR2PhD Mentoring"
-              className="h-5 sm:h-6 w-auto object-contain flex-shrink-0"
+              className="h-8 sm:h-[38px] w-auto object-contain flex-shrink-0"
             />
           </div>
         </div>
