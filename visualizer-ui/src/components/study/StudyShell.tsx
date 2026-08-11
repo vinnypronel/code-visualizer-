@@ -60,10 +60,17 @@ export default function StudyShell({
         className="relative flex-shrink-0 border-b select-none"
         style={{ borderColor: "var(--border)", background: "var(--bg-header)" }}
       >
-        <div className={`w-full ${fluid ? "px-4 py-1.5" : "max-w-4xl mx-auto px-3 sm:px-6 py-1"} flex items-center justify-between gap-4 min-h-[34px]`}>
-          <div className="flex items-center gap-4 flex-1 min-w-0">
+        <div className={`w-full ${fluid ? "px-4 py-1.5" : "max-w-4xl mx-auto px-3 sm:px-6 py-1"} flex items-center justify-between gap-4 min-h-[38px]`}>
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            {/* Left Logo: Kean University */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/kean-logo.png"
+              alt="Kean University"
+              className="h-6 sm:h-7 w-auto object-contain flex-shrink-0"
+            />
             <span
-              className="text-[11px] font-mono uppercase tracking-wider font-semibold whitespace-nowrap"
+              className="text-[11px] font-mono uppercase tracking-wider font-extrabold whitespace-nowrap hidden sm:inline"
               style={{ color: "var(--text-primary)" }}
             >
               Code Visualizer Study
@@ -133,13 +140,20 @@ export default function StudyShell({
           </div>
 
           <div
-            className={`min-h-[20px] flex items-center flex-shrink-0 ${
+            className={`min-h-[20px] flex items-center gap-3 flex-shrink-0 ${
               fluid
                 ? "ml-auto"
-                : "absolute right-3 sm:right-6 top-1.5"
+                : ""
             }`}
           >
             {timer}
+            {/* Right Logo: UR2PhD */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/ur2phd-logo.png"
+              alt="UR2PhD Mentoring"
+              className="h-5 sm:h-6 w-auto object-contain flex-shrink-0"
+            />
           </div>
         </div>
 

@@ -24,6 +24,21 @@ export default function ConsentScreen() {
       subheading="Please read the following before deciding whether to take part."
     >
       <div className="flex flex-col justify-between max-w-[1060px] mx-auto">
+        {/* Institutional Logos Banner */}
+        <div className="flex items-center justify-between gap-4 mb-4 pb-3 border-b" style={{ borderColor: "#cbd5e1" }}>
+          <div className="flex items-center gap-3">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/kean-logo.png" alt="Kean University" className="h-10 w-auto object-contain" />
+            <div>
+              <span className="block text-xs font-extrabold uppercase tracking-wider text-slate-900">Kean University</span>
+              <span className="block text-[11px] text-slate-600 font-medium">Department of Computer Science and Technology</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/ur2phd-logo.png" alt="UR2PhD Mentoring" className="h-9 w-auto object-contain" />
+          </div>
+        </div>
         {/* Expanded Scrollable Consent Form Text Box - Darker Crisp Outline */}
         <div
           className="rounded-lg p-5 h-[430px] max-h-[52vh] overflow-y-auto panel-scroll flex-shrink-0 shadow-sm"
