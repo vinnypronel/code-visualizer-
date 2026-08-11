@@ -5,7 +5,7 @@ import { useStudy } from "@/components/study/StudyProvider";
 
 /* Shows the freshly minted participant ID with skeleton loading during server assignment. */
 export default function AssignedScreen() {
-  const { session, isAssigning, assignError, goTo } = useStudy();
+  const { session, isAssigning, assignError, goTo, acceptConsent } = useStudy();
   const isLoading = isAssigning || !session.participantId;
 
   return (
@@ -70,10 +70,41 @@ export default function AssignedScreen() {
           </>
         )}
 
+        {/*
+          Without a way out, a failed assignment strands the participant here
+          forever: the screen shows a loading skeleton, the Continue button is
+          permanently disabled, and the only clue is a developer error string.
+          That is the single worst failure in the flow, because it happens at
+          the very start of a session and only when something is genuinely
+          wrong on the server, which is exactly when nobody is watching.
+        */}
         {assignError && (
-          <p className="text-[12px] mt-4 font-semibold" style={{ color: "var(--danger)" }}>
-            {assignError}
-          </p>
+          <div className="mt-5 text-center">
+            <p className="text-[13px] font-semibold" style={{ color: "var(--danger)" }}>
+              We could not start your session.
+            </p>
+            <p
+              className="text-[12px] mt-1 mx-auto max-w-md leading-relaxed"
+              style={{ color: "var(--text-secondary)" }}
+            >
+              This is usually a temporary connection problem. Select Try again.
+              If it keeps failing, please tell the researcher and do not close
+              this page.
+            </p>
+            <button
+              type="button"
+              className="btn-primary mt-4"
+              onClick={() => void acceptConsent()}
+              disabled={isAssigning}
+              style={{ opacity: isAssigning ? 0.6 : 1 }}
+            >
+              {isAssigning ? "Trying..." : "Try again"}
+            </button>
+            {/* Kept small and muted: useful to the researcher, ignorable by the participant. */}
+            <p className="text-[10px] mt-3 font-mono" style={{ color: "var(--text-muted)" }}>
+              {assignError}
+            </p>
+          </div>
         )}
       </div>
     </StudyShell>

@@ -9,13 +9,13 @@
  */
 
 import { useEffect, useState } from "react";
-import { CheckCircle2, ExternalLink } from "lucide-react";
+import { ArrowLeft, CheckCircle2, ExternalLink } from "lucide-react";
 import StudyShell from "@/components/study/StudyShell";
 import { useStudy } from "@/components/study/StudyProvider";
 import { MSFORMS_URL, QUESTIONNAIRE_MINUTES } from "@/lib/studyConfig";
 
 export default function HandoffScreen() {
-  const { session, logEvent } = useStudy();
+  const { session, logEvent, returnToConsent } = useStudy();
   const participantId = session.participantId ?? "----";
   const [copied, setCopied] = useState(false);
   const [questionnaireOpened, setQuestionnaireOpened] = useState(false);
@@ -89,18 +89,33 @@ export default function HandoffScreen() {
             >
               {participantId}
             </p>
-            <button
-              type="button"
-              onClick={copyId}
-              className="text-[12px] font-mono px-3 py-1.5 rounded-md border"
-              style={{
-                background: "var(--bg-panel-2)",
-                borderColor: "var(--border)",
-                color: "var(--text-secondary)",
-              }}
-            >
-              {copied ? "Copied" : "Copy ID"}
-            </button>
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              <button
+                type="button"
+                onClick={copyId}
+                className="text-[12px] font-mono px-3 py-1.5 rounded-md border"
+                style={{
+                  background: "var(--bg-panel-2)",
+                  borderColor: "var(--border)",
+                  color: "var(--text-secondary)",
+                }}
+              >
+                {copied ? "Copied" : "Copy ID"}
+              </button>
+              <button
+                type="button"
+                onClick={returnToConsent}
+                className="inline-flex items-center gap-1.5 text-[12px] px-3 py-1.5 rounded-md border"
+                style={{
+                  background: "var(--bg-panel-2)",
+                  borderColor: "var(--border)",
+                  color: "var(--text-secondary)",
+                }}
+              >
+                <ArrowLeft size={13} aria-hidden="true" />
+                Back to consent form
+              </button>
+            </div>
           </div>
 
           <p

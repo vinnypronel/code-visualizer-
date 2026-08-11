@@ -67,6 +67,8 @@ interface StudyContextValue {
   declineConsent: () => void;
   /* Move the machine to a specific phase. */
   goTo: (phase: Phase) => void;
+  /* End the current local session and return to a fresh consent form. */
+  returnToConsent: () => void;
   /*
    * Dev-only escape hatch: jump straight to any phase (optionally forcing a
    * condition) without going through consent or minting a participant ID.
@@ -160,6 +162,12 @@ export function StudyProvider({ children }: { children: React.ReactNode }) {
 
   const goTo = useCallback((phase: Phase) => {
     setSession((s) => ({ ...s, phase }));
+  }, []);
+
+  const returnToConsent = useCallback(() => {
+    window.localStorage.removeItem(SESSION_KEY);
+    setAssignError(null);
+    setSession(INITIAL_SESSION);
   }, []);
 
   const devJump = useCallback((phase: Phase, condition?: Condition) => {
@@ -335,6 +343,7 @@ export function StudyProvider({ children }: { children: React.ReactNode }) {
       acceptConsent,
       declineConsent,
       goTo,
+      returnToConsent,
       devJump,
       logEvent,
       setResponse,
@@ -348,6 +357,7 @@ export function StudyProvider({ children }: { children: React.ReactNode }) {
       acceptConsent,
       declineConsent,
       goTo,
+      returnToConsent,
       devJump,
       logEvent,
       setResponse,
