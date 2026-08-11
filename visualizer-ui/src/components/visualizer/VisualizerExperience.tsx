@@ -2,13 +2,14 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import dynamic from "next/dynamic";
-import { CheckCircle2, ChevronRight, RotateCcw } from "lucide-react";
+import { CheckCircle2, ChevronRight, Compass } from "lucide-react";
 import AiExplanationPanel from "@/components/AiExplanationPanel";
 import OnboardingTour from "@/components/OnboardingTour";
 import InteractiveWalkthrough from "@/components/InteractiveWalkthrough";
 import PostLessonExplorerModal from "@/components/visualizer/PostLessonExplorerModal";
 import {
   LESSON_PRESET_ID,
+  SWITCHABLE_PRESET_IDS,
   SHOW_PRESET_SELECTOR,
   TRACE_REQUEST_TIMEOUT_MS,
   hasGuidedWalkthrough,
@@ -1072,26 +1073,20 @@ class Node {
     steps: [
       // [0] call line=3, entering main
       { lineHighlight: 3, stack: [{ methodName: "main(String[] args)", variables: [] }], heap: {}, arrows: [], spotlightStackVars: [], spotlightHeapObjects: [], spotlightHeapFields: [], stdout: "", activeBlock: LT_MAIN, explanation: "Entering main(). A new stack frame is created. No local variables exist yet.", bananaDiagram: LIVE_TRACE_BANANA },
-      // [1] step_line line=3, positioned at int x = 5
-      { lineHighlight: 3, stack: [{ methodName: "main(String[] args)", variables: [] }], heap: {}, arrows: [], spotlightStackVars: [], spotlightHeapObjects: [], spotlightHeapFields: [], stdout: "", activeBlock: LT_MAIN, explanation: "Positioned at line 3, about to execute: int x = 5.", bananaDiagram: LIVE_TRACE_BANANA },
       // [2] step_line line=4, x=5 assigned
-      { lineHighlight: 4, stack: [{ methodName: "main(String[] args)", variables: [{ name: "x", type: "int", value: "5", isReference: false }] }], heap: {}, arrows: [], spotlightStackVars: ["x"], spotlightHeapObjects: [], spotlightHeapFields: [], stdout: "", activeBlock: LT_MAIN, explanation: "int x = 5 executed. x appears on main's stack frame with value 5.", bananaDiagram: LIVE_TRACE_BANANA },
+      { lineHighlight: 3, stack: [{ methodName: "main(String[] args)", variables: [{ name: "x", type: "int", value: "5", isReference: false }] }], heap: {}, arrows: [], spotlightStackVars: ["x"], spotlightHeapObjects: [], spotlightHeapFields: [], stdout: "", activeBlock: LT_MAIN, explanation: "int x = 5 executed. x appears on main's stack frame with value 5.", bananaDiagram: LIVE_TRACE_BANANA },
       // [3] step_line line=5, y=10 assigned, about to call multiply
-      { lineHighlight: 5, stack: [{ methodName: "main(String[] args)", variables: [{ name: "x", type: "int", value: "5", isReference: false }, { name: "y", type: "int", value: "10", isReference: false }] }], heap: {}, arrows: [], spotlightStackVars: ["y"], spotlightHeapObjects: [], spotlightHeapFields: [], stdout: "", activeBlock: LT_MAIN, explanation: "int y = 10 executed. y added to main's frame. Line 5 calls multiply(x, y), so a new frame is about to be pushed.", bananaDiagram: LIVE_TRACE_BANANA },
+      { lineHighlight: 4, stack: [{ methodName: "main(String[] args)", variables: [{ name: "x", type: "int", value: "5", isReference: false }, { name: "y", type: "int", value: "10", isReference: false }] }], heap: {}, arrows: [], spotlightStackVars: ["y"], spotlightHeapObjects: [], spotlightHeapFields: [], stdout: "", activeBlock: LT_MAIN, explanation: "int y = 10 executed. y added to main's frame. Line 5 calls multiply(x, y), so a new frame is about to be pushed.", bananaDiagram: LIVE_TRACE_BANANA },
       // [4] call line=10, entering multiply, two frames
-      { lineHighlight: 10, stack: [{ methodName: "multiply(int a, int b)", variables: [{ name: "a", type: "int", value: "5", isReference: false }, { name: "b", type: "int", value: "10", isReference: false }] }, { methodName: "main(String[] args)", variables: [{ name: "x", type: "int", value: "5", isReference: false }, { name: "y", type: "int", value: "10", isReference: false }] }], heap: {}, arrows: [], spotlightStackVars: ["a", "b"], spotlightHeapObjects: [], spotlightHeapFields: [], stdout: "", activeBlock: LT_MUL, explanation: "multiply(5, 10) called, so a second stack frame is pushed on top. Parameters a=5 and b=10 are local to multiply().", bananaDiagram: LIVE_TRACE_BANANA },
+      { lineHighlight: 5, stack: [{ methodName: "multiply(int a, int b)", variables: [{ name: "a", type: "int", value: "5", isReference: false }, { name: "b", type: "int", value: "10", isReference: false }] }, { methodName: "main(String[] args)", variables: [{ name: "x", type: "int", value: "5", isReference: false }, { name: "y", type: "int", value: "10", isReference: false }] }], heap: {}, arrows: [], spotlightStackVars: ["a", "b"], spotlightHeapObjects: [], spotlightHeapFields: [], stdout: "", activeBlock: LT_MUL, explanation: "multiply(5, 10) called, so a second stack frame is pushed on top. Parameters a=5 and b=10 are local to multiply().", bananaDiagram: LIVE_TRACE_BANANA },
       // [5] step_line line=10, inside multiply
       { lineHighlight: 10, stack: [{ methodName: "multiply(int a, int b)", variables: [{ name: "a", type: "int", value: "5", isReference: false }, { name: "b", type: "int", value: "10", isReference: false }] }, { methodName: "main(String[] args)", variables: [{ name: "x", type: "int", value: "5", isReference: false }, { name: "y", type: "int", value: "10", isReference: false }] }], heap: {}, arrows: [], spotlightStackVars: ["a", "b"], spotlightHeapObjects: [], spotlightHeapFields: [], stdout: "", activeBlock: LT_MUL, explanation: "Executing: return a * b → 5 × 10 = 50. The multiply frame is about to pop.", bananaDiagram: LIVE_TRACE_BANANA },
       // [6] return line=10, multiply returning 50
       { lineHighlight: 10, stack: [{ methodName: "multiply(int a, int b)", variables: [{ name: "a", type: "int", value: "5", isReference: false }, { name: "b", type: "int", value: "10", isReference: false }, { name: "return value", type: "int", value: "50", isReference: false }] }, { methodName: "main(String[] args)", variables: [{ name: "x", type: "int", value: "5", isReference: false }, { name: "y", type: "int", value: "10", isReference: false }] }], heap: {}, arrows: [], spotlightStackVars: ["return value"], spotlightHeapObjects: [], spotlightHeapFields: [], stdout: "", activeBlock: LT_MUL, explanation: "multiply() returns 50. The frame will be popped, and main() receives the return value and will assign it to result.", bananaDiagram: LIVE_TRACE_BANANA },
-      // [7] step_line line=5, back in main, result not yet assigned
-      { lineHighlight: 5, stack: [{ methodName: "main(String[] args)", variables: [{ name: "x", type: "int", value: "5", isReference: false }, { name: "y", type: "int", value: "10", isReference: false }] }], heap: {}, arrows: [], spotlightStackVars: [], spotlightHeapObjects: [], spotlightHeapFields: [], stdout: "", activeBlock: LT_MAIN, explanation: "Back in main(). multiply's frame was popped. The return value 50 is being assigned to result...", bananaDiagram: LIVE_TRACE_BANANA },
       // [8] step_line line=6, result=50 assigned
-      { lineHighlight: 6, stack: [{ methodName: "main(String[] args)", variables: [{ name: "x", type: "int", value: "5", isReference: false }, { name: "y", type: "int", value: "10", isReference: false }, { name: "result", type: "int", value: "50", isReference: false }] }], heap: {}, arrows: [], spotlightStackVars: ["result"], spotlightHeapObjects: [], spotlightHeapFields: [], stdout: "", activeBlock: LT_MAIN, explanation: "result = 50 assigned on main's stack frame. About to call System.out.println.", bananaDiagram: LIVE_TRACE_BANANA },
+      { lineHighlight: 5, stack: [{ methodName: "main(String[] args)", variables: [{ name: "x", type: "int", value: "5", isReference: false }, { name: "y", type: "int", value: "10", isReference: false }, { name: "result", type: "int", value: "50", isReference: false }] }], heap: {}, arrows: [], spotlightStackVars: ["result"], spotlightHeapObjects: [], spotlightHeapFields: [], stdout: "", activeBlock: LT_MAIN, explanation: "result = 50 assigned on main's stack frame. About to call System.out.println.", bananaDiagram: LIVE_TRACE_BANANA },
       // [9] step_line line=7, println ran, stdout = "Result = 50"
-      { lineHighlight: 7, stack: [{ methodName: "main(String[] args)", variables: [{ name: "x", type: "int", value: "5", isReference: false }, { name: "y", type: "int", value: "10", isReference: false }, { name: "result", type: "int", value: "50", isReference: false }] }], heap: {}, arrows: [], spotlightStackVars: [], spotlightHeapObjects: [], spotlightHeapFields: [], stdout: "Result = 50", activeBlock: LT_MAIN, explanation: "System.out.println(\"Result = \" + result) printed \"Result = 50\" to stdout.", bananaDiagram: LIVE_TRACE_BANANA },
-      // [10] return line=7, main() returning void
-      { lineHighlight: 7, stack: [{ methodName: "main(String[] args)", variables: [{ name: "x", type: "int", value: "5", isReference: false }, { name: "y", type: "int", value: "10", isReference: false }, { name: "result", type: "int", value: "50", isReference: false }] }], heap: {}, arrows: [], spotlightStackVars: [], spotlightHeapObjects: [], spotlightHeapFields: [], stdout: "Result = 50", activeBlock: LT_MAIN, explanation: "main() returns void. Program execution complete. All stack frames are cleared.", bananaDiagram: LIVE_TRACE_BANANA },
+      { lineHighlight: 6, stack: [{ methodName: "main(String[] args)", variables: [{ name: "x", type: "int", value: "5", isReference: false }, { name: "y", type: "int", value: "10", isReference: false }, { name: "result", type: "int", value: "50", isReference: false }] }], heap: {}, arrows: [], spotlightStackVars: [], spotlightHeapObjects: [], spotlightHeapFields: [], stdout: "Result = 50", activeBlock: LT_MAIN, explanation: "System.out.println(\"Result = \" + result) printed \"Result = 50\" to stdout.", bananaDiagram: LIVE_TRACE_BANANA },
     ]
   }
 };
@@ -1153,17 +1148,14 @@ function getWalkthroughMessage(presetId: string, step: number) {
     }
   } else if (presetId === "livetrace") {
     switch (step) {
-      case 0: return "Real trace from java_jail, entering main(). Step forward to watch variables appear on the stack.";
-      case 1: return "Positioned at line 3, about to assign x = 5.";
-      case 2: return "x = 5 added to main's stack frame.";
-      case 3: return "y = 10 added. Next: multiply() will be called, pushing a second frame.";
-      case 4: return "multiply(5, 10) called, and a second stack frame appears with parameters a=5 and b=10.";
-      case 5: return "Inside multiply(), about to compute return a * b = 50.";
-      case 6: return "multiply() returns 50. See the return value on the frame before it is popped.";
-      case 7: return "Back in main(). multiply's frame was popped. Return value 50 is being assigned to result...";
-      case 8: return "result = 50 assigned. About to print.";
-      case 9: return "System.out.println ran, so 'Result = 50' appears in the stdout panel below.";
-      case 10: return "main() returns void. Execution complete. This trace came directly from sample_trace.json.";
+      case 0: return "Java entered main(). Its stack frame is ready, but no local variables have been created yet.";
+      case 1: return "Line 3 created the integer x and stored 5 directly in main's stack frame.";
+      case 2: return "Line 4 created the integer y beside x and stored 10 in it.";
+      case 3: return "Line 5 called multiply. Java copied x and y into parameters a and b in a new multiply stack frame.";
+      case 4: return "Line 10 evaluated a * b as 5 * 10, producing the integer 50.";
+      case 5: return "Line 10 returned 50. The multiply frame is about to be removed because that method is finished.";
+      case 6: return "Execution resumed on line 5 in main. The returned 50 was stored in a new integer named result.";
+      case 7: return "Line 6 printed 'Result = 50' to the output panel. The visible program is now complete.";
       default: return "Live trace complete.";
     }
   }
@@ -1374,7 +1366,7 @@ const LESSON_STEP_TITLES: Record<string, string[]> = {
   linkedlist: ["Create the first Node", "Create the second Node", "Link the Nodes", "Read a field"],
   arraylist: ["Create the array", "Write the first value", "Write the second value", "Track the size", "Create a larger array", "Copy a value"],
   stack: ["Create the stack", "Create the first Node", "Set the first top", "Create the second Node", "Preserve the old top", "Set the new top"],
-  livetrace: ["Assign x", "Assign y", "Call multiply", "Enter multiply", "Compute the result", "Return the result", "Resume main", "Store the result", "Print output", "Finish execution"],
+  livetrace: ["Assign x", "Assign y", "Call multiply", "Compute 5 x 10", "Return 50", "Store result", "Print output"],
 };
 
 const LESSON_GOALS: Record<string, string> = {
@@ -1479,16 +1471,19 @@ function LessonIntro({
 function LessonComplete({
   presetId,
   isCustomCode,
-  onRestart,
+  onTryAnother,
   onContinueToNextStage,
 }: {
   presetId: string;
   isCustomCode: boolean;
-  onRestart: () => void;
+  onTryAnother: () => void;
   onContinueToNextStage?: () => void;
 }) {
   const linkedList = presetId === "linkedlist" && !isCustomCode;
   const recap = isCustomCode ? [] : LESSON_RECAPS[presetId] ?? [];
+  const completedExampleName = isCustomCode
+    ? "Your custom Java program"
+    : SIMULATION_PRESETS[presetId]?.name ?? "Java program";
 
   return (
     <section className="lesson-complete">
@@ -1502,6 +1497,10 @@ function LessonComplete({
               ? "You traced the code you wrote"
               : "You completed the Java trace"}
         </h1>
+        <p className="lesson-completed-example">
+          <span>Completed example</span>
+          <strong>{completedExampleName}</strong>
+        </p>
         {linkedList && (
           <div className="lesson-chain" aria-label="head points to a Node containing 10, whose next field points to a Node containing 20">
             <span className="lesson-chain-variable">head</span><span className="lesson-chain-arrow">→</span>
@@ -1525,7 +1524,9 @@ function LessonComplete({
               Continue to post-test <ChevronRight size={15} aria-hidden="true" />
             </button>
           )}
-          <button type="button" className="btn-ghost" onClick={onRestart}><RotateCcw size={15} /> Review Lesson</button>
+          <button type="button" className="btn-ghost" onClick={onTryAnother}>
+            <Compass size={15} aria-hidden="true" /> Try another
+          </button>
         </div>
 
       </div>
@@ -1668,8 +1669,8 @@ export default function VisualizerExperience({
     setCurrentStep(0);
     setLessonPhase(options?.inPlace ? "ready" : "intro");
     if (options?.inPlace) onExampleAttempt?.(id);
-    /* The guide narrates one example only, so it never carries across. */
-    if (!hasGuidedWalkthrough(id)) setIsWalkthroughActive(false);
+    /* A newly loaded guided example starts at its first required card. */
+    setIsWalkthroughActive(Boolean(options?.inPlace && hasGuidedWalkthrough(id)));
   }, [abortPendingRun, onExampleAttempt]);
 
   const handleStartEdit = useCallback(() => {
@@ -1845,12 +1846,29 @@ export default function VisualizerExperience({
 
   if (lessonPhase === "complete") {
     return (
-      <LessonComplete
-        presetId={presetId}
-        isCustomCode={isCustomCode}
-        onRestart={handleReset}
-        onContinueToNextStage={onContinueToNextStage}
-      />
+      <>
+        <LessonComplete
+          presetId={presetId}
+          isCustomCode={isCustomCode}
+          onTryAnother={() => setIsExploreOpen(true)}
+          onContinueToNextStage={onContinueToNextStage}
+        />
+        <PostLessonExplorerModal
+          isOpen={isExploreOpen}
+          examples={SWITCHABLE_PRESET_IDS.filter((id) => SIMULATION_PRESETS[id]).map((id) => ({
+            id,
+            name: SIMULATION_PRESETS[id].name,
+          }))}
+          activeExampleId={presetId}
+          onClose={() => setIsExploreOpen(false)}
+          onLoadExample={(id) => {
+            setIsExploreOpen(false);
+            setHasFinishedLesson(true);
+            onLessonComplete?.();
+            handlePresetChange(id, { inPlace: true });
+          }}
+        />
+      </>
     );
   }
 
@@ -1870,39 +1888,14 @@ export default function VisualizerExperience({
           </code>
         </div>
 
-        {/*
-          Post-lesson controls. `showPostLessonTools` keeps this off the screen
-          for the whole measured lesson: a participant only reaches it after the
-          completion screen, and a production build has no other way in.
-        */}
-        {postLessonToolsAvailable && !isEditing && (
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <label className="lesson-example-select" style={{ fontSize: 10 }}>
-              <span>Example</span>
-              <select
-                value={isCustomCode ? "" : presetId}
-                onChange={(event) => {
-                  if (event.target.value) handlePresetChange(event.target.value, { inPlace: true });
-                }}
-                style={{ minWidth: 220, padding: "3px 8px", fontSize: 11 }}
-                aria-label="Switch to another example"
-              >
-                {isCustomCode && <option value="">Your code</option>}
-                {Object.values(SIMULATION_PRESETS).map((option) => (
-                  <option key={option.id} value={option.id}>{option.name}</option>
-                ))}
-              </select>
-            </label>
-            {hasFinishedLesson && (
-              <button
-                type="button"
-                className="lesson-guide-button"
-                onClick={() => setLessonPhase("complete")}
-              >
-                Back to summary
-              </button>
-            )}
-          </div>
+        {postLessonToolsAvailable && hasFinishedLesson && !isEditing && (
+          <button
+            type="button"
+            className="lesson-guide-button flex-shrink-0"
+            onClick={() => setLessonPhase("complete")}
+          >
+            Back to summary
+          </button>
         )}
       </div>
 
@@ -1987,6 +1980,7 @@ export default function VisualizerExperience({
       )}
 
       <InteractiveWalkthrough
+        key={presetId}
         isActive={isWalkthroughActive && guideAvailable}
         currentLessonStep={lessonStep}
         lessonPhase={lessonPhase}
@@ -2003,7 +1997,10 @@ export default function VisualizerExperience({
 
       <PostLessonExplorerModal
         isOpen={isExploreOpen}
-        examples={Object.values(SIMULATION_PRESETS).map((preset) => ({ id: preset.id, name: preset.name }))}
+        examples={SWITCHABLE_PRESET_IDS.filter((id) => SIMULATION_PRESETS[id]).map((id) => ({
+          id,
+          name: SIMULATION_PRESETS[id].name,
+        }))}
         activeExampleId={presetId}
         onClose={() => setIsExploreOpen(false)}
         onLoadExample={(id) => {

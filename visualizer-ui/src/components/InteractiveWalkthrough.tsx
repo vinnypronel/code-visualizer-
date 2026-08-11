@@ -10,14 +10,17 @@ import GuideSpotlight, {
   useTargetRect,
   type GuideSide,
 } from "@/components/guide/GuideSpotlight";
+import {
+  GUIDED_WALKTHROUGHS,
+} from "@/data/guidedWalkthroughs";
 
 export interface InteractiveWalkthroughProps {
   isActive: boolean;
-  currentLessonStep: number; // 1 to 4
+  currentLessonStep: number;
   lessonPhase: "intro" | "ready" | "result" | "complete";
   /*
    * Which example is on screen. The guide narrates specific source lines, so it
-   * only runs for presets it has written content for (see WALKTHROUGH_CONTENT
+   * only runs for presets it has written content for (see GUIDED_WALKTHROUGHS
    * below) and never for code the user wrote and ran themselves.
    */
   presetId: string;
@@ -35,42 +38,6 @@ export interface InteractiveWalkthroughProps {
   onExploreExamples?: () => void;
 }
 
-/* The four executable lines still alternate between run and observe cards.
- * Two teaching-only cards introduce the surrounding Java before line 3, so
- * the complete walkthrough contains ten deliberately separate cards. */
-type SubPhase = "run" | "observe";
-
-interface WalkthroughStepDef {
-  expectedLessonStep: number;
-  subPhase: SubPhase;
-  title: string;
-  lineNumber?: number;
-  codeSnippet?: string;
-  showCodeOnObserve?: boolean;
-  setupNote?: {
-    line1Code: string;
-    line1Why: string;
-    line2Code: string;
-    line2Why: string;
-  };
-  blueprintNote?: {
-    linesCode: string;
-    details: string[];
-  };
-  explanationText: string;
-  /* Teaching-only cards can advance within the guide without executing Java.
-   * This lets foundational concepts appear one at a time before the runnable
-   * line is introduced. */
-  actionKind?: "next" | "primary";
-  phaseLabel?: string;
-  /* Label for the live action button inside the card. It performs the real
-   * app action, so the participant can advance from the card or from the
-   * workspace and the card visibly moves either way. */
-  actionButtonLabel: string;
-  selector: string;
-  placement: GuideSide;
-}
-
 const PRIMARY_BUTTON_SELECTOR = "#onboarding-playback-controls";
 const BACK_BUTTON_SELECTOR = "#onboarding-step-back";
 
@@ -83,7 +50,9 @@ const JAVA_KEYWORDS = new Set([
   "try", "void", "while",
 ]);
 
-const JAVA_TYPES = new Set(["LinkedListDemo", "Node", "String"]);
+const JAVA_TYPES = new Set([
+  "ArrayListDemo", "LinkedListDemo", "MyStack", "Node", "Sample", "StackDemo", "String", "System",
+]);
 
 function JavaSyntax({ code, className = "" }: { code: string; className?: string }) {
   const tokens = code.split(/(\s+|[().,;=])/);
@@ -123,153 +92,6 @@ function JavaSyntax({ code, className = "" }: { code: string; className?: string
   );
 }
 
-const walkthroughSteps: WalkthroughStepDef[] = [
-  {
-    expectedLessonStep: 1,
-    subPhase: "run",
-    title: "Understanding the basics",
-    setupNote: {
-      line1Code: "public class LinkedListDemo {",
-      line1Why: 'This defines a class named "LinkedListDemo" that holds the program code. It does not create an object.',
-      line2Code: "public static void main(String[] args) {",
-      line2Why: 'This defines where Java starts running. It does not create anything yet; Java follows the lines inside main from top to bottom.',
-    },
-    explanationText:
-      "These two lines prepare the program. They do not create a Node or change the visualization yet.",
-    actionKind: "next",
-    phaseLabel: "Learn the basics",
-    actionButtonLabel: "Next",
-    selector: "#onboarding-code-content",
-    placement: "right",
-  },
-  {
-    expectedLessonStep: 1,
-    subPhase: "run",
-    title: "Meet the Node blueprint",
-    blueprintNote: {
-      linesCode: "class Node {\n  int value;\n  Node next;\n  Node(int value) {\n    this.value = value;\n  }\n}",
-      details: [
-        'class Node defines the recipe. It does not create a Node object yet.',
-        'int value and Node next say that every Node object will have a number and a link. Before they are changed, value is 0 and next is null.',
-        'Node(int value) is the constructor. It runs whenever the program uses new Node(...).',
-        'this.value means the value field inside the new object. The value on the right is the number passed in, such as 10. The assignment stores that number in the object.',
-      ],
-    },
-    explanationText:
-      "This class describes what every Node will contain. It is a blueprint only; no Node object exists until Java reaches new Node(...).",
-    actionKind: "next",
-    phaseLabel: "Understand a Node",
-    actionButtonLabel: "Next",
-    selector: "#onboarding-code-content",
-    placement: "right",
-  },
-  {
-    expectedLessonStep: 1,
-    subPhase: "run",
-    title: "Create the first node",
-    lineNumber: 3,
-    codeSnippet: "Node head = new Node(10);",
-    explanationText:
-      'On line 3, new Node(10) creates one Node object. Its constructor stores 10 in the value field, while next remains null. Node head creates a Stack variable named "head", and the = makes head point to the new object.',
-    actionKind: "primary",
-    actionButtonLabel: "Run line 3",
-    selector: PRIMARY_BUTTON_SELECTOR,
-    placement: "right",
-  },
-  {
-    expectedLessonStep: 1,
-    subPhase: "observe",
-    title: "First node created",
-    explanationText:
-      'Look at the visualizer: variable "head" appears on the Stack holding a reference arrow pointing to [Object 1] containing a value of 10 in Object Storage.',
-    actionButtonLabel: "Continue",
-    selector: "#onboarding-memory-view",
-    placement: "center",
-  },
-  {
-    expectedLessonStep: 2,
-    subPhase: "run",
-    title: "Create the second node",
-    lineNumber: 4,
-    codeSnippet: "Node temp = new Node(20);",
-    explanationText:
-      'To connect a list we need a second node. This line creates variable named "temp" on the Stack and allocates a new Node object holding 20.',
-    actionButtonLabel: "Run line 4",
-    selector: PRIMARY_BUTTON_SELECTOR,
-    placement: "right",
-  },
-  {
-    expectedLessonStep: 2,
-    subPhase: "observe",
-    title: "Second node created",
-    explanationText:
-      'Look at Object Storage: You now have two separate Node objects (10 and 20) sitting side by side in memory, referenced by variables "head" and "temp".',
-    actionButtonLabel: "Continue",
-    selector: "#onboarding-memory-view",
-    placement: "center",
-  },
-  {
-    expectedLessonStep: 3,
-    subPhase: "run",
-    title: "Link the nodes",
-    lineNumber: 5,
-    codeSnippet: "head.next = temp;",
-    explanationText:
-      'This is the key line that links the list. It sets the "next" field inside variable "head" to point directly to the Node referenced by "temp".',
-    actionButtonLabel: "Run line 5",
-    selector: PRIMARY_BUTTON_SELECTOR,
-    placement: "right",
-  },
-  {
-    expectedLessonStep: 3,
-    subPhase: "observe",
-    title: "Nodes connected!",
-    lineNumber: 5,
-    codeSnippet: "head.next = temp;",
-    showCodeOnObserve: true,
-    explanationText:
-      'The moving [Object 2] label is a reference value being copied from "temp" into the "next" field of [Object 1] (the Node containing 10). Object 2 does not move. When the reference lands, Node 10 points to Node 20, forming the linked list.',
-    actionButtonLabel: "Continue",
-    selector: "#onboarding-memory-view",
-    placement: "center",
-  },
-  {
-    expectedLessonStep: 4,
-    subPhase: "run",
-    title: "Read a value out of a node",
-    lineNumber: 6,
-    codeSnippet: "int value = head.value;",
-    explanationText:
-      'Line 6 follows variable "head" to its Node, reads the number in the "value" field, and copies that number into a new variable named "value" on the Stack.',
-    actionButtonLabel: "Run line 6",
-    selector: PRIMARY_BUTTON_SELECTOR,
-    placement: "right",
-  },
-  {
-    expectedLessonStep: 4,
-    subPhase: "observe",
-    title: "Lesson complete!",
-    explanationText:
-      'The moving 10 is the integer value being copied from Object 1\'s "value" field into a new Stack variable also named "value". Object 1 keeps its own 10; reading a primitive value copies it rather than removing it. You have now traced the whole program!',
-    actionButtonLabel: "Finish Lesson",
-    selector: "#onboarding-memory-view",
-    placement: "center",
-  },
-];
-
-/*
- * Guided content, keyed by preset id.
- *
- * Every step above names a linked-list line verbatim, so the array is
- * registered under "linkedlist" only. Any other example, and any program the
- * user ran themselves, gets no guide rather than a guide describing code that
- * is not on screen. To cover another example later, write its steps and add
- * one entry here, then add the id to WALKTHROUGH_PRESET_IDS in studyConfig.
- */
-const WALKTHROUGH_CONTENT: Record<string, WalkthroughStepDef[]> = {
-  linkedlist: walkthroughSteps,
-};
-
 const CARD_WIDTH = 380;
 const OBSERVE_CARD_WIDTH = 390;
 const CARD_MAX_HEIGHT_FALLBACK = 420;
@@ -297,7 +119,7 @@ export default function InteractiveWalkthrough({
   const reducedMotion = usePrefersReducedMotion();
 
   /* No narration for this example means no guide at all. */
-  const steps = isCustomCode ? undefined : WALKTHROUGH_CONTENT[presetId];
+  const steps = isCustomCode ? undefined : GUIDED_WALKTHROUGHS[presetId];
 
   const isOpeningSequence = currentLessonStep === 1 && lessonPhase === "ready";
   const currentIndex = isOpeningSequence
@@ -333,6 +155,7 @@ export default function InteractiveWalkthrough({
   const backButtonRect = useTargetRect(visible ? BACK_BUTTON_SELECTOR : null, visible);
   const explainMoreButtonRect = useTargetRect(visible ? "#onboarding-explain-more-button" : null, visible);
   const explanationToggleRect = useTargetRect(visible ? "#onboarding-explanation-toggle" : null, visible);
+  const explanationDetailsRect = useTargetRect(visible ? "#step-explanation-details" : null, visible);
 
   /* Keep the strong code line treatment on while the guide is running so the
    * line the card is talking about is obvious in the editor. */
@@ -358,7 +181,7 @@ export default function InteractiveWalkthrough({
 
       if (
         activeStepData?.subPhase === "observe" &&
-        activeStepData.expectedLessonStep === 4 &&
+        currentIndex === (steps?.length ?? 0) - 1 &&
         live
       ) {
         const margin = 24;
@@ -379,10 +202,6 @@ export default function InteractiveWalkthrough({
 
       if (
         activeStepData?.subPhase === "run" &&
-        (activeStepData.expectedLessonStep === 1 ||
-          activeStepData.expectedLessonStep === 2 ||
-          activeStepData.expectedLessonStep === 3 ||
-          activeStepData.expectedLessonStep === 4) &&
         live
       ) {
         const margin = 24;
@@ -493,7 +312,7 @@ export default function InteractiveWalkthrough({
       observer?.disconnect();
       window.removeEventListener("resize", reposition);
     };
-  }, [visible, targetRect, activeStepData]);
+  }, [visible, targetRect, activeStepData, currentIndex, steps?.length]);
 
   /*
    * The card auto-places itself out of the way of whatever it is describing,
@@ -622,6 +441,7 @@ export default function InteractiveWalkthrough({
           backButtonRect,
           explainMoreButtonRect,
           explanationToggleRect,
+          explanationDetailsRect,
         ]}
         side={placement?.side ?? "center"}
         reducedMotion={reducedMotion}
@@ -648,6 +468,7 @@ export default function InteractiveWalkthrough({
             left: dragPos?.left ?? placement?.left ?? 0,
             width: `min(${isObserve ? OBSERVE_CARD_WIDTH : CARD_WIDTH}px, calc(100vw - 32px))`,
             maxHeight: "calc(100vh - 32px)",
+            overflowY: "auto",
             background: "var(--bg-panel)",
             borderColor: "var(--border)",
             boxShadow: "0 16px 36px rgba(23, 32, 51, 0.18)",
@@ -677,7 +498,7 @@ export default function InteractiveWalkthrough({
             <div className="mb-2 p-2 rounded-lg bg-slate-950/90 border border-slate-800 text-[10.5px]">
               <div className="flex items-center gap-1 text-[9.5px] font-mono text-[#16a34a] font-bold uppercase tracking-wider mb-1">
                 <HelpCircle size={11} aria-hidden="true" />
-                <span>Lines 1-2: where Java starts</span>
+                <span>{activeStepData.setupNote.heading}</span>
               </div>
               <div className="mb-1.5">
                 <JavaSyntax code={activeStepData.setupNote.line1Code} className="font-mono text-[10.5px] block" />
@@ -694,7 +515,7 @@ export default function InteractiveWalkthrough({
             <div className="mb-2 p-2 rounded-lg bg-slate-950/90 border border-slate-800 text-[11px]">
               <div className="flex items-center gap-1 text-[10px] font-mono text-[#16a34a] font-bold uppercase tracking-wider mb-1">
                 <HelpCircle size={12} aria-hidden="true" />
-                <span>Lines 10-16: how Java builds a Node</span>
+                <span>{activeStepData.blueprintNote.heading}</span>
               </div>
               <JavaSyntax code={activeStepData.blueprintNote.linesCode} className="font-mono text-[10.5px] leading-tight block whitespace-pre-wrap" />
               <ul className="mt-1.5 space-y-1 text-slate-300 text-[10px] leading-tight list-disc pl-4">

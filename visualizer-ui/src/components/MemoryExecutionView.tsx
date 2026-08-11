@@ -811,9 +811,14 @@ export default function MemoryExecutionView({
                             <div className="grid grid-cols-3 gap-1 p-1 rounded-md border" style={{ background: "var(--bg-panel-2)", borderColor: "var(--border)" }}>
                               {obj.arrayValues?.map((value, aIdx) => {
                                 const isSlotSpotlighted = spotlightHeapFields.includes(`${obj.id}-${aIdx}`);
+                                /* An array slot is a field like any other, so
+                                 * it earns the same stage-3 reveal and the same
+                                 * CHANGED marker. Without them the panel says
+                                 * "Changed items are marked" while the one cell
+                                 * the line actually wrote stays unmarked. */
                                 const slotClass = hasSpotlight
                                   ? isSlotSpotlighted
-                                    ? "spotlight-active-green"
+                                    ? "spotlight-active-green reveal-stage-3"
                                     : ""
                                   : "";
 
@@ -828,6 +833,7 @@ export default function MemoryExecutionView({
                                     <span className="text-xs font-mono font-bold text-emerald-400">
                                       {value}
                                     </span>
+                                    {isSlotSpotlighted && <span className="changed-badge mt-1">Changed</span>}
                                   </div>
                                 );
                               })}

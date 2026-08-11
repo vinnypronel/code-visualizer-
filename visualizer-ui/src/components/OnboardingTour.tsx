@@ -21,7 +21,7 @@ interface TourStep {
 const STEPS: TourStep[] = [
   {
     title: "Follow the lesson path",
-    content: "This row shows the four Java concepts you will complete. The highlighted section is your current step.",
+    content: "This row shows the Java concepts you will complete in this lesson. The highlighted section is your current step.",
     selector: "#onboarding-lesson-progress",
     placement: "bottom",
   },

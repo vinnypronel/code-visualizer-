@@ -79,7 +79,26 @@ export function showPostLessonTools(lessonPhase: string, hasFinishedLesson: bool
  * no guide at all. Add an id here only once InteractiveWalkthrough actually
  * carries steps for it.
  */
-export const WALKTHROUGH_PRESET_IDS: readonly string[] = ["linkedlist"];
+export const WALKTHROUGH_PRESET_IDS: readonly string[] = [
+  "linkedlist",
+  "arraylist",
+  "stack",
+  "livetrace",
+];
+
+/*
+ * Examples a participant may switch to after finishing the lesson.
+ *
+ * Every example listed here has a matching required walkthrough. Live Trace is
+ * included after its raw JDI events are condensed into meaningful Java actions
+ * in the visualizer preset.
+ */
+export const SWITCHABLE_PRESET_IDS: readonly string[] = [
+  "linkedlist",
+  "arraylist",
+  "stack",
+  "livetrace",
+];
 
 /*
  * Whether the guided walkthrough has content for this preset. Code the

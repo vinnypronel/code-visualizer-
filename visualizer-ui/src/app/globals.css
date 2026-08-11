@@ -522,6 +522,26 @@ button:disabled, [role="button"][aria-disabled="true"] {
   text-align: center;
 }
 
+.lesson-completed-example {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.lesson-completed-example span {
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.lesson-completed-example strong {
+  color: var(--accent);
+  font-size: 16px;
+}
+
 .lesson-chain {
   display: flex;
   align-items: center;
