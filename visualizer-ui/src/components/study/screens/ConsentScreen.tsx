@@ -37,8 +37,8 @@ export default function ConsentScreen() {
           </div>
         </div>
 
-        {/* Agreement Question Section - Wide Horizontally & Short Vertically */}
-        <div className="flex-1 w-full min-w-[340px] max-w-[620px] flex flex-col justify-between self-stretch pt-1">
+        {/* Agreement Question Section Moved Down a Lot More */}
+        <div className="flex-1 w-full min-w-[340px] max-w-[620px] flex flex-col justify-between self-stretch pt-28 sm:pt-36">
           <fieldset className="space-y-3 w-full">
             <legend className="text-[14px] font-extrabold mb-2" style={{ color: "#0f172a" }}>
               Do you agree to participate in this study?
