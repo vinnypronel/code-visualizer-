@@ -298,22 +298,16 @@ export default function InteractiveWalkthrough({
           return;
         }
 
-        const resultBottom = visibleBottom - (isFirstResult ? 34 : margin);
         setPlacement({
           top: Math.max(
             margin,
-            Math.min(
-              resultBottom - cardHeight,
-              window.innerHeight - cardHeight - margin,
-            ),
+            window.innerHeight - cardHeight - 105,
           ),
           left: Math.max(
             margin,
             Math.min(
               window.innerWidth - cardWidth - margin,
-              isFirstResult
-                ? live.left + 24
-                : live.left + (live.width - cardWidth) / 2,
+              isFirstResult ? live.left + 8 : live.left - 54,
             ),
           ),
           side: "center",

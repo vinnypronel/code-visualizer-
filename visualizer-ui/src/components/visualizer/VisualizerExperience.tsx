@@ -1875,30 +1875,6 @@ export default function VisualizerExperience({
   return (
     <div className="flex flex-col h-full overflow-hidden select-none font-sans" style={{ background: "var(--bg-base)", color: "var(--text-primary)" }}>
       <LessonProgress presetId={presetId} current={lessonStep} total={totalLessonSteps} phase={lessonPhase} />
-      {/* This bar names the highlighted line only. The step number and title live in
-        * the progress rail above, and the run state lives in the explanation panel
-        * below, so neither is repeated here. */}
-      <div className="visualizer-context-bar">
-        <div className="min-w-0">
-          <span className="visualizer-context-label">
-            {isEditing ? "Editing your code" : "Highlighted line"}
-          </span>
-          <code className="visualizer-context-code">
-            {isEditing ? "Run my code when you are ready" : activeLineText}
-          </code>
-        </div>
-
-        {postLessonToolsAvailable && hasFinishedLesson && !isEditing && (
-          <button
-            type="button"
-            className="lesson-guide-button flex-shrink-0"
-            onClick={() => setLessonPhase("complete")}
-          >
-            Back to summary
-          </button>
-        )}
-      </div>
-
       {/* Main Workspace Layout */}
       <div ref={containerRef} className="visualizer-main flex flex-1 min-h-0 overflow-hidden relative">
         
