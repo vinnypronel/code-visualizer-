@@ -10,7 +10,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import StudyShell, { TimerChip } from "@/components/study/StudyShell";
 import { useStudy } from "@/components/study/StudyProvider";
-import { formatMMSS, useCountUp } from "@/components/study/useTimers";
+import { formatMMSS, useCountdown } from "@/components/study/useTimers";
 import StaticMaterialsStub from "@/components/study/StaticMaterialsStub";
 import VisualizerExperience from "@/components/visualizer/VisualizerExperience";
 
@@ -19,7 +19,8 @@ import { BackButtonWithTooltip } from "@/components/study/screens/TimedTestScree
 export default function LearningScreen() {
   const { session, logEvent, goTo } = useStudy();
   const [startAtMs] = useState(() => Date.now());
-  const elapsed = useCountUp(startAtMs);
+  const remaining = useCountdown(900, startAtMs);
+  const urgent = remaining <= 60;
 
   // The lesson can be replayed, so completion is logged only the first time.
   const loggedCompletionRef = useRef(false);
@@ -64,7 +65,11 @@ export default function LearningScreen() {
             label="Back to Pre-test"
             onClick={() => goTo("pretest")}
           />
-          <TimerChip label="Elapsed" value={formatMMSS(elapsed)} />
+          <TimerChip
+            label="Recommended time left"
+            value={formatMMSS(remaining)}
+            urgent={urgent}
+          />
         </div>
       }
     >
