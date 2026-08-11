@@ -23,23 +23,23 @@ export default function ConsentScreen() {
       heading={CONSENT_META.title}
       subheading="Please read the following before deciding whether to take part."
     >
-      <div className="flex flex-col justify-between max-w-[1060px] ml-0 mr-auto">
-        {/* Expanded Scrollable Consent Form Text Box - Clipped Inside Border */}
+      <div className="flex flex-col lg:flex-row items-start gap-8 max-w-[1180px] ml-0 mr-auto">
+        {/* Scrollable Consent Form Text Box - Thinner Width & Longer Vertically */}
         <div
-          className="rounded-xl overflow-hidden shadow-sm flex-shrink-0"
+          className="w-full lg:w-[600px] max-w-[600px] rounded-xl overflow-hidden shadow-sm flex-shrink-0"
           style={{
             background: "#ffffff",
             border: "1.5px solid #64748b",
           }}
         >
-          <div className="p-5 h-[430px] max-h-[52vh] overflow-y-auto panel-scroll">
+          <div className="p-5 h-[500px] max-h-[64vh] overflow-y-auto panel-scroll">
             <ConsentBody />
           </div>
         </div>
 
-        {/* Agreement Question Section Pushed Down + Continue Button Moved Farther Right */}
-        <div className="mt-5 flex flex-col md:flex-row items-start md:items-end justify-between gap-6">
-          <fieldset className="space-y-2.5 flex-1 w-full min-w-0">
+        {/* Agreement Question Section Moved to the Right a Bunch */}
+        <div className="flex-1 w-full min-w-[320px] flex flex-col justify-between self-stretch pt-1">
+          <fieldset className="space-y-2.5 w-full">
             <legend className="text-[14px] font-extrabold mb-2" style={{ color: "#0f172a" }}>
               Do you agree to participate in this study?
             </legend>
@@ -95,8 +95,8 @@ export default function ConsentScreen() {
             })}
           </fieldset>
 
-          {/* Continue Button Moved Farther Right */}
-          <div className="flex flex-col items-end gap-2 flex-shrink-0 self-end pb-0.5 pl-4">
+          {/* Continue Button */}
+          <div className="mt-6 flex flex-col items-end gap-2 flex-shrink-0 self-end">
             {assignError && (
               <span className="text-[12px]" style={{ color: "var(--danger)" }}>
                 {assignError}
