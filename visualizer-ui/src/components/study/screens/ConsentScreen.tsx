@@ -23,7 +23,7 @@ export default function ConsentScreen() {
       heading={CONSENT_META.title}
       subheading="Please read the following before deciding whether to take part."
     >
-      <div className="flex flex-col lg:flex-row items-start gap-8 w-full max-w-[1440px] -ml-3 sm:-ml-6 mr-auto">
+      <div className="flex flex-col lg:flex-row items-start gap-5 w-full max-w-[1320px] -ml-3 sm:-ml-6 mr-auto">
         {/* Scrollable Consent Form Text Box */}
         <div
           className="w-full lg:w-[560px] max-w-[560px] rounded-xl overflow-hidden shadow-sm flex-shrink-0"
@@ -37,9 +37,9 @@ export default function ConsentScreen() {
           </div>
         </div>
 
-        {/* Agreement Question Section Moved All The Way Down + Continue Button Placed Farther Right */}
-        <div className="flex-1 w-full min-w-[340px] flex flex-col justify-end self-stretch pb-1">
-          <div className="flex flex-col xl:flex-row items-start xl:items-end justify-between gap-6 w-full mt-auto">
+        {/* Agreement Question & Continue Group Moved Left Next to Consent Box */}
+        <div className="flex-initial w-auto min-w-[340px] max-w-[680px] flex flex-col justify-end self-stretch pb-1">
+          <div className="flex flex-col sm:flex-row items-start sm:items-end justify-start gap-4 w-full mt-auto">
             {/* Agreement Question & Option Boxes (Untouched Sizing) */}
             <fieldset className="space-y-2.5 w-full max-w-[440px] flex-shrink-0">
               <legend className="text-[14px] font-extrabold mb-2" style={{ color: "#0f172a" }}>
@@ -97,8 +97,8 @@ export default function ConsentScreen() {
               })}
             </fieldset>
 
-            {/* Continue Button Shifted Farther Right */}
-            <div className="flex flex-col items-end gap-2 flex-shrink-0 self-end xl:self-end pb-0.5 ml-auto">
+            {/* Continue Button Joined Right Next to Options */}
+            <div className="flex flex-col items-end gap-2 flex-shrink-0 self-end pb-0.5 ml-2">
               {assignError && (
                 <span className="text-[12px]" style={{ color: "var(--danger)" }}>
                   {assignError}
