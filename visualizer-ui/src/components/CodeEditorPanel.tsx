@@ -305,7 +305,7 @@ export default function CodeEditorPanel({
             <div className="flex items-center gap-2">
               {showGuideButton && (
                 <button id="onboarding-guide-button" type="button" className="lesson-guide-button" onClick={onOpenGuide}>
-                  <HelpCircle size={14} aria-hidden="true" /> Guide
+                  <HelpCircle size={14} aria-hidden="true" /> Reset Guide
                 </button>
               )}
               {canEdit && (
