@@ -97,6 +97,32 @@ const INITIAL_SESSION: SessionState = {
   posttestResponses: {},
 };
 
+/*
+ * Session persistence.
+ *
+ * Without this, the whole session lives in React memory, so a refresh, an
+ * accidental tab close, or a browser restart drops the participant back on the
+ * consent form with no ID. Consenting a second time mints a SECOND participant
+ * ID through the atomic sequence, which splits one person's data across two
+ * rows and is invisible at analysis time. Restoring instead puts them back
+ * exactly where they were, with the same ID.
+ *
+ * Only sessions that have an ID are stored, so nothing is written before
+ * consent. Restoring happens in an effect after mount rather than in the
+ * initial state, so the server and the first client render agree.
+ */
+const SESSION_KEY = "study.session.v1";
+
+/*
+ * A stored session is abandoned after this long. It bounds the damage when a
+ * shared lab machine moves from one participant to the next: a stale session
+ * cannot silently attach a new person's answers to yesterday's ID.
+ */
+const SESSION_MAX_AGE_MS = 12 * 60 * 60 * 1000;
+
+/* Escape hatch for a shared machine: /?new=1 always starts a clean session. */
+const FORCE_NEW_PARAM = "new";
+
 export function StudyProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<SessionState>(INITIAL_SESSION);
   const [assignError, setAssignError] = useState<string | null>(null);
@@ -105,6 +131,32 @@ export function StudyProvider({ children }: { children: React.ReactNode }) {
   // A ref that always holds the latest session, so logEvent can read the
   // participant ID without being re-created on every state change.
   const sessionRef = useLatestRef(session);
+
+  /*
+   * Restore a session left behind by a refresh or a closed tab. Runs once,
+   * after mount, so there is no hydration mismatch. A stored session only
+   * exists once an ID has been minted, so this can never resurrect a
+   * half-finished consent form.
+   */
+  useEffect(() => {
+    const stored = readStoredSession();
+    // Setting state from an effect is exactly right here: localStorage cannot
+    // be read during render without the server and client disagreeing, so the
+    // first paint has to be the pristine session and the restore has to land
+    // immediately after mount.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (stored) setSession(stored);
+  }, []);
+
+  /*
+   * Mirror the session to storage whenever it changes, but only once it has an
+   * ID worth restoring. Writing before consent would persist nothing useful and
+   * would make a fresh visit look like a resumed one.
+   */
+  useEffect(() => {
+    if (!session.participantId) return;
+    writeStoredSession(session);
+  }, [session]);
 
   const goTo = useCallback((phase: Phase) => {
     setSession((s) => ({ ...s, phase }));
@@ -125,6 +177,12 @@ export function StudyProvider({ children }: { children: React.ReactNode }) {
   const acceptConsent = useCallback(async () => {
     setIsAssigning(true);
     setAssignError(null);
+    // Instant transition: move to page 2 (assigned) immediately so the user sees skeleton loaders right away
+    setSession((s) => ({
+      ...s,
+      phase: "assigned",
+    }));
+
     try {
       const res = await fetch("/api/session/assign", {
         method: "POST",
@@ -350,6 +408,52 @@ function sleep(ms: number): Promise<void> {
 
 function makeOutboxId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+/*
+ * Session storage helpers. Guarded the same way as the outbox, since this
+ * module is also evaluated during server rendering. A malformed or expired
+ * entry is treated as absent and cleared, so a bad value can never wedge a
+ * participant on a screen they cannot leave.
+ */
+function readStoredSession(): SessionState | null {
+  if (typeof window === "undefined") return null;
+  try {
+    // A researcher resetting a shared machine between participants.
+    if (new URLSearchParams(window.location.search).has(FORCE_NEW_PARAM)) {
+      window.localStorage.removeItem(SESSION_KEY);
+      return null;
+    }
+
+    const raw = window.localStorage.getItem(SESSION_KEY);
+    if (!raw) return null;
+
+    const parsed = JSON.parse(raw) as { savedAt?: number; session?: SessionState };
+    const savedAt = parsed?.savedAt ?? 0;
+    const session = parsed?.session;
+
+    if (!session?.participantId || Date.now() - savedAt > SESSION_MAX_AGE_MS) {
+      window.localStorage.removeItem(SESSION_KEY);
+      return null;
+    }
+
+    return session;
+  } catch {
+    return null;
+  }
+}
+
+function writeStoredSession(session: SessionState): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(
+      SESSION_KEY,
+      JSON.stringify({ savedAt: Date.now(), session }),
+    );
+  } catch {
+    // Storage can be full or blocked. Losing persistence is survivable; the
+    // in-memory session still carries the participant through in one sitting.
+  }
 }
 
 /*

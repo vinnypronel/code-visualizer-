@@ -46,6 +46,14 @@ body {
   overflow: hidden;
 }
 
+button, [role="button"] {
+  cursor: pointer;
+}
+
+button:disabled, [role="button"][aria-disabled="true"] {
+  cursor: not-allowed;
+}
+
 /* ─── Scrollbar ──────────────────────────────────────────────────────── */
 ::-webkit-scrollbar        { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track  { background: transparent; }
@@ -116,6 +124,49 @@ body {
   animation: slide-value 1.8s cubic-bezier(0.25, 1, 0.5, 1) forwards;
   z-index: 50;
   border-radius: 6px;
+}
+
+/*
+ * Staged reveal of a step's result.
+ *
+ * Running a line used to make everything it changed appear at once, which is
+ * the moment a student most needs to be walked through. These stages let the
+ * pieces arrive in the order the line actually causes them: the variable is
+ * created on the stack, then the object it points to, then the reference
+ * linking them and any field that changed inside an object.
+ *
+ * Applied by adding the class, not by remounting, so a dragged box keeps its
+ * position. The class is removed while a line is only "ready to run", which is
+ * what makes the animation replay on the next step.
+ *
+ * "both" fill mode holds the element invisible through its delay. Total run is
+ * about 1.2 seconds, three discrete arrivals, nothing repeating, so it stays
+ * far below any flashing threshold.
+ */
+@keyframes memory-reveal {
+  from { opacity: 0; transform: translateY(6px) scale(0.97); }
+  to   { opacity: 1; transform: none; }
+}
+
+.reveal-stage-1 { animation: memory-reveal 380ms cubic-bezier(0.16, 1, 0.3, 1) 0ms both; }
+.reveal-stage-2 { animation: memory-reveal 380ms cubic-bezier(0.16, 1, 0.3, 1) 420ms both; }
+.reveal-stage-3 { animation: memory-reveal 380ms cubic-bezier(0.16, 1, 0.3, 1) 840ms both; }
+
+/* Arrows are strokes, so they fade rather than move. */
+.reveal-arrow { animation: memory-arrow-reveal 420ms ease-out 840ms both; }
+
+@keyframes memory-arrow-reveal {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal-stage-1,
+  .reveal-stage-2,
+  .reveal-stage-3,
+  .reveal-arrow {
+    animation: none;
+  }
 }
 
 /* ─── Spotlight Animation Effects ─── */
@@ -292,16 +343,20 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid var(--border);
+  border: 1px solid #b8c4d4;
   border-radius: 6px;
-  color: var(--text-secondary);
-  background: transparent;
+  color: var(--text-primary);
+  background: var(--bg-panel);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
   cursor: pointer;
+  transition: all 0.15s ease;
 }
 
 .icon-button:hover:not(:disabled) {
-  color: var(--text-primary);
-  background: var(--bg-panel);
+  color: var(--accent);
+  border-color: var(--accent);
+  background: #f0f6ff;
+  box-shadow: 0 2px 4px rgba(23, 105, 170, 0.12);
 }
 
 .visualizer-context-bar {
@@ -531,20 +586,32 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 5px 8px;
-  border: 1px solid var(--border);
+  padding: 6px 10px;
+  border: 1px solid #b8c4d4;
   border-radius: 6px;
-  color: var(--text-secondary);
-  background: transparent;
-  font-size: 11px;
+  color: var(--text-primary);
+  background: var(--bg-panel);
+  font-size: 11.5px;
   font-weight: 600;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
   cursor: pointer;
+  transition: all 0.15s ease;
 }
 
-.lesson-guide-button:hover {
-  color: var(--text-primary);
-  border-color: var(--border-active);
-  background: var(--bg-panel);
+.lesson-guide-button:hover:not(:disabled) {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: #f0f6ff;
+  box-shadow: 0 2px 4px rgba(23, 105, 170, 0.12);
+}
+
+.lesson-guide-button:disabled {
+  color: #7c8799;
+  border-color: #cbd3df;
+  background: #e2e6ec;
+  cursor: not-allowed;
+  box-shadow: none;
+  opacity: 0.72;
 }
 
 .lesson-guide-button:focus-visible {
@@ -606,6 +673,14 @@ body {
   grid-template-columns: minmax(160px, 0.8fr) minmax(220px, 1.25fr) minmax(220px, 1.25fr);
 }
 
+/*
+ * Before a line runs the panel holds one cell, not three, so it spans the full
+ * width instead of leaving two empty columns behind a divider.
+ */
+.explanation-grid-ready {
+  grid-template-columns: 1fr;
+}
+
 .explanation-item {
   min-width: 0;
   min-height: 40px;
@@ -613,14 +688,20 @@ body {
   border-right: 1px solid var(--border);
 }
 
-.explanation-item:last-child {
-  border-right: 0;
+.explanation-label {
+  display: block;
+  margin-bottom: 2px;
+  color: #0f172a;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
 }
 
 .explanation-code,
 .explanation-copy {
-  color: var(--text-primary);
-  font-size: 11px;
+  color: #000000;
+  font-size: 11.5px;
+  font-weight: 600;
   line-height: 1.35;
 }
 
@@ -633,6 +714,7 @@ body {
 }
 
 .explanation-copy {
+  color: #000000;
   max-height: 2.6em;
   overflow-y: auto;
 }
@@ -751,36 +833,26 @@ body {
 /* ─── Monaco Execution Line Highlight ───────────────────────────────── */
 .exec-highlight-line {
   background: rgba(16, 185, 129, 0.12) !important;
-  border-left: 3.5px solid var(--accent) !important;
-  box-shadow: inset 24px 0 32px rgba(16, 185, 129, 0.04);
+  box-shadow: none !important;
+  transform: translateY(2px);
 }
 
 .onboarding-editor-line-focus .exec-highlight-line {
-  background: rgba(16, 185, 129, 0.34) !important;
+  background: rgba(16, 185, 129, 0.3) !important;
+  box-shadow: none !important;
+}
+
+.exec-highlight-margin {
+  background: rgba(16, 185, 129, 0.12) !important;
+  border-left: 3.5px solid var(--accent) !important;
+  box-shadow: none !important;
+  transform: translateY(2px);
+}
+
+.onboarding-editor-line-focus .exec-highlight-margin {
+  background: rgba(16, 185, 129, 0.3) !important;
   border-left: 5px solid #34d399 !important;
-  box-shadow:
-    inset 0 0 0 1px rgba(52, 211, 153, 0.55),
-    inset 34px 0 40px rgba(16, 185, 129, 0.22),
-    0 0 18px rgba(16, 185, 129, 0.3);
-}
-
-.exec-highlight-glyph {
-  width: 8px !important;
-  height: 8px !important;
-  margin-left: 5px;
-  margin-top: 5px;
-  background: var(--accent) !important;
-  border-radius: 50% !important;
-  box-shadow: 0 0 10px var(--accent);
-}
-
-.onboarding-editor-line-focus .exec-highlight-glyph {
-  width: 12px !important;
-  height: 12px !important;
-  margin-left: 3px;
-  margin-top: 3px;
-  background: #34d399 !important;
-  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.2), 0 0 16px #34d399;
+  box-shadow: none !important;
 }
 
 /* ─── Memory View & Arrow Styles ────────────────────────────────────── */
@@ -791,6 +863,18 @@ body {
 .ref-pointer-active {
   stroke-dasharray: 4, 4;
   animation: arrow-flow 1.2s linear infinite;
+}
+
+/*
+ * An arrow this step created has to do two things: fade in on cue as the last
+ * stage of the reveal, then keep flowing. Both animations are declared together
+ * here because a single `animation` property cannot be merged across two
+ * classes, and this rule has to sit after .ref-pointer-active to win.
+ */
+.ref-pointer-active.reveal-arrow {
+  animation:
+    memory-arrow-reveal 420ms ease-out 840ms both,
+    arrow-flow 1.2s linear 840ms infinite;
 }
 
 /* ─── Spotlight Styles ─── */
@@ -957,6 +1041,57 @@ body {
   background: var(--scrollbar-thumb-hover);
 }
 
+/* ─── Developer jump controls ─── */
+.dev-jump-option,
+.dev-jump-toggle,
+.dev-jump-hide-button {
+  transition:
+    transform 140ms ease,
+    filter 140ms ease,
+    color 140ms ease,
+    background-color 140ms ease,
+    border-color 140ms ease,
+    box-shadow 140ms ease;
+}
+
+.dev-jump-option:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.14);
+  box-shadow: 0 3px 8px rgba(23, 32, 51, 0.18);
+}
+
+.dev-jump-option:active,
+.dev-jump-toggle:active,
+.dev-jump-hide-button:active {
+  transform: translateY(0);
+}
+
+.dev-jump-hide-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 7px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-secondary);
+  background: var(--bg-panel-2);
+}
+
+.dev-jump-toggle {
+  border-color: var(--border);
+  color: var(--text-secondary);
+  background: var(--bg-panel);
+}
+
+.dev-jump-hide-button:hover,
+.dev-jump-toggle:hover {
+  transform: translateY(-1px);
+  border-color: var(--accent);
+  color: var(--accent);
+  background: #e8f1f8 !important;
+  box-shadow: 0 3px 8px rgba(23, 105, 170, 0.14);
+}
+
 /* ─── Monaco Info Icon Decorator ─── */
 .monaco-info-icon {
   text-decoration: underline wavy var(--accent-3) 1.5px !important;
@@ -996,4 +1131,29 @@ body {
       0 0 0 1px rgba(6, 7, 10, 0.85),
       0 0 0 9px rgba(16, 185, 129, 0.26);
   }
+}
+.guide-drag-handle {
+  display: inline-flex;
+  width: 30px;
+  height: 24px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-muted);
+  background: var(--bg-panel-2);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  transition: color 150ms ease, border-color 150ms ease, background-color 150ms ease;
+}
+
+.guide-drag-handle:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: #e8f2f9;
+}
+
+.guide-drag-handle:active {
+  cursor: grabbing;
 }

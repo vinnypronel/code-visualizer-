@@ -50,13 +50,13 @@ export interface BananaDiagram {
 }
 
 export interface DataMovement {
-  from: string; // e.g. "heap-101-val"
-  to: string;   // e.g. "stack-val"
+  from: string; // e.g. "heap-101-value"
+  to: string;   // e.g. "stack-value"
   value: string; // e.g. "10"
 }
 
 export interface MemoryCallout {
-  target: string; // e.g. "stack-head", "heap-101-val", "heap-101-next"
+  target: string; // e.g. "stack-head", "heap-101-value", "heap-101-next"
   title: string;
   body: string;
   tone?: "blue" | "purple" | "green" | "amber";

@@ -45,55 +45,75 @@ export default function HandoffScreen() {
         heading="Thank you for participating"
         subheading="The questionnaire is open in another tab."
       >
-        <div className="mx-auto max-w-2xl py-5 text-center">
+        {/*
+          No action lives on this screen. The questionnaire is already open in
+          another tab, so the only thing this page owes the participant is the
+          ID they have to type into it and the reassurance that everything on
+          our side is finished.
+        */}
+        <div className="mx-auto max-w-xl py-6 text-center">
           <CheckCircle2
             aria-hidden="true"
             className="mx-auto mb-5"
-            size={48}
+            size={44}
             strokeWidth={1.75}
-            style={{ color: "var(--accent)" }}
+            style={{ color: "var(--success)" }}
           />
 
-          <h2 className="mb-3 text-2xl font-bold">One final action</h2>
+          <h2 className="mb-3 text-2xl font-bold">
+            Your part in the app is finished
+          </h2>
           <p
-            className="mx-auto mb-7 max-w-xl text-[15px] leading-relaxed"
+            className="mx-auto mb-8 max-w-lg text-[15px] leading-relaxed"
             style={{ color: "var(--text-secondary)" }}
           >
-            Complete and submit the questionnaire in the tab that just opened.
-            After you submit it, your participation is complete and you may
-            close both tabs.
+            Your pre-test, learning activity, and post-test have all been
+            recorded. One short questionnaire is open in the other tab. Fill it
+            in, submit it, and you are completely done.
           </p>
 
+          {/* The ID is the only thing they still need from this page. */}
           <div
-            className="mb-7 rounded-lg border px-5 py-4"
+            className="mb-8 rounded-lg border px-5 py-5"
             style={{ background: "var(--bg-panel)", borderColor: "var(--border)" }}
           >
             <p
-              className="mb-1 text-[11px] font-semibold uppercase tracking-wider"
+              className="mb-2 text-[11px] font-semibold uppercase tracking-wider"
               style={{ color: "var(--text-muted)" }}
             >
-              Participant ID for the questionnaire
+              The questionnaire will ask for this ID
             </p>
             <p
-              className="font-mono text-3xl font-bold"
+              className="mb-3 font-mono text-4xl font-bold"
               style={{ color: "var(--accent)", letterSpacing: "2px" }}
             >
               {participantId}
             </p>
+            <button
+              type="button"
+              onClick={copyId}
+              className="text-[12px] font-mono px-3 py-1.5 rounded-md border"
+              style={{
+                background: "var(--bg-panel-2)",
+                borderColor: "var(--border)",
+                color: "var(--text-secondary)",
+              }}
+            >
+              {copied ? "Copied" : "Copy ID"}
+            </button>
           </div>
 
-          <a
-            className="btn-primary inline-flex items-center gap-2"
-            href={MSFORMS_URL}
-            target="_blank"
-            rel="noopener noreferrer"
+          <p
+            className="mb-8 text-[13px] leading-relaxed"
+            style={{ color: "var(--text-secondary)" }}
           >
-            Open questionnaire again
-            <ExternalLink size={15} aria-hidden="true" />
-          </a>
+            You can leave this tab open until you have submitted the
+            questionnaire, in case you need to check the ID again. After that
+            you can close both tabs.
+          </p>
 
           <p
-            className="mt-7 text-[12px] leading-relaxed"
+            className="text-[12px] leading-relaxed"
             style={{ color: "var(--text-muted)" }}
           >
             Thank you for helping with this research. For study questions or

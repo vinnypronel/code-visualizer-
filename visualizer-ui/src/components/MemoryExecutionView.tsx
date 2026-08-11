@@ -148,6 +148,23 @@ export default function MemoryExecutionView({
 
   const hasMovedBoxes = Object.keys(boxOffsets).length > 0;
 
+  /*
+   * Which arrows this line is responsible for. Fading every arrow on every step
+   * would make links the student already understands flicker back in, so only
+   * arrows touching something the step marked as changed are staged. Anchor ids
+   * here must match the data-ref attributes further down.
+   */
+  const revealedArrowIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const arrow of arrows) {
+      const fromNewVariable = spotlightStackVars.some((name) => arrow.source === `stack-${name}`);
+      const toNewObject = spotlightHeapObjects.some((id) => arrow.target === `heap-${id}`);
+      const fromChangedField = spotlightHeapFields.some((field) => arrow.source === `heap-${field}`);
+      if (fromNewVariable || toNewObject || fromChangedField) ids.add(arrow.id);
+    }
+    return ids;
+  }, [arrows, spotlightStackVars, spotlightHeapObjects, spotlightHeapFields]);
+
   // Check if current step has any active spotlight focal points
   const hasSpotlight =
     spotlightStackVars.length > 0 ||
@@ -503,7 +520,7 @@ export default function MemoryExecutionView({
               stroke={colorHex}
               strokeWidth={2}
               markerEnd={`url(#arrow-${p.color})`}
-              className="ref-pointer ref-pointer-active"
+              className={`ref-pointer ref-pointer-active${revealedArrowIds.has(p.id) ? " reveal-arrow" : ""}`}
             />
           );
         })}
@@ -557,7 +574,7 @@ export default function MemoryExecutionView({
       >
         <div className="flex items-center gap-2">
           <Layers size={16} className="text-[var(--accent)]" />
-          <span className="text-xs font-semibold" style={{ color: "var(--text-primary)" }}>What Java Is Doing</span>
+          <span className="text-xs font-semibold" style={{ color: "var(--text-primary)" }}>What Java Is Doing: Visualization Workbench</span>
         </div>
         <div className="flex items-center gap-3">
           {hasMovedBoxes && (
@@ -647,11 +664,12 @@ export default function MemoryExecutionView({
                       const isHovered = hoveredElement === `stack-${v.name}`;
                       const isSpotlighted = spotlightStackVars.includes(v.name);
                       
+                      /* Stage 1: the variable is created on the stack first. */
                       const varClass = isHovered
                         ? "hover-pulse"
                         : hasSpotlight
                           ? isSpotlighted
-                            ? "spotlight-active-blue"
+                            ? "spotlight-active-blue reveal-stage-1"
                             : "spotlight-dim"
                           : "";
 
@@ -716,7 +734,7 @@ export default function MemoryExecutionView({
           <div className="absolute top-4 left-6 flex items-center gap-1.5 pointer-events-none">
             <HardDrive size={13} style={{ color: "var(--text-secondary)" }} />
             <div>
-              <h3 className="text-xs font-bold" style={{ color: "var(--text-primary)" }}>Objects</h3>
+              <h3 className="text-xs font-bold" style={{ color: "var(--text-primary)" }}>Objects: Memory</h3>
               <span className="text-[9px] font-sans block leading-normal mt-0.5 font-normal" style={{ color: "var(--text-secondary)" }}>
                 Created with <code>new</code> <span style={{ color: "var(--text-muted)" }}>(Heap)</span>
               </span>
@@ -735,11 +753,12 @@ export default function MemoryExecutionView({
                 const isCardHovered = hoveredElement === `heap-${obj.id}`;
                 const isCardSpotlighted = spotlightHeapObjects.includes(obj.id);
                 
+                /* Stage 2: the object the variable points at arrives next. */
                 const cardClass = isCardHovered
                   ? "hover-pulse"
                   : hasSpotlight
                     ? isCardSpotlighted
-                      ? "spotlight-active-purple"
+                      ? "spotlight-active-purple reveal-stage-2"
                       : "spotlight-dim"
                     : "";
 
@@ -790,12 +809,12 @@ export default function MemoryExecutionView({
                               Slots (length: {obj.arrayValues?.length})
                             </span>
                             <div className="grid grid-cols-3 gap-1 p-1 rounded-md border" style={{ background: "var(--bg-panel-2)", borderColor: "var(--border)" }}>
-                              {obj.arrayValues?.map((val, aIdx) => {
+                              {obj.arrayValues?.map((value, aIdx) => {
                                 const isSlotSpotlighted = spotlightHeapFields.includes(`${obj.id}-${aIdx}`);
                                 const slotClass = hasSpotlight
                                   ? isSlotSpotlighted
                                     ? "spotlight-active-green"
-                                    : "spotlight-dim"
+                                    : ""
                                   : "";
 
                                 return (
@@ -807,7 +826,7 @@ export default function MemoryExecutionView({
                                   >
                                     <span className="text-[8px] font-mono" style={{ color: "var(--text-muted)" }}>[{aIdx}]</span>
                                     <span className="text-xs font-mono font-bold text-emerald-400">
-                                      {val}
+                                      {value}
                                     </span>
                                   </div>
                                 );
@@ -818,10 +837,12 @@ export default function MemoryExecutionView({
                           <div className="space-y-1.5">
                             {obj.fields?.map((field, fIdx) => {
                               const isFieldSpotlighted = spotlightHeapFields.includes(`${obj.id}-${field.name}`);
+                              /* Stage 3: a field changing inside an object is
+                               * the last thing to land, alongside the arrow. */
                               const fieldClass = hasSpotlight
                                 ? isFieldSpotlighted
-                                  ? "spotlight-active-purple bg-purple-950/20"
-                                  : "spotlight-dim"
+                                  ? "spotlight-active-purple bg-purple-950/20 reveal-stage-3"
+                                  : ""
                                 : "";
 
                               const friendlyFieldVal = getFriendlyAddressLabel(field.value);

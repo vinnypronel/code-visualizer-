@@ -28,6 +28,7 @@ export type TestResponses = Record<string, string>;
 
 /* How a timed test ended. */
 export type EndedBy = "timer" | "manual";
+export type ExampleId = "linkedlist" | "arraylist" | "stack" | "livetrace";
 
 /* The subset of session state the client tracks in memory during a run. */
 export interface SessionState {
@@ -64,6 +65,7 @@ export type LogEvent =
    * column stays null for them by design; read it together with `condition`.
    */
   | "learning_completed"
+  | "example_attempted"
   | "learning_continue"
   | "posttest_started"
   | "posttest_finished"
@@ -77,5 +79,6 @@ export interface LogRequestBody {
     ended_by?: EndedBy;
     responses?: TestResponses;
     elapsed_seconds?: number;
+    example_id?: string;
   };
 }

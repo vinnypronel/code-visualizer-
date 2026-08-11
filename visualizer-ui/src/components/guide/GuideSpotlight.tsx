@@ -37,9 +37,11 @@ export function usePrefersReducedMotion(): boolean {
   return reduced;
 }
 
-/* Tracks a target element's viewport rect. The workspace panels animate and
- * reflow for a moment after every lesson step change, so instead of a single
- * read we poll for a short window and then rely on resize and scroll events. */
+/* Tracks a target element's viewport rect for the entire time the guide is
+ * visible. Participants can collapse the explanation panel at any point, and
+ * that reflows the controls without necessarily producing a window resize or
+ * scroll event. Keeping the lightweight rect read alive prevents spotlight
+ * openings from being left at a button's former position. */
 export function useTargetRect(selector: string | null, active: boolean): GuideRect | null {
   const [rect, setRect] = useState<GuideRect | null>(null);
 
@@ -70,20 +72,37 @@ export function useTargetRect(selector: string | null, active: boolean): GuideRe
 
     read();
 
-    const start = performance.now();
     const tick = () => {
       read();
-      if (performance.now() - start < 900) {
-        frame = requestAnimationFrame(tick);
-      }
+      frame = requestAnimationFrame(tick);
     };
     frame = requestAnimationFrame(tick);
+
+    const targetElement = document.querySelector(selector);
+    const layoutRoot = targetElement?.closest(
+      "#onboarding-editor-panel, #onboarding-tutor-panel",
+    ) ?? targetElement?.parentElement;
+    const resizeObserver = new ResizeObserver(read);
+    if (targetElement) resizeObserver.observe(targetElement);
+    if (layoutRoot && layoutRoot !== targetElement) resizeObserver.observe(layoutRoot);
+
+    const mutationObserver = layoutRoot
+      ? new MutationObserver(read)
+      : null;
+    mutationObserver?.observe(layoutRoot!, {
+      attributes: true,
+      characterData: true,
+      childList: true,
+      subtree: true,
+    });
 
     window.addEventListener("resize", read);
     window.addEventListener("scroll", read, true);
 
     return () => {
       cancelAnimationFrame(frame);
+      resizeObserver.disconnect();
+      mutationObserver?.disconnect();
       window.removeEventListener("resize", read);
       window.removeEventListener("scroll", read, true);
     };
@@ -163,20 +182,23 @@ export function placeGuideCard({
     let top: number;
     let left: number;
 
+    // 58px offset ensures room for the 44px pointer arrow between target & card
+    const sideGap = Math.max(gap, 58);
+
     if (side === "right") {
-      left = target.left + target.width + gap;
+      left = target.left + target.width + sideGap;
       top = clampY(targetCenterY - cardHeight / 2);
       if (left + cardWidth > viewportWidth - margin) return null;
     } else if (side === "left") {
-      left = target.left - cardWidth - gap;
+      left = target.left - cardWidth - sideGap;
       top = clampY(targetCenterY - cardHeight / 2);
       if (left < margin) return null;
     } else if (side === "bottom") {
-      top = target.top + target.height + gap;
+      top = target.top + target.height + sideGap;
       left = clampX(targetCenterX - cardWidth / 2);
       if (top + cardHeight > viewportHeight - margin) return null;
     } else {
-      top = target.top - cardHeight - gap;
+      top = target.top - cardHeight - sideGap;
       left = clampX(targetCenterX - cardWidth / 2);
       if (top < margin) return null;
     }
@@ -262,10 +284,10 @@ function PointerArrow({
 
   const loop =
     axis === "x"
-      ? { x: [travel, 0, travel], opacity: [0.6, 1, 0.6] }
-      : { y: [travel, 0, travel], opacity: [0.6, 1, 0.6] };
+      ? { x: [travel, 0, travel], opacity: [0.82, 1, 0.82] }
+      : { y: [travel, 0, travel], opacity: [0.82, 1, 0.82] };
 
-  const staticState = axis === "x" ? { x: travel / 2, opacity: 0.95 } : { y: travel / 2, opacity: 0.95 };
+  const staticState = axis === "x" ? { x: travel / 2, opacity: 1 } : { y: travel / 2, opacity: 1 };
 
   return (
     <motion.div
@@ -287,12 +309,12 @@ function PointerArrow({
       >
         <path
           d="M 42 11 L 17 11"
-          stroke="var(--accent)"
-          strokeWidth="3.5"
+          stroke="#0b4f7a"
+          strokeWidth="4.5"
           strokeLinecap="round"
           fill="none"
         />
-        <polygon points="2,11 19,3 19,19" fill="var(--accent)" />
+        <polygon points="2,11 19,3 19,19" fill="#0b4f7a" />
       </svg>
     </motion.div>
   );
@@ -303,10 +325,14 @@ function PointerArrow({
  * stacking context or overflow can trap it. */
 export default function GuideSpotlight({
   target,
+  focusTarget,
+  additionalTargets = [],
   side,
   reducedMotion,
 }: {
   target: GuideRect | null;
+  focusTarget?: GuideRect | null;
+  additionalTargets?: Array<GuideRect | null>;
   side: GuideSide;
   reducedMotion: boolean;
 }) {
@@ -316,11 +342,14 @@ export default function GuideSpotlight({
 
   const viewportWidth = window.innerWidth;
   const viewportHeight = window.innerHeight;
+  const opening = focusTarget && focusTarget.width > 0 && focusTarget.height > 0
+    ? focusTarget
+    : target;
 
-  const top = Math.max(0, target.top);
-  const left = Math.max(0, target.left);
-  const right = Math.min(viewportWidth, target.left + target.width);
-  const bottom = Math.min(viewportHeight, target.top + target.height);
+  const top = Math.max(0, opening.top);
+  const left = Math.max(0, opening.left);
+  const right = Math.min(viewportWidth, opening.left + opening.width);
+  const bottom = Math.min(viewportHeight, opening.top + opening.height);
   const width = Math.max(0, right - left);
   const height = Math.max(0, bottom - top);
 
@@ -330,23 +359,74 @@ export default function GuideSpotlight({
       style={{ zIndex: SPOTLIGHT_Z, isolation: "isolate" }}
       aria-hidden="true"
     >
-      <div className="fixed left-0 right-0 top-0 pointer-events-none" style={{ height: top, background: DIM }} />
-      <div className="fixed left-0 pointer-events-none" style={{ top, width: left, height, background: DIM }} />
-      <div
-        className="fixed pointer-events-none"
-        style={{ top, left: right, width: Math.max(0, viewportWidth - right), height, background: DIM }}
-      />
-      <div
-        className="fixed left-0 right-0 pointer-events-none"
-        style={{ top: bottom, height: Math.max(0, viewportHeight - bottom), background: DIM }}
-      />
+      <svg
+        className="fixed inset-0 pointer-events-none"
+        width={viewportWidth}
+        height={viewportHeight}
+        viewBox={`0 0 ${viewportWidth} ${viewportHeight}`}
+        aria-hidden="true"
+      >
+        <defs>
+          <mask id="guide-spotlight-mask" maskUnits="userSpaceOnUse">
+            <rect width={viewportWidth} height={viewportHeight} fill="white" />
+            <rect
+              x={left}
+              y={top}
+              width={width}
+              height={height}
+              rx={opening.borderRadius ?? "0px"}
+              fill="black"
+            />
+            {focusTarget && (
+              <rect
+                x={target.left}
+                y={target.top}
+                width={target.width}
+                height={target.height}
+                rx={target.borderRadius ?? "0px"}
+                fill="black"
+              />
+            )}
+            {additionalTargets.map((additionalTarget, index) => additionalTarget && (
+              <rect
+                key={`${additionalTarget.left}-${additionalTarget.top}-${index}`}
+                x={additionalTarget.left}
+                y={additionalTarget.top}
+                width={additionalTarget.width}
+                height={additionalTarget.height}
+                rx={additionalTarget.borderRadius ?? "0px"}
+                fill="black"
+              />
+            ))}
+          </mask>
+        </defs>
+        <rect
+          width={viewportWidth}
+          height={viewportHeight}
+          fill={DIM}
+          mask="url(#guide-spotlight-mask)"
+        />
+      </svg>
 
       <div
         className="guide-spotlight-ring"
-        style={{ top, left, width, height, borderRadius: target.borderRadius ?? "0px" }}
+        style={{ top, left, width, height, borderRadius: opening.borderRadius ?? "0px" }}
       />
 
-      <PointerArrow target={{ top, left, width, height }} side={side} reducedMotion={reducedMotion} />
+      {focusTarget && (
+        <div
+          className="guide-spotlight-ring"
+          style={{
+            top: target.top,
+            left: target.left,
+            width: target.width,
+            height: target.height,
+            borderRadius: target.borderRadius ?? "0px",
+          }}
+        />
+      )}
+
+      <PointerArrow target={target} side={side} reducedMotion={reducedMotion} />
     </div>,
     document.body,
   );

@@ -72,12 +72,12 @@ export default function CodeEditorPanel({
   canEdit = false,
   isEditing = false,
   runState = { status: "idle" },
-  onStartEdit,
   onCancelEdit,
   onCodeChange,
   onRunCode,
 }: CodeEditorPanelProps) {
   const [copied, setCopied] = useState(false);
+  const [editorReady, setEditorReady] = useState(false);
   const editorRef = useRef<any>(null);
   const monacoRef = useRef<any>(null);
   const decorationsRef = useRef<any>(null);
@@ -91,6 +91,7 @@ export default function CodeEditorPanel({
   const handleEditorMount = (editor: any, monaco: any) => {
     editorRef.current = editor;
     monacoRef.current = monaco;
+    setEditorReady(true);
 
     // Register Monaco Hover Provider for beginner-friendly CS terminology
     monaco.languages.registerHoverProvider("java", {
@@ -151,42 +152,13 @@ export default function CodeEditorPanel({
           options: {
             isWholeLine: true,
             className: "exec-highlight-line",
-            glyphMarginClassName: "exec-highlight-glyph",
+            marginClassName: "exec-highlight-margin",
           },
         },
       ]);
       editorRef.current.revealLineInCenter(activeLine);
     }
-  }, [activeLine, code]);
-
-  // Sync Inline Monaco code decorations for keywords
-  useEffect(() => {
-    if (!editorRef.current || !monacoRef.current) return;
-
-    const model = editorRef.current.getModel();
-    if (!model) return;
-
-    const decorations: any[] = [];
-    const monaco = monacoRef.current;
-
-    const keywords = ["new"];
-    keywords.forEach(keyword => {
-      const matches = model.findMatches(keyword, true, false, true, null, true);
-      matches.forEach((match: any) => {
-        decorations.push({
-          range: match.range,
-          options: {
-            inlineClassName: "monaco-info-icon",
-          }
-        });
-      });
-    });
-
-    const decorationsCollection = editorRef.current.createDecorationsCollection(decorations);
-    return () => {
-      decorationsCollection.clear();
-    };
-  }, [code]);
+  }, [activeLine, code, editorReady]);
 
   return (
     <div id="onboarding-editor-panel" className="flex flex-col h-full bg-slate-950" style={{ background: "#1e1e1e" }}>
@@ -208,7 +180,7 @@ export default function CodeEditorPanel({
       </div>
 
       {/* Monaco Code Window */}
-      <div className="flex-1 min-h-0 overflow-hidden relative">
+      <div id="onboarding-code-content" className="flex-1 min-h-0 overflow-hidden relative">
         <MonacoEditor
           height="100%"
           language="java"
@@ -220,11 +192,12 @@ export default function CodeEditorPanel({
           }}
           options={{
             fontSize: 13,
+            lineHeight: 24,
             fontFamily: "'Geist Mono', 'Fira Code', 'Cascadia Code', monospace",
             fontLigatures: true,
             minimap: { enabled: false },
             lineNumbers: "on",
-            glyphMargin: true, // Required for glyph line decorations
+            glyphMargin: false,
             scrollBeyondLastLine: false,
             wordWrap: "on",
             renderLineHighlight: "gutter",
@@ -290,6 +263,7 @@ export default function CodeEditorPanel({
       )}
 
       <div
+        id="onboarding-code-controls"
         className="code-step-controls flex items-center justify-between gap-3 px-4 py-3 border-t flex-shrink-0"
         style={{ borderColor: "var(--border)", background: "var(--bg-panel-2)" }}
       >
@@ -330,19 +304,34 @@ export default function CodeEditorPanel({
               * so this footer only carries the controls. */}
             <div className="flex items-center gap-2">
               {showGuideButton && (
-                <button type="button" className="lesson-guide-button" onClick={onOpenGuide}>
+                <button id="onboarding-guide-button" type="button" className="lesson-guide-button" onClick={onOpenGuide}>
                   <HelpCircle size={14} aria-hidden="true" /> Guide
                 </button>
               )}
               {canEdit && (
-                <button type="button" className="lesson-guide-button" onClick={onStartEdit}>
+                <button
+                  id="onboarding-edit-button"
+                  type="button"
+                  className="lesson-guide-button"
+                  disabled
+                  title="Coming soon"
+                  aria-label="Edit the code (coming soon)"
+                  style={{
+                    color: "#7c8799",
+                    borderColor: "#cbd3df",
+                    background: "#e2e6ec",
+                    cursor: "not-allowed",
+                    boxShadow: "none",
+                    opacity: 0.72,
+                  }}
+                >
                   <Pencil size={14} aria-hidden="true" /> Edit the code
                 </button>
               )}
             </div>
 
             <div className="flex items-center gap-2">
-              <button onClick={onReset} className="icon-button" title="Restart lesson" aria-label="Restart lesson">
+              <button id="onboarding-restart-button" onClick={onReset} className="icon-button" title="Restart lesson" aria-label="Restart lesson">
                 <RotateCcw size={15} />
               </button>
               <button id="onboarding-step-back" onClick={onStepBack} disabled={!canGoBack} className="icon-button" title="Previous step" aria-label="Previous step">

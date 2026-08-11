@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, ChevronUp, Info } from "lucide-react";
-import GeminiLogo from "@/components/icons/GeminiLogo";
+import { BookOpen, ChevronDown, ChevronUp, Info } from "lucide-react";
 import type { BananaDiagram } from "@/types/visualizer";
 
 interface AiExplanationPanelProps {
@@ -58,9 +57,22 @@ export default function AiExplanationPanel({
           className="flex items-center gap-2 cursor-pointer select-none"
           onClick={() => setIsCollapsed((prev) => !prev)}
         >
-          <GeminiLogo size={14} className="text-[var(--accent)]" />
+          {/*
+            * Deliberately NOT the Gemini mark. These explanations are authored
+            * text, not model output, so branding the panel with a model vendor
+            * would tell participants something untrue about what they are
+            * looking at. The questionnaire asks them about the explanations, so
+            * the label has to match reality. Restore the Gemini mark when the
+            * explanations are actually generated (the component still exists at
+            * components/icons/GeminiLogo).
+            */}
+          <BookOpen size={14} className="text-[var(--accent)]" aria-hidden="true" />
+          {/* Named for what it does rather than for what it is. "Step
+            * Explanation" told a participant nothing about why the strip was
+            * there, and this panel is the whole difference between the two
+            * study conditions, so it has to announce itself. */}
           <h2 id="step-explanation-title" className="text-[11px] font-semibold flex items-center gap-1.5" style={{ color: "var(--text-primary)" }}>
-            Step Explanation
+            Explanation of this line
             {/* Only surfaced while collapsed, so the run state is stated exactly once on screen. */}
             {isCollapsed && (
               <span className="text-[10px] font-normal" style={{ color: "var(--text-secondary)" }}>{runStateLabel}</span>
@@ -68,9 +80,10 @@ export default function AiExplanationPanel({
           </h2>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className={`flex items-center gap-2 ${isCollapsed ? "mr-16" : ""}`}>
           {!isCollapsed && (
             <button
+              id="onboarding-explain-more-button"
               type="button"
               className="explain-more-button text-[10px] py-0.5 px-2"
               onClick={() => setDetailsOpen((open) => !open)}
@@ -84,12 +97,13 @@ export default function AiExplanationPanel({
           )}
 
           <button
+            id="onboarding-explanation-toggle"
             type="button"
             className="text-[10px] flex items-center gap-1 px-1.5 py-0.5 rounded border transition-all"
             style={{ color: "var(--text-secondary)", borderColor: "var(--border)", background: "var(--bg-panel-2)" }}
             onClick={() => setIsCollapsed((prev) => !prev)}
-            aria-label={isCollapsed ? "Expand Step Explanation" : "Collapse Step Explanation"}
-            title={isCollapsed ? "Expand Step Explanation" : "Collapse Step Explanation"}
+            aria-label={isCollapsed ? "Expand the explanation of this line" : "Collapse the explanation of this line"}
+            title={isCollapsed ? "Expand the explanation of this line" : "Collapse the explanation of this line"}
           >
             <span className="text-[10px] font-medium">{isCollapsed ? "Show" : "Hide"}</span>
             {isCollapsed ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
@@ -99,41 +113,51 @@ export default function AiExplanationPanel({
 
       {!isCollapsed && (
         /* Keyed so the reveal animation replays each time a line runs. It is one
-         * short fade, well under 3Hz, and disabled under reduced motion. */
+         * short fade, well under 3Hz, and disabled under reduced motion.
+         *
+         * Before a line runs there is exactly one thing worth saying, which is
+         * what to look for. The other two cells used to hold "this line has not
+         * run yet" and a restatement of the instructions, both of which the
+         * highlighted line and the Run This Line button already communicate.
+         * Three columns of padding made the panel read as a status bar, so the
+         * ready state is now a single cell and the panel widens back out to
+         * three only when it has three real things to say. */
         <div
           key={`${currentStep}-${showResult}`}
-          className={`explanation-grid${showResult ? " explanation-result-reveal" : ""}`}
+          className={`explanation-grid${showResult ? " explanation-result-reveal" : " explanation-grid-ready"}`}
           role="status"
           aria-live="polite"
         >
-          <div className="explanation-item py-1.5 px-3.5">
-            <span className="explanation-label text-[9.5px] uppercase font-mono tracking-wider font-bold block mb-0.5">
-              {runStateLabel}
-            </span>
-            <p className="explanation-copy text-[11px] leading-snug">
-              {runStateCopy}
-            </p>
-          </div>
+          {showResult && (
+            <div className="explanation-item py-1.5 px-3.5">
+              <span className="explanation-label text-[9.5px] uppercase font-mono tracking-wider font-extrabold block mb-0.5" style={{ color: "#000000" }}>
+                {runStateLabel}
+              </span>
+              <p className="explanation-copy text-[11px] leading-snug font-semibold" style={{ color: "#000000" }}>
+                {runStateCopy}
+              </p>
+            </div>
+          )}
 
           <div className="explanation-item py-1.5 px-3.5">
-            <span className="explanation-label text-[9.5px] uppercase font-mono tracking-wider font-bold block mb-0.5">
-              {showResult ? "What changed" : "What to watch"}
+            <span className="explanation-label text-[9.5px] uppercase font-mono tracking-wider font-extrabold block mb-0.5" style={{ color: "#000000" }}>
+              {showResult ? "What changed" : "What to watch for"}
             </span>
-            <p className="explanation-copy text-[11px] leading-snug">
+            <p className="explanation-copy text-[11px] leading-snug font-semibold" style={{ color: "#000000" }}>
               {showResult ? explanation : readyPrompt}
             </p>
           </div>
 
-          <div className="explanation-item py-1.5 px-3.5">
-            <span className="explanation-label text-[9.5px] uppercase font-mono tracking-wider font-bold block mb-0.5">
-              {showResult ? "Why it matters" : "Your task"}
-            </span>
-            <p className="explanation-copy text-[11px] leading-snug">
-              {showResult
-                ? whyItMatters
-                : "Read the highlighted line, then press Run This Line and look for the change described above."}
-            </p>
-          </div>
+          {showResult && (
+            <div className="explanation-item py-1.5 px-3.5">
+              <span className="explanation-label text-[9.5px] uppercase font-mono tracking-wider font-extrabold block mb-0.5" style={{ color: "#000000" }}>
+                Why it matters
+              </span>
+              <p className="explanation-copy text-[11px] leading-snug font-semibold" style={{ color: "#000000" }}>
+                {whyItMatters}
+              </p>
+            </div>
+          )}
         </div>
       )}
 

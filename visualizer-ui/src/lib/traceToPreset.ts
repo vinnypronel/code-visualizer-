@@ -9,8 +9,8 @@
  * java_jail encodings, confirmed by running the tracer rather than by reading
  * docs:
  *   frame.func_name       "main:3", that is name:line
- *   encoded_locals        { "head": ["REF", 347], "val": 10 }
- *   heap                  { "347": ["INSTANCE", "Node", ["val", 10], ["next", null]] }
+ *   encoded_locals        { "head": ["REF", 347], "value": 10 }
+ *   heap                  { "347": ["INSTANCE", "Node", ["value", 10], ["next", null]] }
  *   arrays                ["ARRAY", 1, 2, 3]
  *   a void return         { "__return__": ["VOID"] }
  *
@@ -58,7 +58,7 @@ export function traceToPreset(trace: JailTrace, code: string): MappedTrace {
    *
    * First, constructor frames are dropped. The JVM really does jump into
    * Node's constructor on `new Node(10)`, push a frame holding `this`, and
-   * leave `val` at 0 for a couple of steps before assigning it. That is true,
+   * leave `value` at 0 for a couple of steps before assigning it. That is true,
    * but a student reading it sees the highlight leap to a line they did not
    * run, a variable they were never taught, and a value that looks wrong. The
    * lesson deliberately shows `new Node(10)` as one step, so generated traces

@@ -21,6 +21,7 @@ export default function LearningScreen() {
 
   // The lesson can be replayed, so completion is logged only the first time.
   const loggedCompletionRef = useRef(false);
+  const loggedExamplesRef = useRef(new Set<string>());
 
   const isAi = session.condition !== "static"; // default to AI if unset
 
@@ -29,10 +30,11 @@ export default function LearningScreen() {
     void logEvent("learning_started");
   }, [logEvent]);
 
-  // TODO(in-tool-logging): this is the hook point for logging in-tool activity
-  // during the learning phase (e.g. steps taken, presets opened, time on task).
-  // Left intentionally unimplemented for this task. Wire a callback from
-  // VisualizerExperience here and POST it via logEvent when that is in scope.
+  const handleExampleAttempt = useCallback((exampleId: string) => {
+    if (loggedExamplesRef.current.has(exampleId)) return;
+    loggedExamplesRef.current.add(exampleId);
+    void logEvent("example_attempted", { example_id: exampleId });
+  }, [logEvent]);
 
   const handleLessonComplete = useCallback(() => {
     if (loggedCompletionRef.current) return;
@@ -60,6 +62,7 @@ export default function LearningScreen() {
         <VisualizerExperience
           onLessonComplete={handleLessonComplete}
           onContinueToNextStage={proceed}
+          onExampleAttempt={handleExampleAttempt}
         />
       ) : (
         <StaticMaterialsStub onContinue={proceed} />

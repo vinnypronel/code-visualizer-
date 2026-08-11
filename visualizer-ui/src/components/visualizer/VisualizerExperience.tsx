@@ -6,7 +6,7 @@ import { CheckCircle2, ChevronRight, RotateCcw } from "lucide-react";
 import AiExplanationPanel from "@/components/AiExplanationPanel";
 import OnboardingTour from "@/components/OnboardingTour";
 import InteractiveWalkthrough from "@/components/InteractiveWalkthrough";
-import PostLessonPanel from "@/components/visualizer/PostLessonPanel";
+import PostLessonExplorerModal from "@/components/visualizer/PostLessonExplorerModal";
 import {
   LESSON_PRESET_ID,
   SHOW_PRESET_SELECTOR,
@@ -104,15 +104,15 @@ const SIMULATION_PRESETS: Record<string, Preset> = {
         Node head = new Node(10);
         Node temp = new Node(20);
         head.next = temp;
-        int val = head.val;
+        int value = head.value;
     }
 }
 
 class Node {
-    int val;
+    int value;
     Node next;
-    Node(int val) {
-        this.val = val;
+    Node(int value) {
+        this.value = value;
     }
 }`,
     steps: [
@@ -149,7 +149,7 @@ class Node {
             id: "101",
             className: "Node",
             fields: [
-              { name: "val", type: "int", value: "10", isReference: false },
+              { name: "value", type: "int", value: "10", isReference: false },
               { name: "next", type: "Node", value: "null", isReference: true }
             ],
             x: 20,
@@ -161,7 +161,7 @@ class Node {
         ],
         spotlightStackVars: ["head"],
         spotlightHeapObjects: ["101"],
-        spotlightHeapFields: ["101-val"],
+        spotlightHeapFields: ["101-value"],
         callouts: [
           {
             target: "stack-head",
@@ -170,9 +170,9 @@ class Node {
             tone: "blue"
           },
           {
-            target: "heap-101-val",
+            target: "heap-101-value",
             title: "Value inside the object",
-            body: "This Node has its own val field. The number 10 is stored inside the Heap object.",
+            body: "This Node has its own value field. The number 10 is stored inside the Heap object.",
             tone: "green"
           },
           {
@@ -182,7 +182,7 @@ class Node {
             tone: "amber"
           }
         ],
-        explanation: "We just created a new Node object, which we'll call [Object 1], in our Object Storage (The Heap). The variable head on the Stack now holds a remote control pointing to [Object 1]. The node contains val 10, and its next slot is currently empty (null).",
+        explanation: "We just created a new Node object, which we'll call [Object 1], in our Object Storage (The Heap). The variable head on the Stack now holds a remote control pointing to [Object 1]. The node contains value 10, and its next slot is currently empty (null).",
         bananaDiagram: {
           type: "reference",
           title: "Address Tags (References)",
@@ -206,7 +206,7 @@ class Node {
             id: "101",
             className: "Node",
             fields: [
-              { name: "val", type: "int", value: "10", isReference: false },
+              { name: "value", type: "int", value: "10", isReference: false },
               { name: "next", type: "Node", value: "null", isReference: true }
             ],
             x: 20,
@@ -216,7 +216,7 @@ class Node {
             id: "102",
             className: "Node",
             fields: [
-              { name: "val", type: "int", value: "20", isReference: false },
+              { name: "value", type: "int", value: "20", isReference: false },
               { name: "next", type: "Node", value: "null", isReference: true }
             ],
             x: 60,
@@ -229,7 +229,7 @@ class Node {
         ],
         spotlightStackVars: ["temp"],
         spotlightHeapObjects: ["102"],
-        spotlightHeapFields: ["102-val"],
+        spotlightHeapFields: ["102-value"],
         callouts: [
           {
             target: "stack-head",
@@ -244,13 +244,13 @@ class Node {
             tone: "purple"
           },
           {
-            target: "heap-102-val",
+            target: "heap-102-value",
             title: "Value in Object 2",
-            body: "This separate Node stores 20 in its val field. It is a different object from the Node holding 10.",
+            body: "This separate Node stores 20 in its value field. It is a different object from the Node holding 10.",
             tone: "green"
           }
         ],
-        explanation: "We create a second Node object, which we'll call [Object 2], in our Object Storage with val 20. A new variable temp is added to the Stack, holding a matching remote control pointing to [Object 2].",
+        explanation: "We create a second Node object, which we'll call [Object 2], in our Object Storage with value 20. A new variable temp is added to the Stack, holding a matching remote control pointing to [Object 2].",
         bananaDiagram: {
           type: "reference",
           title: "Multiple Objects in Storage",
@@ -274,7 +274,7 @@ class Node {
             id: "101",
             className: "Node",
             fields: [
-              { name: "val", type: "int", value: "10", isReference: false },
+              { name: "value", type: "int", value: "10", isReference: false },
               { name: "next", type: "Node", value: "@102", isReference: true }
             ],
             x: 20,
@@ -284,7 +284,7 @@ class Node {
             id: "102",
             className: "Node",
             fields: [
-              { name: "val", type: "int", value: "20", isReference: false },
+              { name: "value", type: "int", value: "20", isReference: false },
               { name: "next", type: "Node", value: "null", isReference: true }
             ],
             x: 60,
@@ -313,7 +313,7 @@ class Node {
             tone: "amber"
           },
           {
-            target: "heap-102-val",
+            target: "heap-102-value",
             title: "End of the chain for now",
             body: "Object 2 still has next = null, so the list stops here.",
             tone: "green"
@@ -329,7 +329,7 @@ class Node {
           type: "reference",
           title: "Linking Objects",
           description: "By storing a reference pointer inside one object's 'next' slot, we chain the objects together, creating a Linked List.",
-          svgMarkup: `<svg viewBox="0 0 200 120" class="w-full h-full"><rect x="20" y="45" width="50" height="30" rx="4" fill="#1e293b" stroke="#3b82f6"/><text x="45" y="63" fill="#f8fafc" font-size="9" text-anchor="middle">val: 10</text><line x1="70" y1="45" x2="70" y2="75" stroke="#3b82f6"/><rect x="130" y="45" width="50" height="30" rx="4" fill="#1e293b" stroke="#8b5cf6"/><text x="155" y="63" fill="#f8fafc" font-size="9" text-anchor="middle">val: 20</text><path d="M 60 60 L 122 60" fill="none" stroke="#3b82f6" stroke-width="2"/><polygon points="128,60 120,56 120,64" fill="#3b82f6"/></svg>`
+          svgMarkup: `<svg viewBox="0 0 200 120" class="w-full h-full"><rect x="20" y="45" width="50" height="30" rx="4" fill="#1e293b" stroke="#3b82f6"/><text x="45" y="63" fill="#f8fafc" font-size="9" text-anchor="middle">value: 10</text><line x1="70" y1="45" x2="70" y2="75" stroke="#3b82f6"/><rect x="130" y="45" width="50" height="30" rx="4" fill="#1e293b" stroke="#8b5cf6"/><text x="155" y="63" fill="#f8fafc" font-size="9" text-anchor="middle">value: 20</text><path d="M 60 60 L 122 60" fill="none" stroke="#3b82f6" stroke-width="2"/><polygon points="128,60 120,56 120,64" fill="#3b82f6"/></svg>`
         }
       },
       {
@@ -340,7 +340,7 @@ class Node {
             variables: [
               { name: "head", type: "Node", value: "@101", isReference: true },
               { name: "temp", type: "Node", value: "@102", isReference: true },
-              { name: "val", type: "int", value: "10", isReference: false }
+              { name: "value", type: "int", value: "10", isReference: false }
             ]
           }
         ],
@@ -349,7 +349,7 @@ class Node {
             id: "101",
             className: "Node",
             fields: [
-              { name: "val", type: "int", value: "10", isReference: false },
+              { name: "value", type: "int", value: "10", isReference: false },
               { name: "next", type: "Node", value: "@102", isReference: true }
             ],
             x: 20,
@@ -359,7 +359,7 @@ class Node {
             id: "102",
             className: "Node",
             fields: [
-              { name: "val", type: "int", value: "20", isReference: false },
+              { name: "value", type: "int", value: "20", isReference: false },
               { name: "next", type: "Node", value: "null", isReference: true }
             ],
             x: 60,
@@ -371,46 +371,46 @@ class Node {
           { id: "temp-to-102", source: "stack-temp", target: "heap-102", label: "temp", color: "purple" },
           { id: "next-to-102", source: "heap-101-next", target: "heap-102", label: "next", color: "purple" }
         ],
-        spotlightStackVars: ["val", "head"],
+        spotlightStackVars: ["value", "head"],
         spotlightHeapObjects: ["101"],
-        spotlightHeapFields: ["101-val"],
+        spotlightHeapFields: ["101-value"],
         callouts: [
           {
             target: "stack-head",
             title: "Follow head first",
-            body: "For head.val, Java first follows head's address tag to [Object 1] in the Heap.",
+            body: "For head.value, Java first follows head's address tag to [Object 1] in the Heap.",
             tone: "blue"
           },
           {
-            target: "heap-101-val",
+            target: "heap-101-value",
             title: "Read this Heap value",
-            body: "Inside [Object 1], the val field stores 10. This is the value Java reads.",
+            body: "Inside [Object 1], the value field stores 10. This is the value Java reads.",
             tone: "green"
           },
           {
-            target: "stack-val",
+            target: "stack-value",
             title: "Copied onto the Stack",
-            body: "The new local variable val stores the number 10 directly. It does not point to an object.",
+            body: "The new local variable value stores the number 10 directly. It does not point to an object.",
             tone: "amber"
           },
           {
             target: "heap-101-next",
             title: "Reference still points onward",
-            body: "next still points to [Object 2]. Reading head.val does not change the linked list.",
+            body: "next still points to [Object 2]. Reading head.value does not change the linked list.",
             tone: "purple"
           }
         ],
         dataMovement: {
-          from: "heap-101-val",
-          to: "stack-val",
+          from: "heap-101-value",
+          to: "stack-value",
           value: "10"
         },
-        explanation: "We read the value: int val = head.val. We follow the remote control held by head to find [Object 1] in Object Storage, grab the number 10 from its val field, and copy it directly into a new local variable val on the Stack.",
+        explanation: "We read the value: int value = head.value. We follow the remote control held by head to find [Object 1] in Object Storage, grab the number 10 from its value field, and copy it directly into a new local variable value on the Stack.",
         bananaDiagram: {
           type: "dereference",
           title: "Following the Reference",
           description: "Following a reference pointer means going to that specific object in Object Storage to read or edit what's inside.",
-          svgMarkup: `<svg viewBox="0 0 200 120" class="w-full h-full"><circle cx="40" cy="60" r="16" fill="#3b82f622" stroke="#3b82f6"/><text x="40" y="63" fill="#f8fafc" font-size="9" font-weight="bold" text-anchor="middle">head</text><path d="M 58 60 L 120 60" fill="none" stroke="#3b82f6" stroke-width="2" stroke-dasharray="2,2"/><polygon points="126,60 118,56 118,64" fill="#3b82f6"/><rect x="128" y="40" width="50" height="40" rx="4" fill="#1e293b" stroke="#3b82f6"/><text x="153" y="58" fill="#e2e8f0" font-size="8" text-anchor="middle">Node [Object 1]</text><text x="153" y="71" fill="#10b981" font-size="8" font-weight="bold" text-anchor="middle">val = 10</text></svg>`
+          svgMarkup: `<svg viewBox="0 0 200 120" class="w-full h-full"><circle cx="40" cy="60" r="16" fill="#3b82f622" stroke="#3b82f6"/><text x="40" y="63" fill="#f8fafc" font-size="9" font-weight="bold" text-anchor="middle">head</text><path d="M 58 60 L 120 60" fill="none" stroke="#3b82f6" stroke-width="2" stroke-dasharray="2,2"/><polygon points="126,60 118,56 118,64" fill="#3b82f6"/><rect x="128" y="40" width="50" height="40" rx="4" fill="#1e293b" stroke="#3b82f6"/><text x="153" y="58" fill="#e2e8f0" font-size="8" text-anchor="middle">Node [Object 1]</text><text x="153" y="71" fill="#10b981" font-size="8" font-weight="bold" text-anchor="middle">value = 10</text></svg>`
         }
       }
     ]
@@ -702,9 +702,9 @@ class MyStack {
 }
 
 class Node {
-    int val;
+    int value;
     Node next;
-    Node(int val) { this.val = val; }
+    Node(int value) { this.value = value; }
 }`,
     steps: [
       {
@@ -785,7 +785,7 @@ class Node {
             id: "302",
             className: "Node",
             fields: [
-              { name: "val", type: "int", value: "42", isReference: false },
+              { name: "value", type: "int", value: "42", isReference: false },
               { name: "next", type: "Node", value: "null", isReference: true }
             ],
             x: 60,
@@ -798,13 +798,13 @@ class Node {
         ],
         spotlightStackVars: ["n1"],
         spotlightHeapObjects: ["302"],
-        spotlightHeapFields: ["302-val"],
+        spotlightHeapFields: ["302-value"],
         explanation: "We create a Node object, which we'll call [Object 2], in Object Storage holding the value 42. The variable n1 on the Stack holds the remote control pointing to [Object 2].",
         bananaDiagram: {
           type: "reference",
           title: "Preparing a New Box",
           description: "Before putting a node on the stack, we create it in Object Storage with the number 42 inside, pointing to no other nodes.",
-          svgMarkup: `<svg viewBox="0 0 200 120" class="w-full h-full"><rect x="120" y="40" width="60" height="40" rx="4" fill="#1e293b" stroke="#334155"/><text x="150" y="58" fill="#e2e8f0" font-size="8" text-anchor="middle">Node [Object 2]</text><text x="150" y="70" fill="#94a3b8" font-size="8" text-anchor="middle">val: 42</text></svg>`
+          svgMarkup: `<svg viewBox="0 0 200 120" class="w-full h-full"><rect x="120" y="40" width="60" height="40" rx="4" fill="#1e293b" stroke="#334155"/><text x="150" y="58" fill="#e2e8f0" font-size="8" text-anchor="middle">Node [Object 2]</text><text x="150" y="70" fill="#94a3b8" font-size="8" text-anchor="middle">value: 42</text></svg>`
         }
       },
       {
@@ -832,7 +832,7 @@ class Node {
             id: "302",
             className: "Node",
             fields: [
-              { name: "val", type: "int", value: "42", isReference: false },
+              { name: "value", type: "int", value: "42", isReference: false },
               { name: "next", type: "Node", value: "null", isReference: true }
             ],
             x: 60,
@@ -886,7 +886,7 @@ class Node {
             id: "302",
             className: "Node",
             fields: [
-              { name: "val", type: "int", value: "42", isReference: false },
+              { name: "value", type: "int", value: "42", isReference: false },
               { name: "next", type: "Node", value: "null", isReference: true }
             ],
             x: 60,
@@ -896,7 +896,7 @@ class Node {
             id: "303",
             className: "Node",
             fields: [
-              { name: "val", type: "int", value: "84", isReference: false },
+              { name: "value", type: "int", value: "84", isReference: false },
               { name: "next", type: "Node", value: "null", isReference: true }
             ],
             x: 60,
@@ -911,13 +911,13 @@ class Node {
         ],
         spotlightStackVars: ["n2"],
         spotlightHeapObjects: ["303"],
-        spotlightHeapFields: ["303-val"],
+        spotlightHeapFields: ["303-value"],
         explanation: "We create a second Node object, which we'll call [Object 3], in Object Storage holding the value 84. The variable n2 on the Stack holds the remote control pointing to [Object 3].",
         bananaDiagram: {
           type: "reference",
           title: "Preparing the Next Box",
           description: "We build a second node [Object 3] containing 84 in Object Storage. It is not yet connected to our stack.",
-          svgMarkup: `<svg viewBox="0 0 200 120" class="w-full h-full"><rect x="120" y="40" width="60" height="40" rx="4" fill="#1e293b" stroke="#334155"/><text x="150" y="58" fill="#e2e8f0" font-size="8" text-anchor="middle">Node [Object 3]</text><text x="150" y="70" fill="#10b981" font-size="8" text-anchor="middle">val: 84</text></svg>`
+          svgMarkup: `<svg viewBox="0 0 200 120" class="w-full h-full"><rect x="120" y="40" width="60" height="40" rx="4" fill="#1e293b" stroke="#334155"/><text x="150" y="58" fill="#e2e8f0" font-size="8" text-anchor="middle">Node [Object 3]</text><text x="150" y="70" fill="#10b981" font-size="8" text-anchor="middle">value: 84</text></svg>`
         }
       },
       {
@@ -946,7 +946,7 @@ class Node {
             id: "302",
             className: "Node",
             fields: [
-              { name: "val", type: "int", value: "42", isReference: false },
+              { name: "value", type: "int", value: "42", isReference: false },
               { name: "next", type: "Node", value: "null", isReference: true }
             ],
             x: 60,
@@ -956,7 +956,7 @@ class Node {
             id: "303",
             className: "Node",
             fields: [
-              { name: "val", type: "int", value: "84", isReference: false },
+              { name: "value", type: "int", value: "84", isReference: false },
               { name: "next", type: "Node", value: "@302", isReference: true }
             ],
             x: 60,
@@ -1012,7 +1012,7 @@ class Node {
             id: "302",
             className: "Node",
             fields: [
-              { name: "val", type: "int", value: "42", isReference: false },
+              { name: "value", type: "int", value: "42", isReference: false },
               { name: "next", type: "Node", value: "null", isReference: true }
             ],
             x: 60,
@@ -1022,7 +1022,7 @@ class Node {
             id: "303",
             className: "Node",
             fields: [
-              { name: "val", type: "int", value: "84", isReference: false },
+              { name: "value", type: "int", value: "84", isReference: false },
               { name: "next", type: "Node", value: "@302", isReference: true }
             ],
             x: 60,
@@ -1109,7 +1109,7 @@ function getWalkthroughMessage(presetId: string, step: number) {
       case 3:
         return "Changed head.next from null to the same Node referenced by temp.";
       case 4:
-        return "Read head.val and stored the value 10 in a new variable named val.";
+        return "Read head.value and stored the value 10 in a new variable named value.";
       default:
         return "Tracing completed. Feel free to reset, edit code, or try another example preset!";
     }
@@ -1180,7 +1180,7 @@ function getWalkthroughMessage(presetId: string, step: number) {
       case 3:
         return "Great! head.next = temp executed. The next field of [Object 1] now points to [Object 2], chaining the two nodes!";
       case 4:
-        return "Success! val = head.val executed. The value 10 was followed from [Object 1] on the Heap and stored directly as a value on the Stack.";
+        return "Success! value = head.value executed. The value 10 was followed from [Object 1] on the Heap and stored directly as a value on the Stack.";
       default:
         return "Tracing completed. Feel free to reset, edit code, or try another example preset!";
     }
@@ -1388,7 +1388,7 @@ const LESSON_RECAPS: Record<string, Array<{ label: string; text: string }>> = {
   linkedlist: [
     { label: "Created", text: "Two separate Node objects." },
     { label: "Connected", text: "head.next points to the same Node as temp." },
-    { label: "Read", text: "head.val copied 10 into val." },
+    { label: "Read", text: "head.value copied 10 into value." },
   ],
   arraylist: [
     { label: "Created", text: "An array and a larger replacement array." },
@@ -1417,7 +1417,7 @@ function getReadyPrompt(presetId: string, lessonStep: number): string {
       "Watch for a new variable, a new Node, and the arrow connecting them.",
       "Watch for a second variable and a separate Node object.",
       "Watch the next field change from null to a reference arrow.",
-      "Watch Java copy 10 from the first Node into the variable val.",
+      "Watch Java copy 10 from the first Node into the variable value.",
     ][lessonStep - 1] ?? "Watch the memory view for the marked change.";
   }
   return "Watch the Variables and Objects areas for the marked change.";
@@ -1478,19 +1478,13 @@ function LessonIntro({
 
 function LessonComplete({
   presetId,
-  examples,
   isCustomCode,
   onRestart,
-  onLoadExample,
-  onEditCode,
   onContinueToNextStage,
 }: {
   presetId: string;
-  examples: Array<{ id: string; name: string }>;
   isCustomCode: boolean;
   onRestart: () => void;
-  onLoadExample: (id: string) => void;
-  onEditCode: () => void;
   onContinueToNextStage?: () => void;
 }) {
   const linkedList = presetId === "linkedlist" && !isCustomCode;
@@ -1534,17 +1528,6 @@ function LessonComplete({
           <button type="button" className="btn-ghost" onClick={onRestart}><RotateCcw size={15} /> Review Lesson</button>
         </div>
 
-        {/*
-          Post-lesson tools. They live here and only here, because the lesson is
-          over by the time this screen renders, so nothing a participant does
-          from this point can affect what the post-test measures.
-        */}
-        <PostLessonPanel
-          examples={examples}
-          activeExampleId={isCustomCode ? examples[0]?.id ?? presetId : presetId}
-          onLoadExample={onLoadExample}
-          onEditCode={onEditCode}
-        />
       </div>
     </section>
   );
@@ -1559,11 +1542,13 @@ interface VisualizerExperienceProps {
    */
   onLessonComplete?: () => void;
   onContinueToNextStage?: () => void;
+  onExampleAttempt?: (exampleId: string) => void;
 }
 
 export default function VisualizerExperience({
   onLessonComplete,
   onContinueToNextStage,
+  onExampleAttempt,
 }: VisualizerExperienceProps = {}) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [leftW, setLeftW]   = useState(540); // px
@@ -1572,7 +1557,9 @@ export default function VisualizerExperience({
   const [currentStep, setCurrentStep] = useState<number>(0);
   const [lessonPhase, setLessonPhase] = useState<LessonPhase>("intro");
   const [isTourOpen, setIsTourOpen]   = useState(false);
+  const [tourInitialStep, setTourInitialStep] = useState(0);
   const [isWalkthroughActive, setIsWalkthroughActive] = useState<boolean>(false);
+  const [isExploreOpen, setIsExploreOpen] = useState(false);
 
   /*
    * Everything below is post-lesson only. `hasFinishedLesson` latches once the
@@ -1638,8 +1625,9 @@ export default function VisualizerExperience({
       setLessonPhase("result");
       return;
     }
-    if (lessonPhase === "result" && currentStep > 1) {
+    if (lessonPhase === "result" && currentStep > 0) {
       setCurrentStep(prev => prev - 1);
+      setLessonPhase("ready");
       return;
     }
     setCurrentStep(0);
@@ -1679,9 +1667,10 @@ export default function VisualizerExperience({
     setPresetId(id);
     setCurrentStep(0);
     setLessonPhase(options?.inPlace ? "ready" : "intro");
+    if (options?.inPlace) onExampleAttempt?.(id);
     /* The guide narrates one example only, so it never carries across. */
     if (!hasGuidedWalkthrough(id)) setIsWalkthroughActive(false);
-  }, [abortPendingRun]);
+  }, [abortPendingRun, onExampleAttempt]);
 
   const handleStartEdit = useCallback(() => {
     abortPendingRun();
@@ -1845,7 +1834,9 @@ export default function VisualizerExperience({
         presets={Object.values(SIMULATION_PRESETS)}
         onPresetChange={handlePresetChange}
         onBegin={() => {
+          onExampleAttempt?.(activePreset.id);
           setLessonPhase("ready");
+          setTourInitialStep(0);
           setIsTourOpen(true);
         }}
       />
@@ -1857,10 +1848,7 @@ export default function VisualizerExperience({
       <LessonComplete
         presetId={presetId}
         isCustomCode={isCustomCode}
-        examples={Object.values(SIMULATION_PRESETS).map((preset) => ({ id: preset.id, name: preset.name }))}
         onRestart={handleReset}
-        onLoadExample={(id) => handlePresetChange(id, { inPlace: true })}
-        onEditCode={handleStartEdit}
         onContinueToNextStage={onContinueToNextStage}
       />
     );
@@ -1937,7 +1925,11 @@ export default function VisualizerExperience({
             onStepBack={handleStepBack}
             onPrimary={handlePrimary}
             onReset={handleReset}
-            onOpenGuide={() => setIsTourOpen(true)}
+            onOpenGuide={() => {
+              setIsWalkthroughActive(false);
+              setTourInitialStep(0);
+              setIsTourOpen(true);
+            }}
             showGuideButton={guideAvailable}
             canEdit={postLessonToolsAvailable}
             isEditing={isEditing}
@@ -1984,12 +1976,15 @@ export default function VisualizerExperience({
         whyItMatters={isCustomCode ? stepDiagram.description : getWhyItMatters(presetId, focusStepIndex, stepDiagram.description)}
       />
 
-      <OnboardingTour
-        isOpen={isTourOpen}
-        onClose={() => setIsTourOpen(false)}
-        /* The walkthrough only opens for examples it has narration for. */
-        onStartWalkthrough={() => setIsWalkthroughActive(guideAvailable)}
-      />
+      {isTourOpen && (
+        <OnboardingTour
+          isOpen
+          initialStep={tourInitialStep}
+          onClose={() => setIsTourOpen(false)}
+          /* The walkthrough only opens for examples it has narration for. */
+          onStartWalkthrough={() => setIsWalkthroughActive(guideAvailable)}
+        />
+      )}
 
       <InteractiveWalkthrough
         isActive={isWalkthroughActive && guideAvailable}
@@ -1997,6 +1992,26 @@ export default function VisualizerExperience({
         lessonPhase={lessonPhase}
         presetId={presetId}
         isCustomCode={isCustomCode}
+        onStepBack={handleStepBack}
+        onBackToOrientation={() => {
+          setIsWalkthroughActive(false);
+          setTourInitialStep(4);
+          setIsTourOpen(true);
+        }}
+        onExploreExamples={() => setIsExploreOpen(true)}
+      />
+
+      <PostLessonExplorerModal
+        isOpen={isExploreOpen}
+        examples={Object.values(SIMULATION_PRESETS).map((preset) => ({ id: preset.id, name: preset.name }))}
+        activeExampleId={presetId}
+        onClose={() => setIsExploreOpen(false)}
+        onLoadExample={(id) => {
+          setIsExploreOpen(false);
+          setHasFinishedLesson(true);
+          onLessonComplete?.();
+          handlePresetChange(id, { inPlace: true });
+        }}
       />
 
       {false && <>{/* Legacy developer status footer, hidden from participants. */}

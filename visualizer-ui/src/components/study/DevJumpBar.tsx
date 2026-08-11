@@ -7,6 +7,7 @@
  */
 
 import { useEffect, useState } from "react";
+import { ChevronDown } from "lucide-react";
 import { useStudy } from "@/components/study/StudyProvider";
 import type { Condition, Phase } from "@/lib/studyTypes";
 
@@ -84,10 +85,13 @@ export default function DevJumpBar() {
               DEV JUMP - {session.phase} / {condition}
             </span>
             <button
+              type="button"
               onClick={() => setOpen(false)}
-              style={{ color: "var(--text-secondary)" }}
+              className="dev-jump-hide-button cursor-pointer flex items-center gap-1"
+              style={{ cursor: "pointer" }}
             >
-              hide
+              <ChevronDown size={13} aria-hidden="true" />
+              Hide
             </button>
           </div>
 
@@ -101,12 +105,14 @@ export default function DevJumpBar() {
                 (entry.condition === undefined || entry.condition === condition);
               return (
                 <button
+                  type="button"
                   key={`${entry.phase}-${entry.condition ?? "any"}`}
                   onClick={() => devJump(entry.phase, entry.condition)}
-                  className="rounded px-2 py-1"
+                  className="dev-jump-option rounded px-2 py-1 cursor-pointer transition-opacity hover:opacity-90"
                   style={{
                     background: active ? GREEN_ON : GREEN_OFF,
                     color: "#fff",
+                    cursor: "pointer",
                   }}
                 >
                   {entry.label}
@@ -119,12 +125,14 @@ export default function DevJumpBar() {
             <span style={{ color: "var(--text-secondary)" }}>condition:</span>
             {(["ai", "static"] as Condition[]).map((c) => (
               <button
+                type="button"
                 key={c}
                 onClick={() => devJump(session.phase, c)}
-                className="rounded px-2 py-1"
+                className="dev-jump-option rounded px-2 py-1 cursor-pointer transition-opacity hover:opacity-90"
                 style={{
                   background: condition === c ? GREEN_ON : GREEN_OFF,
                   color: "#fff",
+                  cursor: "pointer",
                 }}
               >
                 {c}
@@ -134,13 +142,9 @@ export default function DevJumpBar() {
         </div>
       ) : (
         <button
+          type="button"
           onClick={() => setOpen(true)}
-          className="rounded-md border px-2 py-1"
-          style={{
-            background: "var(--bg-panel)",
-            borderColor: "var(--border)",
-            color: "var(--text-secondary)",
-          }}
+          className="dev-jump-toggle cursor-pointer rounded-md border px-2 py-1"
         >
           dev
         </button>

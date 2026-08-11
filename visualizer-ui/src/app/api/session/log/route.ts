@@ -7,10 +7,12 @@
  * event to the matching session columns and patches the row.
  */
 
-import { patchSession } from "@/lib/supabaseServer";
+import { callRpc, patchSession } from "@/lib/supabaseServer";
 import type { LogRequestBody } from "@/lib/studyTypes";
 
 export const dynamic = "force-dynamic";
+
+const EXAMPLE_IDS = new Set(["linkedlist", "arraylist", "stack", "livetrace"]);
 
 function patchForEvent(
   body: LogRequestBody,
@@ -30,6 +32,8 @@ function patchForEvent(
       return { learning_started_at: serverNow };
     case "learning_completed":
       return { learning_completed_at: serverNow };
+    case "example_attempted":
+      return {};
     case "learning_continue":
       return { learning_continue_at: serverNow };
     case "posttest_started":
@@ -57,6 +61,17 @@ export async function POST(request: Request) {
       );
     }
     const serverNow = new Date().toISOString();
+    if (body.event === "example_attempted") {
+      const exampleId = body.payload?.example_id;
+      if (!exampleId || !EXAMPLE_IDS.has(exampleId)) {
+        return Response.json({ error: "a valid example_id is required" }, { status: 400 });
+      }
+      await callRpc("record_example_attempt", {
+        p_participant_id: body.participant_id,
+        p_example_id: exampleId,
+      });
+      return Response.json({ ok: true, serverTimestamp: serverNow });
+    }
     const patch = patchForEvent(body, serverNow);
     await patchSession(body.participant_id, patch);
     return Response.json({ ok: true, serverTimestamp: serverNow });

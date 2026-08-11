@@ -4,13 +4,11 @@ import { useState } from "react";
 import { Pencil, Play } from "lucide-react";
 
 /*
- * The two things a participant can do once the lesson is finished: open another
- * built-in example, or edit the Java and run it for real.
+ * Post-lesson options shown after every required line has run.
  *
- * This panel is rendered only from the lesson completion screen. Nothing here
- * is reachable during the measured lesson, because a participant who spends the
- * learning phase on the Stack example, or on a program they wrote themselves,
- * produces post-test data we cannot use.
+ * This panel is opened from the final required walkthrough card, after every
+ * required line has run. It can also be reused anywhere post-lesson tools are
+ * needed without duplicating their behavior.
  */
 
 export interface PostLessonExample {
@@ -22,7 +20,7 @@ interface PostLessonPanelProps {
   examples: PostLessonExample[];
   activeExampleId: string;
   onLoadExample: (id: string) => void;
-  onEditCode: () => void;
+  showHeading?: boolean;
 }
 
 const cardStyle: React.CSSProperties = {
@@ -39,9 +37,10 @@ export default function PostLessonPanel({
   examples,
   activeExampleId,
   onLoadExample,
-  onEditCode,
+  showHeading = true,
 }: PostLessonPanelProps) {
-  const [choice, setChoice] = useState<string>(activeExampleId);
+  const otherExamples = examples.filter((example) => example.id !== activeExampleId);
+  const [choice, setChoice] = useState<string>(otherExamples[0]?.id ?? activeExampleId);
 
   return (
     <div
@@ -53,16 +52,18 @@ export default function PostLessonPanel({
         textAlign: "left",
       }}
     >
-      <h2
-        style={{
-          color: "var(--text-primary)",
-          fontSize: 15,
-          fontWeight: 700,
-          textAlign: "center",
-        }}
-      >
-        Want to keep exploring?
-      </h2>
+      {showHeading && (
+        <h2
+          style={{
+            color: "var(--text-primary)",
+            fontSize: 15,
+            fontWeight: 700,
+            textAlign: "center",
+          }}
+        >
+          Want to keep exploring?
+        </h2>
+      )}
 
       <div style={cardStyle}>
         <h3 style={{ color: "var(--text-primary)", fontSize: 13.5, fontWeight: 700 }}>
@@ -79,14 +80,19 @@ export default function PostLessonPanel({
               onChange={(event) => setChoice(event.target.value)}
               aria-label="Choose another example to load"
             >
-              {examples.map((example) => (
+              {otherExamples.map((example) => (
                 <option key={example.id} value={example.id}>
                   {example.name}
                 </option>
               ))}
             </select>
           </label>
-          <button type="button" className="btn-primary" onClick={() => onLoadExample(choice)}>
+          <button
+            type="button"
+            className="btn-primary"
+            onClick={() => onLoadExample(choice)}
+            disabled={otherExamples.length === 0}
+          >
             <Play size={15} aria-hidden="true" />
             <span>Load example</span>
           </button>
@@ -98,15 +104,27 @@ export default function PostLessonPanel({
           Edit the code and run it
         </h3>
         <p style={{ color: "var(--text-secondary)", fontSize: 12.5, lineHeight: 1.6 }}>
-          Change the Java yourself, then run it. The memory view will follow your program, one line
-          at a time, exactly as it followed ours. If your code does not compile, you will see the
-          error message and can fix it and run it again.
+          This is a feature for the future and will be included for our full user study after our pilot study. In the future, you will be able to edit the Java code directly, compile it, and trace your own custom program step by step in memory.
         </p>
-        <div>
-          <button type="button" className="btn-ghost" onClick={onEditCode}>
-            <Pencil size={15} aria-hidden="true" />
-            <span>Edit the code</span>
-          </button>
+        <div className="relative inline-flex items-center">
+          <div className="group relative inline-flex items-center">
+            <button
+              type="button"
+              className="btn-ghost cursor-not-allowed opacity-60 flex items-center gap-1.5"
+              disabled
+              aria-describedby="edit-code-coming-soon"
+            >
+              <Pencil size={15} aria-hidden="true" />
+              <span>Edit the code</span>
+            </button>
+            <span
+              id="edit-code-coming-soon"
+              role="tooltip"
+              className="pointer-events-none absolute left-full ml-2 z-20 whitespace-nowrap rounded-md bg-slate-900 px-2.5 py-1 text-[11px] font-bold text-emerald-400 opacity-0 shadow-lg border border-slate-700 transition-all duration-150 group-hover:opacity-100 group-hover:translate-x-1"
+            >
+              Coming soon
+            </span>
+          </div>
         </div>
       </div>
     </div>

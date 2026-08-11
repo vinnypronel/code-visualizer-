@@ -1,9 +1,9 @@
 "use client";
 
-import { useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { motion } from "framer-motion";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, GripHorizontal } from "lucide-react";
 import GuideSpotlight, {
   placeGuideCard,
   usePrefersReducedMotion,
@@ -38,8 +38,8 @@ const STEPS: TourStep[] = [
     placement: "top",
   },
   {
-    title: "Inspect Java's memory",
-    content: "Variables appear on the left and objects appear on the right. Items are marked after they change.",
+    title: "Meet the Visualization Workbench",
+    content: "The entire section to the right of the Java code is the Visualization Workbench. It shows Stack variables on the left, Objects on the right, and marks what changes after each line runs.",
     selector: "#onboarding-memory-view",
     placement: "left",
   },
@@ -55,14 +55,17 @@ interface OnboardingTourProps {
   isOpen: boolean;
   onClose: () => void;
   onStartWalkthrough?: () => void;
+  initialStep?: number;
 }
 
 const CARD_WIDTH = 360;
 
-export default function OnboardingTour({ isOpen, onClose, onStartWalkthrough }: OnboardingTourProps) {
-  const [activeStep, setActiveStep] = useState(0);
+export default function OnboardingTour({ isOpen, onClose, onStartWalkthrough, initialStep = 0 }: OnboardingTourProps) {
+  const [activeStep, setActiveStep] = useState(() => Math.max(0, Math.min(STEPS.length - 1, initialStep)));
   const [placement, setPlacement] = useState<{ top: number; left: number; side: GuideSide } | null>(null);
+  const [dragPos, setDragPos] = useState<{ top: number; left: number } | null>(null);
   const cardRef = useRef<HTMLDivElement>(null);
+  const dragOriginRef = useRef<{ dx: number; dy: number } | null>(null);
   const reducedMotion = usePrefersReducedMotion();
   const step = STEPS[activeStep];
   const targetRect = useTargetRect(isOpen ? step.selector : null, isOpen);
@@ -72,11 +75,87 @@ export default function OnboardingTour({ isOpen, onClose, onStartWalkthrough }: 
 
     const reposition = () => {
       const cardHeight = cardRef.current?.offsetHeight ?? 230;
+      const cardWidth = cardRef.current?.offsetWidth ?? CARD_WIDTH;
+
+      /*
+       * The highlighted-line card belongs beside the editor but should leave
+       * the source visible. Anchor it just inside the memory area and align it
+       * to the bottom of the viewport, matching the position students found
+       * most useful when moving it themselves.
+       */
+      if (activeStep === 1 && targetRect) {
+        const margin = 24;
+        const desiredLeft = targetRect.left + targetRect.width + 19;
+        const roomOnRight = desiredLeft + cardWidth <= window.innerWidth - margin;
+        if (roomOnRight) {
+          setPlacement({
+            top: Math.max(margin, window.innerHeight - cardHeight - 84),
+            left: desiredLeft,
+            side: "right",
+          });
+          return;
+        }
+      }
+
+      /* The explanation card reads best centered above the explanation panel,
+       * with enough separation for the downward pointer to remain obvious. */
+      if (activeStep === 2 && targetRect) {
+        const margin = 24;
+        const left = Math.max(
+          margin,
+          Math.min(
+            window.innerWidth - cardWidth - margin,
+            (window.innerWidth - cardWidth) / 2 + 16,
+          ),
+        );
+        const desiredTop = targetRect.top - cardHeight - 74;
+        setPlacement({
+          top: Math.max(margin, desiredTop),
+          left,
+          side: "top",
+        });
+        return;
+      }
+
+      /* The memory overview belongs in the open middle of the code pane so it
+       * can point toward Stack and Objects without covering either one. */
+      if (activeStep === 3 && targetRect) {
+        const margin = 24;
+        const editorWidth = targetRect.left;
+        const left = Math.max(margin, (editorWidth - cardWidth) / 2);
+        const desiredTop = targetRect.top + (targetRect.height - cardHeight) / 2 - 16;
+        setPlacement({
+          top: Math.max(margin, Math.min(window.innerHeight - cardHeight - margin, desiredTop)),
+          left,
+          side: "left",
+        });
+        return;
+      }
+
+      /* The final orientation card sits to the right of Run This Line. Keeping
+       * the control near the lower third of the card makes the relationship
+       * clear without covering the button students are about to use. */
+      if (activeStep === 4 && targetRect) {
+        const margin = 24;
+        const desiredLeft = targetRect.left + targetRect.width + 72;
+        const desiredTop = targetRect.top - cardHeight * 0.66;
+        setPlacement({
+          top: Math.max(margin, Math.min(window.innerHeight - cardHeight - margin, desiredTop)),
+          left: Math.max(
+            margin,
+            Math.min(window.innerWidth - cardWidth - margin, desiredLeft),
+          ),
+          side: "right",
+        });
+        return;
+      }
+
       setPlacement(placeGuideCard({
         target: targetRect,
-        cardWidth: CARD_WIDTH,
+        cardWidth,
         cardHeight,
         preferred: step.placement,
+        gap: activeStep === 0 ? 66 : undefined,
         viewportWidth: window.innerWidth,
         viewportHeight: window.innerHeight,
       }));
@@ -90,12 +169,69 @@ export default function OnboardingTour({ isOpen, onClose, onStartWalkthrough }: 
       observer?.disconnect();
       window.removeEventListener("resize", reposition);
     };
-  }, [isOpen, step.placement, targetRect]);
+  }, [activeStep, isOpen, step.placement, targetRect]);
+
+  const clampToViewport = useCallback((top: number, left: number) => {
+    const card = cardRef.current;
+    const width = card?.offsetWidth ?? CARD_WIDTH;
+    const height = card?.offsetHeight ?? 230;
+    const margin = 8;
+    return {
+      top: Math.max(margin, Math.min(window.innerHeight - height - margin, top)),
+      left: Math.max(margin, Math.min(window.innerWidth - width - margin, left)),
+    };
+  }, []);
+
+  const handleDragStart = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
+    const card = cardRef.current;
+    if (!card) return;
+    const rect = card.getBoundingClientRect();
+    dragOriginRef.current = {
+      dx: event.clientX - rect.left,
+      dy: event.clientY - rect.top,
+    };
+    card.setPointerCapture(event.pointerId);
+  }, []);
+
+  const handleDragMove = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
+    const origin = dragOriginRef.current;
+    if (!origin) return;
+    event.preventDefault();
+    setDragPos(clampToViewport(event.clientY - origin.dy, event.clientX - origin.dx));
+  }, [clampToViewport]);
+
+  const handleDragEnd = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
+    if (!dragOriginRef.current) return;
+    dragOriginRef.current = null;
+    cardRef.current?.releasePointerCapture(event.pointerId);
+  }, []);
+
+  useEffect(() => {
+    if (!dragPos) return;
+    const onResize = () => setDragPos((position) => (
+      position ? clampToViewport(position.top, position.left) : position
+    ));
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, [dragPos, clampToViewport]);
+
+  // Card 2 explicitly teaches students to read the next executable line, so
+  // give that line the same strong treatment used by the required walkthrough.
+  useEffect(() => {
+    if (!isOpen || activeStep !== 1) return;
+    document.body.classList.add("onboarding-editor-line-focus");
+    return () => document.body.classList.remove("onboarding-editor-line-focus");
+  }, [isOpen, activeStep]);
 
   const finishTour = () => {
     onClose();
     setActiveStep(0);
     onStartWalkthrough?.();
+  };
+
+  const moveToStep = (nextStep: number) => {
+    setDragPos(null);
+    setActiveStep(Math.max(0, Math.min(STEPS.length - 1, nextStep)));
   };
 
   if (!isOpen || typeof document === "undefined") return null;
@@ -120,30 +256,44 @@ export default function OnboardingTour({ isOpen, onClose, onStartWalkthrough }: 
           transition={{ duration: reducedMotion ? 0 : 0.18 }}
           className="fixed w-[min(360px,calc(100vw-32px))] rounded-lg border px-5 py-4 shadow-lg pointer-events-auto"
           style={{
-            top: placement?.top ?? 0,
-            left: placement?.left ?? 0,
+            top: dragPos?.top ?? placement?.top ?? 0,
+            left: dragPos?.left ?? placement?.left ?? 0,
             background: "var(--bg-panel)",
             borderColor: "var(--border)",
             boxShadow: "0 16px 36px rgba(23, 32, 51, 0.18)",
           }}
           role="dialog"
           aria-label={`Lesson orientation ${activeStep + 1} of ${STEPS.length}: ${step.title}`}
+          onPointerMove={handleDragMove}
+          onPointerUp={handleDragEnd}
+          onPointerCancel={handleDragEnd}
         >
           <div className="flex items-center justify-between gap-2 mb-3">
             <p className="text-[11px] font-mono font-bold uppercase tracking-wider" style={{ color: "var(--accent)" }}>
               Lesson guide - {activeStep + 1} of {STEPS.length}
             </p>
-            {!isFirst && (
-              <button
-                type="button"
-                onClick={() => setActiveStep((current) => current - 1)}
-                className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-300 hover:text-white transition-colors px-2 py-0.5 rounded bg-slate-900/90 hover:bg-slate-800 border border-slate-700/60 shadow-sm"
-                title="Go back to previous step"
+            <div className="flex items-center gap-2">
+              {!isFirst && (
+                <button
+                  type="button"
+                  onClick={() => moveToStep(activeStep - 1)}
+                  className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-300 hover:text-white transition-colors px-2 py-0.5 rounded bg-slate-900/90 hover:bg-slate-800 border border-slate-700/60 shadow-sm"
+                  title="Go back to previous step"
+                >
+                  <ChevronLeft size={13} aria-hidden="true" />
+                  <span>Back</span>
+                </button>
+              )}
+              <div
+                className="guide-drag-handle"
+                onPointerDown={handleDragStart}
+                title="Drag guide"
+                aria-label="Drag lesson guide"
+                role="button"
               >
-                <ChevronLeft size={13} aria-hidden="true" />
-                <span>Back</span>
-              </button>
-            )}
+                <GripHorizontal size={16} aria-hidden="true" />
+              </div>
+            </div>
           </div>
           <h2 className="mb-2 text-[18px] font-bold" style={{ color: "var(--text-primary)" }}>{step.title}</h2>
           <p className="mb-5 text-[13px] leading-relaxed" style={{ color: "var(--text-secondary)" }}>{step.content}</p>
@@ -166,7 +316,7 @@ export default function OnboardingTour({ isOpen, onClose, onStartWalkthrough }: 
               {!isFirst && (
                 <button
                   type="button"
-                  onClick={() => setActiveStep((current) => current - 1)}
+                  onClick={() => moveToStep(activeStep - 1)}
                   className="inline-flex items-center gap-1 rounded-md border px-3 py-1.5 text-[12px] font-semibold"
                   style={{ color: "var(--text-secondary)", borderColor: "var(--border)", background: "var(--bg-panel-2)" }}
                 >
@@ -175,7 +325,7 @@ export default function OnboardingTour({ isOpen, onClose, onStartWalkthrough }: 
               )}
               <button
                 type="button"
-                onClick={isLast ? finishTour : () => setActiveStep((current) => current + 1)}
+                onClick={isLast ? finishTour : () => moveToStep(activeStep + 1)}
                 className="inline-flex items-center gap-1 rounded-md px-4 py-1.5 text-[12px] font-bold text-white"
                 style={{ background: "var(--action)" }}
               >
