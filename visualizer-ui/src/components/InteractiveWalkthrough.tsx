@@ -502,11 +502,15 @@ export default function InteractiveWalkthrough({
               </div>
               <div className="mb-1.5">
                 <JavaSyntax code={activeStepData.setupNote.line1Code} className="font-mono text-[10.5px] block" />
-                <span className="text-slate-300 text-[10px] block leading-tight mt-0.5">{activeStepData.setupNote.line1Why}</span>
+                <span className="text-slate-400 font-mono text-[10px] block leading-tight mt-0.5">
+                  {"// "}{activeStepData.setupNote.line1Why}
+                </span>
               </div>
               <div>
                 <JavaSyntax code={activeStepData.setupNote.line2Code} className="font-mono text-[10.5px] block" />
-                <span className="text-slate-300 text-[10px] block leading-tight mt-0.5">{activeStepData.setupNote.line2Why}</span>
+                <span className="text-slate-400 font-mono text-[10px] block leading-tight mt-0.5">
+                  {"// "}{activeStepData.setupNote.line2Why}
+                </span>
               </div>
             </div>
           )}
