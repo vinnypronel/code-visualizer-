@@ -39,13 +39,15 @@ export default function LearningScreen() {
     void logEvent("example_attempted", { example_id: exampleId });
   }, [logEvent]);
 
-  const handleLessonComplete = useCallback(() => {
+  const handleLessonComplete = useCallback((exampleId: string) => {
     if (loggedCompletionRef.current) return;
     loggedCompletionRef.current = true;
+    handleExampleAttempt(exampleId);
     void logEvent("learning_completed", {
       elapsed_seconds: Math.floor((Date.now() - startAtMs) / 1000),
+      example_id: exampleId,
     });
-  }, [logEvent, startAtMs]);
+  }, [handleExampleAttempt, logEvent, startAtMs]);
 
   const proceed = useCallback(() => {
     void logEvent("learning_continue", {

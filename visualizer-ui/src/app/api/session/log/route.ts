@@ -14,6 +14,10 @@ export const dynamic = "force-dynamic";
 
 const EXAMPLE_IDS = new Set(["linkedlist", "arraylist", "stack", "livetrace"]);
 
+function validExampleId(value: unknown): value is string {
+  return typeof value === "string" && EXAMPLE_IDS.has(value);
+}
+
 function patchForEvent(
   body: LogRequestBody,
   serverNow: string,
@@ -63,7 +67,7 @@ export async function POST(request: Request) {
     const serverNow = new Date().toISOString();
     if (body.event === "example_attempted") {
       const exampleId = body.payload?.example_id;
-      if (!exampleId || !EXAMPLE_IDS.has(exampleId)) {
+      if (!validExampleId(exampleId)) {
         return Response.json({ error: "a valid example_id is required" }, { status: 400 });
       }
       await callRpc("record_example_attempt", {
@@ -71,6 +75,18 @@ export async function POST(request: Request) {
         p_example_id: exampleId,
       });
       return Response.json({ ok: true, serverTimestamp: serverNow });
+    }
+    if (body.event === "learning_completed" && body.payload?.example_id !== undefined) {
+      const exampleId = body.payload.example_id;
+      if (!validExampleId(exampleId)) {
+        return Response.json({ error: "a valid example_id is required" }, { status: 400 });
+      }
+      // Completion records the measured choice again as an idempotent safety
+      // net in case the earlier Begin Lesson event was delayed or interrupted.
+      await callRpc("record_example_attempt", {
+        p_participant_id: body.participant_id,
+        p_example_id: exampleId,
+      });
     }
     const patch = patchForEvent(body, serverNow);
     await patchSession(body.participant_id, patch);

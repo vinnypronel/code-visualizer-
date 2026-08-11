@@ -34,23 +34,17 @@ export const POSTTEST_DURATION_SECONDS = 10 * 60;
 /* Recommended (not enforced) time on the learning phase. */
 export const LEARNING_RECOMMENDED_MINUTES = 15;
 
-/*
- * The one lesson preset every participant sees.
- *
- * Two reasons this is pinned. The post-test only measures the linked-list
- * content, and the guided walkthrough narrates the linked-list source lines
- * verbatim, so any other preset would leave the guide describing code that is
- * not on screen. The other presets stay in the visualizer for development.
- */
+/* The initial selection shown before a participant chooses a lesson. */
 export const LESSON_PRESET_ID = "linkedlist";
 
 /*
- * Whether the lesson intro renders the example picker. Same guard DevJumpBar
- * uses: a developer can still switch presets locally, and a production build
- * compiles the control out, so a participant can never leave the measured
- * lesson.
+ * Every AI-condition participant chooses one of the four fully guided lessons
+ * before beginning. The choice is recorded when Begin Lesson is selected.
  */
-export const SHOW_PRESET_SELECTOR = process.env.NODE_ENV !== "production";
+export const SHOW_PRESET_SELECTOR = true;
+
+/* Development-only escape hatches must remain unavailable to participants. */
+const SHOW_DEVELOPER_LESSON_TOOLS = process.env.NODE_ENV !== "production";
 
 /*
  * Post-lesson tools: swapping to another built-in example, and editing the Java
@@ -67,7 +61,7 @@ export const SHOW_PRESET_SELECTOR = process.env.NODE_ENV !== "production";
  * so a production build compiles the mid-lesson path out entirely.
  */
 export function showPostLessonTools(lessonPhase: string, hasFinishedLesson: boolean): boolean {
-  return lessonPhase === "complete" || hasFinishedLesson || SHOW_PRESET_SELECTOR;
+  return lessonPhase === "complete" || hasFinishedLesson || SHOW_DEVELOPER_LESSON_TOOLS;
 }
 
 /*

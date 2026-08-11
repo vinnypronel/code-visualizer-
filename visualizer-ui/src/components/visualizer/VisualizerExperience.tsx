@@ -1451,7 +1451,7 @@ function LessonIntro({
         <div className="lesson-kicker">Guided Java Lesson: Code Visualizer</div>
         {SHOW_PRESET_SELECTOR && (
           <label className="lesson-example-select">
-            <span>Example</span>
+            <span>Choose your lesson</span>
             <select value={preset.id} onChange={(event) => onPresetChange(event.target.value)}>
               {presets.map((option) => <option key={option.id} value={option.id}>{option.name}</option>)}
             </select>
@@ -1541,7 +1541,7 @@ interface VisualizerExperienceProps {
    * intervention. The lesson state machine stays local to this component, so
    * the parent gets a notification rather than owning the state.
    */
-  onLessonComplete?: () => void;
+  onLessonComplete?: (exampleId: string) => void;
   onContinueToNextStage?: () => void;
   onExampleAttempt?: (exampleId: string) => void;
 }
@@ -1647,12 +1647,12 @@ export default function VisualizerExperience({
         /* Latch here rather than in an effect: finishing the lesson is the one
          * event that unlocks the post-lesson tools, and it happens here. */
         setHasFinishedLesson(true);
-        onLessonComplete?.();
+        onLessonComplete?.(presetId);
       } else {
         setLessonPhase("ready");
       }
     }
-  }, [currentStep, lessonPhase, onLessonComplete, totalSteps]);
+  }, [currentStep, lessonPhase, onLessonComplete, presetId, totalSteps]);
 
   /*
    * Loading an example. `inPlace` is what the post-lesson switcher uses: the
@@ -1813,8 +1813,8 @@ export default function VisualizerExperience({
   // "intro", so this can fire again on a second pass; the listener is expected
   // to be idempotent.
   useEffect(() => {
-    if (lessonPhase === "complete") onLessonComplete?.();
-  }, [lessonPhase, onLessonComplete]);
+    if (lessonPhase === "complete") onLessonComplete?.(presetId);
+  }, [lessonPhase, onLessonComplete, presetId]);
 
   const activeLineNumber = focusStepData.lineHighlight ?? 1;
   const activeLineText = activePreset.code
@@ -1864,7 +1864,7 @@ export default function VisualizerExperience({
           onLoadExample={(id) => {
             setIsExploreOpen(false);
             setHasFinishedLesson(true);
-            onLessonComplete?.();
+            onLessonComplete?.(presetId);
             handlePresetChange(id, { inPlace: true });
           }}
         />
@@ -2006,7 +2006,7 @@ export default function VisualizerExperience({
         onLoadExample={(id) => {
           setIsExploreOpen(false);
           setHasFinishedLesson(true);
-          onLessonComplete?.();
+          onLessonComplete?.(presetId);
           handlePresetChange(id, { inPlace: true });
         }}
       />
