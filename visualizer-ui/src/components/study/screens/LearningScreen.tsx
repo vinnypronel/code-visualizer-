@@ -14,6 +14,8 @@ import { formatMMSS, useCountUp } from "@/components/study/useTimers";
 import StaticMaterialsStub from "@/components/study/StaticMaterialsStub";
 import VisualizerExperience from "@/components/visualizer/VisualizerExperience";
 
+import { BackButtonWithTooltip } from "@/components/study/screens/TimedTestScreen";
+
 export default function LearningScreen() {
   const { session, logEvent, goTo } = useStudy();
   const [startAtMs] = useState(() => Date.now());
@@ -56,7 +58,15 @@ export default function LearningScreen() {
       stageIndex={2}
       heading="Learning"
       fluid
-      timer={<TimerChip label="Elapsed" value={formatMMSS(elapsed)} />}
+      timer={
+        <div className="flex items-center gap-3">
+          <BackButtonWithTooltip
+            label="Back to Pre-test"
+            onClick={() => goTo("pretest")}
+          />
+          <TimerChip label="Elapsed" value={formatMMSS(elapsed)} />
+        </div>
+      }
     >
       {isAi ? (
         <VisualizerExperience

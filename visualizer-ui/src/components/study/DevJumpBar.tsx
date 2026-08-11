@@ -61,7 +61,8 @@ export default function DevJumpBar() {
     };
   }, [session.phase]);
 
-  if (process.env.NODE_ENV === "production") return null;
+  // Temporarily enabled in production for testing as requested
+  // if (process.env.NODE_ENV === "production") return null;
 
   const condition: Condition = session.condition ?? "ai";
 

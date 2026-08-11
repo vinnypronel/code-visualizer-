@@ -57,7 +57,7 @@ export default function StudyShell({
     >
       {/* Header: study name + phase stepper + timer slot */}
       <header
-        className="flex-shrink-0 border-b select-none"
+        className="relative flex-shrink-0 border-b select-none"
         style={{ borderColor: "var(--border)", background: "var(--bg-header)" }}
       >
         <div className={`w-full ${fluid ? "px-4 py-1.5" : "max-w-4xl mx-auto px-3 sm:px-6 py-1"} flex items-center justify-between gap-4 min-h-[34px]`}>
@@ -132,7 +132,15 @@ export default function StudyShell({
             )}
           </div>
 
-          <div className="min-h-[20px] flex items-center ml-auto flex-shrink-0">{timer}</div>
+          <div
+            className={`min-h-[20px] flex items-center flex-shrink-0 ${
+              fluid
+                ? "ml-auto"
+                : "absolute right-3 sm:right-6 top-1.5"
+            }`}
+          >
+            {timer}
+          </div>
         </div>
 
         {!fluid && (

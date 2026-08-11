@@ -8,6 +8,7 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { ChevronLeft } from "lucide-react";
 import StudyShell, { TimerChip } from "@/components/study/StudyShell";
 import TestRunner from "@/components/study/TestRunner";
 import { useStudy } from "@/components/study/StudyProvider";
@@ -26,6 +27,37 @@ interface TimedTestScreenProps {
   nextPhase: Phase;
 }
 
+/* Tooltip button that informs participants that their responses are saved when navigating back */
+export function BackButtonWithTooltip({
+  label,
+  onClick,
+  tooltipText = "Your responses will be saved automatically if you go back.",
+}: {
+  label: string;
+  onClick: () => void;
+  tooltipText?: string;
+}) {
+  return (
+    <div className="group relative inline-flex items-center">
+      <button
+        type="button"
+        onClick={onClick}
+        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md border text-[12px] font-semibold text-slate-700 hover:text-slate-900 hover:border-slate-400 bg-white shadow-sm transition-all cursor-pointer"
+        style={{ borderColor: "var(--border)" }}
+      >
+        <ChevronLeft size={14} aria-hidden="true" />
+        <span>{label}</span>
+      </button>
+      <span
+        role="tooltip"
+        className="pointer-events-none absolute bottom-[calc(100%+8px)] left-0 z-50 whitespace-nowrap rounded-md bg-slate-900 px-2.5 py-1 text-[11px] font-medium text-white opacity-0 shadow-lg border border-slate-700 transition-all duration-150 group-hover:opacity-100 group-hover:translate-y-[-2px]"
+      >
+        {tooltipText}
+      </span>
+    </div>
+  );
+}
+
 export default function TimedTestScreen({
   which,
   def,
@@ -36,7 +68,7 @@ export default function TimedTestScreen({
   finishEvent,
   nextPhase,
 }: TimedTestScreenProps) {
-  const { session, setResponse, logEvent, goTo } = useStudy();
+  const { session, setResponse, logEvent, goTo, returnToConsent } = useStudy();
   // Anchor the timer to a single start moment, captured once.
   const [startAtMs] = useState(() => Date.now());
   const finishedRef = useRef(false);
@@ -91,20 +123,35 @@ export default function TimedTestScreen({
       heading={heading}
       timer={
         <TimerChip
-          label="Time left"
+          label="Recommended time left"
           value={formatMMSS(remaining)}
           urgent={urgent}
         />
       }
       footer={
         <>
+          {which === "pretest" ? (
+            <BackButtonWithTooltip
+              label="Back to Consent Form"
+              onClick={returnToConsent}
+              tooltipText="Going back to the Consent Form will reset your assigned Participant ID and answers."
+            />
+          ) : (
+            <BackButtonWithTooltip
+              label="Back to Pre-test"
+              onClick={() => goTo("pretest")}
+              tooltipText="Going back will reset your progress for this section."
+            />
+          )}
+
           <span
             id={`${which}-completion-progress`}
-            className="mr-auto text-[12px]"
+            className="mx-auto text-[12px]"
             style={{ color: "var(--text-secondary)" }}
           >
             {completedResponses} of {responseKeys.length} responses completed
           </span>
+
           <button
             className="btn-primary"
             disabled={!testComplete}
