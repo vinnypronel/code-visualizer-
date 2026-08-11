@@ -23,7 +23,7 @@ export default function ConsentScreen() {
       heading={CONSENT_META.title}
       subheading="Please read the following before deciding whether to take part."
     >
-      <div className="flex flex-col lg:flex-row items-start gap-5 w-full max-w-[1440px] -ml-8 sm:-ml-20 mr-auto">
+      <div className="flex flex-col lg:flex-row items-start gap-5 w-full max-w-[1360px]">
         {/* Scrollable Consent Form Text Box */}
         <div
           className="w-full lg:w-[560px] max-w-[560px] rounded-xl overflow-hidden shadow-sm flex-shrink-0"

@@ -156,8 +156,8 @@ export default function StudyShell({
         <main className="flex-1 min-h-0 overflow-hidden">{children}</main>
       ) : (
         <main className="flex-1 min-h-0 overflow-y-auto panel-scroll">
-          <div className="mx-auto w-full max-w-4xl px-6 py-5 sm:py-6">
-            <h1 className="text-xl font-bold mb-1">{heading}</h1>
+          <div className="w-full max-w-[1440px] px-6 sm:px-10 py-5 sm:py-6">
+            {heading && <h1 className="text-xl font-bold mb-1">{heading}</h1>}
             {subheading && (
               <p
                 className="text-[13px] mb-4"
