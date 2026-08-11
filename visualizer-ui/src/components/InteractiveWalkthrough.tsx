@@ -173,8 +173,10 @@ export default function InteractiveWalkthrough({
     if (!visible) return;
 
     const reposition = () => {
-      const cardHeight = cardRef.current?.offsetHeight || CARD_MAX_HEIGHT_FALLBACK;
-      const desiredCardWidth = activeStepData?.subPhase === "observe" ? OBSERVE_CARD_WIDTH : CARD_WIDTH;
+      const isObserve = activeStepData?.subPhase === "observe";
+      const defaultHeight = isObserve ? 235 : CARD_MAX_HEIGHT_FALLBACK;
+      const cardHeight = cardRef.current?.offsetHeight || defaultHeight;
+      const desiredCardWidth = isObserve ? OBSERVE_CARD_WIDTH : CARD_WIDTH;
       const cardWidth = cardRef.current?.offsetWidth || desiredCardWidth;
       const el = activeStepData ? document.querySelector(activeStepData.selector) : null;
       const live = el ? el.getBoundingClientRect() : null;
@@ -253,6 +255,24 @@ export default function InteractiveWalkthrough({
               Math.min(
                 window.innerWidth - cardWidth - margin,
                 live.left - cardWidth - 8,
+              ),
+            ),
+            side: "center",
+          });
+          return;
+        }
+
+        if (isFirstResult) {
+          setPlacement({
+            top: Math.max(
+              margin,
+              window.innerHeight - cardHeight - 105,
+            ),
+            left: Math.max(
+              margin,
+              Math.min(
+                window.innerWidth - cardWidth - margin,
+                live.left + 8,
               ),
             ),
             side: "center",
