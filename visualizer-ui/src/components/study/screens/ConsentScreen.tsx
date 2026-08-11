@@ -54,31 +54,43 @@ export default function ConsentScreen() {
                     "No, I do not agree - I do not wish to participate and will not be able to proceed with the study.",
                 },
               ] as const
-            ).map((opt) => (
-              <label
-                key={opt.key}
-                className="flex items-center gap-3 rounded-lg px-4 py-3 cursor-pointer transition-all shadow-sm"
-                style={{
-                  background:
-                    choice === opt.key ? "#ecfdf5" : "#ffffff",
-                  border:
-                    choice === opt.key
-                      ? "2px solid #059669"
+            ).map((opt) => {
+              const isSelected = choice === opt.key;
+              const isAgree = opt.key === "agree";
+              return (
+                <label
+                  key={opt.key}
+                  className="flex items-center gap-3 rounded-lg px-4 py-3 cursor-pointer transition-all shadow-sm"
+                  style={{
+                    background: isSelected
+                      ? isAgree
+                        ? "#ecfdf5"
+                        : "#fef2f2"
+                      : "#ffffff",
+                    border: isSelected
+                      ? isAgree
+                        ? "2px solid #059669"
+                        : "2px solid #dc2626"
                       : "1.5px solid #64748b",
-                  color: choice === opt.key ? "#047857" : "#0f172a",
-                }}
-              >
-                <input
-                  type="radio"
-                  name="consent"
-                  value={opt.key}
-                  checked={choice === opt.key}
-                  onChange={() => setChoice(opt.key)}
-                  className="accent-emerald-600 w-4 h-4"
-                />
-                <span className="text-[13px] font-semibold">{opt.label}</span>
-              </label>
-            ))}
+                    color: isSelected
+                      ? isAgree
+                        ? "#047857"
+                        : "#b91c1c"
+                      : "#0f172a",
+                  }}
+                >
+                  <input
+                    type="radio"
+                    name="consent"
+                    value={opt.key}
+                    checked={isSelected}
+                    onChange={() => setChoice(opt.key)}
+                    className={`w-4 h-4 ${isAgree ? "accent-emerald-600" : "accent-red-600"}`}
+                  />
+                  <span className="text-[13px] font-semibold">{opt.label}</span>
+                </label>
+              );
+            })}
           </fieldset>
 
           {/* Continue Button Moved Farther Right */}
