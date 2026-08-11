@@ -1154,15 +1154,15 @@ button:disabled, [role="button"][aria-disabled="true"] {
 }
 .guide-drag-handle {
   display: inline-flex;
-  width: 30px;
-  height: 24px;
+  width: 32px;
+  height: 26px;
   align-items: center;
   justify-content: center;
   border: 1px solid var(--border);
-  border-radius: 4px;
-  color: var(--text-muted);
+  border-radius: 6px;
+  color: var(--text-secondary);
   background: var(--bg-panel-2);
-  cursor: grab;
+  cursor: grab !important;
   touch-action: none;
   user-select: none;
   transition: color 150ms ease, border-color 150ms ease, background-color 150ms ease;
@@ -1172,8 +1172,10 @@ button:disabled, [role="button"][aria-disabled="true"] {
   color: var(--accent);
   border-color: var(--accent);
   background: #e8f2f9;
+  cursor: grab !important;
 }
 
-.guide-drag-handle:active {
-  cursor: grabbing;
+.guide-drag-handle:active,
+.guide-drag-handle.is-dragging {
+  cursor: grabbing !important;
 }

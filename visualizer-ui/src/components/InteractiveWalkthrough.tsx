@@ -181,20 +181,17 @@ export default function InteractiveWalkthrough({
 
       if (
         activeStepData?.subPhase === "observe" &&
-        currentIndex === (steps?.length ?? 0) - 1 &&
-        live
+        currentIndex === (steps?.length ?? 0) - 1
       ) {
+        const editorEl = document.querySelector("#onboarding-code-content");
+        const editorRect = editorEl ? editorEl.getBoundingClientRect() : null;
         const margin = 24;
-        const bottomInset = 28;
+        const targetLeft = editorRect ? editorRect.left + 88 : 88;
+        const targetTop = Math.max(margin, window.innerHeight - cardHeight - 135);
+
         setPlacement({
-          top: Math.max(margin, window.innerHeight - cardHeight - bottomInset),
-          left: Math.max(
-            margin,
-            Math.min(
-              window.innerWidth - cardWidth - margin,
-              live.left + 187,
-            ),
-          ),
+          top: targetTop,
+          left: Math.max(margin, targetLeft),
           side: "center",
         });
         return;
@@ -338,6 +335,8 @@ export default function InteractiveWalkthrough({
    */
   const dragOriginRef = useRef<{ dx: number; dy: number } | null>(null);
 
+  const [isDragging, setIsDragging] = useState(false);
+
   const clampToViewport = useCallback((top: number, left: number) => {
     const card = cardRef.current;
     const width = card?.offsetWidth ?? CARD_WIDTH;
@@ -360,6 +359,7 @@ export default function InteractiveWalkthrough({
         dx: event.clientX - rect.left,
         dy: event.clientY - rect.top,
       };
+      setIsDragging(true);
       card.setPointerCapture(event.pointerId);
     },
     [],
@@ -381,6 +381,7 @@ export default function InteractiveWalkthrough({
   const handleDragEnd = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
     if (!dragOriginRef.current) return;
     dragOriginRef.current = null;
+    setIsDragging(false);
     cardRef.current?.releasePointerCapture(event.pointerId);
   }, []);
 
@@ -495,13 +496,14 @@ export default function InteractiveWalkthrough({
               Step {guideStepNumber} of {totalGuideSteps} &middot; {activeStepData.phaseLabel ?? (isObserve ? "Look at what changed" : "Run the line")}
             </span>
             <div
-              className="guide-drag-handle flex-shrink-0"
+              className={`guide-drag-handle flex-shrink-0 ${isDragging ? "is-dragging" : ""}`}
               onPointerDown={handleDragStart}
-              title="Drag guide"
+              title="Drag guide (click and hold to drag)"
               aria-label="Drag lesson guide"
               role="button"
+              style={{ cursor: isDragging ? "grabbing" : "grab" }}
             >
-              <GripHorizontal size={16} aria-hidden="true" />
+              <GripHorizontal size={16} aria-hidden="true" style={{ pointerEvents: "none" }} />
             </div>
           </div>
 
