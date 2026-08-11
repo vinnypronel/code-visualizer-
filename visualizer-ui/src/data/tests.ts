@@ -3,9 +3,7 @@
  *
  * Rendered by TestRunner. Every code block is read-only; every blank and table
  * cell is an editable input captured into the responses JSON. Pre-test and
- * post-test use the SAME response key scheme (q1.*, q2.*) so analysis is
- * symmetric across the two. Column headers differ between the tests, but the
- * captured keys do not.
+ * post-test use the SAME response key scheme so analysis is symmetric across the two.
  *
  * Nothing here is auto-graded. Responses are captured and stored only.
  */
@@ -43,22 +41,6 @@ export const TEST_INSTRUCTIONS: string[] = [
   "When every response is complete, click the button below to continue.",
 ];
 
-/* Builder for the 6-row recursion trace table (columns: Step #, What happened). */
-function traceTable(keyPrefix: string): Extract<Field, { kind: "grid" }> {
-  const rows: GridCell[][] = [];
-  for (let i = 1; i <= 6; i++) {
-    rows.push([
-      { t: "ro", text: String(i) },
-      { t: "in", key: `${keyPrefix}.step${i}` },
-    ]);
-  }
-  return {
-    kind: "grid",
-    columns: ["Step #", "What happened in this step?"],
-    rows,
-  };
-}
-
 /*
  * Builder for the object-reference trace table. Row 1 is prefilled and
  * read-only; rows 2 to 5 are editable (three cells each). `col1` is the label
@@ -67,6 +49,7 @@ function traceTable(keyPrefix: string): Extract<Field, { kind: "grid" }> {
 function objectRefTable(
   columns: [string, string, string],
   row1Values: [string, string, string],
+  keyPrefix = "q1",
 ): Field {
   const rows: GridCell[][] = [
     [
@@ -79,9 +62,9 @@ function objectRefTable(
   for (let s = 2; s <= 5; s++) {
     rows.push([
       { t: "ro", text: String(s) },
-      { t: "in", key: `q2.table.step${s}.col_a` },
-      { t: "in", key: `q2.table.step${s}.col_b` },
-      { t: "in", key: `q2.table.step${s}.col_c` },
+      { t: "in", key: `${keyPrefix}.table.step${s}.col_a` },
+      { t: "in", key: `${keyPrefix}.table.step${s}.col_b` },
+      { t: "in", key: `${keyPrefix}.table.step${s}.col_c` },
     ]);
   }
   return {
@@ -96,44 +79,7 @@ export const PRETEST: TestDef = {
   questions: [
     {
       id: "q1",
-      title: "Q1. Recursion Trace",
-      prompt: "Consider the following recursive method:",
-      fields: [
-        {
-          kind: "code",
-          code: `static int f(int n) {
-    if (n == 0){
-        return 1;
-    } else {
-        return n * f(n - 1);
-    }
-}`,
-        },
-        {
-          kind: "text",
-          key: "q1.base_case",
-          label: "1.1 Which line(s) of code represent the base case?",
-        },
-        {
-          ...traceTable("q1.trace"),
-          caption:
-            "1.2 Trace the execution of f(3). For each step, describe what happened - follow the tracing format we used in CPS 2231. Each method call and each return value counts as a separate step.",
-        },
-        {
-          kind: "text",
-          key: "q1.base_case_step",
-          label: "1.3 At which step does it hit the base case?",
-        },
-        {
-          kind: "text",
-          key: "q1.final_value",
-          label: "1.4 What is the final return value of f(3)?",
-        },
-      ],
-    },
-    {
-      id: "q2",
-      title: "Q2. Object Reference Trace",
+      title: "Q1. Object Reference Trace",
       prompt: "Consider the following Java program:",
       fields: [
         {
@@ -156,15 +102,16 @@ b = a;                        // Step 5`,
         objectRefTable(
           ["a.name / a.age", "b.name / b.age", "c.name / c.age"],
           ['"Rex" / 3', "(not yet created)", "(not yet created)"],
+          "q1"
         ),
         {
           kind: "code",
-          caption: "2.2 After Step 5, what does the following code print?",
+          caption: "1.2 After Step 5, what does the following code print?",
           code: `System.out.println(b.name + ", " + b.age);
 System.out.println(c.name + ", " + c.age);`,
         },
-        { kind: "text", key: "q2.output.line1", label: "Line 1 output" },
-        { kind: "text", key: "q2.output.line2", label: "Line 2 output" },
+        { kind: "text", key: "q1.output.line1", label: "Line 1 output" },
+        { kind: "text", key: "q1.output.line2", label: "Line 2 output" },
       ],
     },
   ],
@@ -175,44 +122,7 @@ export const POSTTEST: TestDef = {
   questions: [
     {
       id: "q1",
-      title: "Q1. Recursion Trace",
-      prompt: "Consider the following recursive method:",
-      fields: [
-        {
-          kind: "code",
-          code: `static int g(int n) {
-    if (n == 0){
-        return 1;
-    } else {
-        return g(n - 1) + n;
-    }
-}`,
-        },
-        {
-          kind: "text",
-          key: "q1.base_case",
-          label: "1.1 Which line(s) of code represent the base case?",
-        },
-        {
-          ...traceTable("q1.trace"),
-          caption:
-            "1.2 Trace the execution of g(3). For each step, describe what happened - follow the tracing format we used in CPS 2231. Each method call and each return value counts as a separate step.",
-        },
-        {
-          kind: "text",
-          key: "q1.base_case_step",
-          label: "1.3 At which step does it hit the base case?",
-        },
-        {
-          kind: "text",
-          key: "q1.final_value",
-          label: "1.4 What is the final return value of g(3)?",
-        },
-      ],
-    },
-    {
-      id: "q2",
-      title: "Q2. Object Reference Trace",
+      title: "Q1. Object Reference Trace",
       prompt: "Consider the following Java program:",
       fields: [
         {
@@ -235,15 +145,16 @@ x = y;                            // Step 5`,
         objectRefTable(
           ["x.title / x.pages", "y.title / y.pages", "z.title / z.pages"],
           ['"Java" / 300', "(not yet created)", "(not yet created)"],
+          "q1"
         ),
         {
           kind: "code",
-          caption: "2.2 After Step 5, what does the following code print?",
+          caption: "1.2 After Step 5, what does the following code print?",
           code: `System.out.println(x.title + ", " + x.pages);
 System.out.println(z.title + ", " + z.pages);`,
         },
-        { kind: "text", key: "q2.output.line1", label: "Line 1 output" },
-        { kind: "text", key: "q2.output.line2", label: "Line 2 output" },
+        { kind: "text", key: "q1.output.line1", label: "Line 1 output" },
+        { kind: "text", key: "q1.output.line2", label: "Line 2 output" },
       ],
     },
   ],
