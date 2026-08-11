@@ -24,15 +24,17 @@ export default function ConsentScreen() {
       subheading="Please read the following before deciding whether to take part."
     >
       <div className="flex flex-col justify-between max-w-[1060px] mx-auto">
-        {/* Expanded Scrollable Consent Form Text Box - Darker Crisp Outline */}
+        {/* Expanded Scrollable Consent Form Text Box - Clipped Inside Border */}
         <div
-          className="rounded-lg p-5 h-[430px] max-h-[52vh] overflow-y-auto panel-scroll flex-shrink-0 shadow-sm"
+          className="rounded-xl overflow-hidden shadow-sm flex-shrink-0"
           style={{
             background: "#ffffff",
             border: "1.5px solid #64748b",
           }}
         >
-          <ConsentBody />
+          <div className="p-5 h-[430px] max-h-[52vh] overflow-y-auto panel-scroll">
+            <ConsentBody />
+          </div>
         </div>
 
         {/* Agreement Question Section Pushed Down + Continue Button Moved Farther Right */}
