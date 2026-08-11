@@ -267,10 +267,7 @@ export default function InteractiveWalkthrough({
           setPlacement({
             top: Math.max(
               margin,
-              Math.min(
-                visibleBottom - cardHeight - 20,
-                window.innerHeight - cardHeight - margin,
-              ),
+              window.innerHeight - cardHeight - 105,
             ),
             left: Math.max(
               margin,
