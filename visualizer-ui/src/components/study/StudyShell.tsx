@@ -60,49 +60,36 @@ export default function StudyShell({
         className="relative flex-shrink-0 border-b select-none"
         style={{ borderColor: "var(--border)", background: "var(--bg-header)" }}
       >
-        <div className="w-full px-4 sm:px-8 py-2 flex items-center justify-between gap-4 min-h-[52px]">
-          <div className="flex items-center gap-3 flex-shrink-0">
-            {/* Left Logo: Kean University */}
+        <div className="w-full px-4 sm:px-6 py-1.5 flex items-center justify-between gap-4 min-h-[46px]">
+          {/* Left: Kean Logo + Title */}
+          <div className="flex items-center gap-2.5 flex-shrink-0">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/kean-logo.png"
               alt="Kean University"
-              className="h-9 sm:h-10 w-auto object-contain flex-shrink-0"
+              className="h-10 sm:h-12 w-auto object-contain flex-shrink-0"
             />
             <span
-              className="text-xs sm:text-sm font-mono uppercase tracking-wider font-extrabold whitespace-nowrap hidden sm:inline"
+              className="text-xs sm:text-sm font-mono uppercase tracking-wider font-extrabold whitespace-nowrap hidden lg:inline"
               style={{ color: "var(--text-primary)" }}
             >
               Code Visualizer Study
             </span>
           </div>
 
-          <div className="flex items-center gap-3.5 flex-shrink-0 ml-auto">
-            {timer}
-            {/* Right Logo: UR2PhD */}
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/ur2phd-logo.png"
-              alt="UR2PhD Mentoring"
-              className="h-8 sm:h-[38px] w-auto object-contain flex-shrink-0"
-            />
-          </div>
-        </div>
-
-        {/* Single Stage Tracker Bar */}
-        <div className="mx-auto w-full max-w-4xl px-3 sm:px-6 pb-2 pt-0.5">
-          <ol className="flex items-center gap-1 sm:gap-2">
+          {/* Center: Stage Tracker */}
+          <ol className="hidden md:flex items-center gap-1.5 flex-1 max-w-2xl mx-auto px-2">
             {STAGES.map((stage, i) => {
               const state =
                 i < stageIndex ? "done" : i === stageIndex ? "active" : "todo";
               return (
-                <li key={stage} className="flex items-center gap-2 flex-1">
+                <li key={stage} className="flex items-center gap-1.5 flex-1">
                   <div className="flex items-center gap-1.5 min-w-0">
                     <span
                       className="flex items-center justify-center rounded-full text-[10px] font-bold flex-shrink-0"
                       style={{
-                        width: 20,
-                        height: 20,
+                        width: 19,
+                        height: 19,
                         background:
                           state === "active"
                             ? "var(--accent)"
@@ -124,9 +111,12 @@ export default function StudyShell({
                       {i + 1}
                     </span>
                     <span
-                      className="hidden sm:inline text-[11.5px] font-semibold truncate"
+                      className="text-[11px] font-semibold truncate"
                       style={{
-                        color: "var(--text-primary)",
+                        color:
+                          state === "active"
+                            ? "var(--accent)"
+                            : "var(--text-primary)",
                       }}
                     >
                       {stage}
@@ -147,6 +137,17 @@ export default function StudyShell({
               );
             })}
           </ol>
+
+          {/* Right: Timer + UR2PhD Logo */}
+          <div className="flex items-center gap-3 flex-shrink-0 ml-auto">
+            {timer}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/ur2phd-logo.png"
+              alt="UR2PhD Mentoring"
+              className="h-9 sm:h-[42px] w-auto object-contain flex-shrink-0"
+            />
+          </div>
         </div>
       </header>
 
