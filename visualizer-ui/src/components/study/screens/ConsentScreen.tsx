@@ -105,7 +105,7 @@ export default function ConsentScreen() {
                 </span>
               )}
               <button
-                className="btn-primary min-w-[140px] justify-center text-xs py-2.5 px-6 shadow-lg"
+                className="btn-primary min-w-[140px] text-xs py-2.5 px-6 shadow-lg"
                 disabled={choice === null || isAssigning}
                 style={{
                   opacity: choice === null || isAssigning ? 0.5 : 1,

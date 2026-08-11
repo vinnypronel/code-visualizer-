@@ -218,8 +218,8 @@ button:disabled, [role="button"][aria-disabled="true"] {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  padding: 8px 18px;
+  position: relative;
+  padding: 10px 24px;
   background: var(--action);
   color: #fff;
   border-radius: 8px;
@@ -227,28 +227,34 @@ button:disabled, [role="button"][aria-disabled="true"] {
   font-weight: 600;
   cursor: pointer;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+  transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .btn-primary:hover:not(:disabled) {
   background: var(--action-hover);
-  padding-right: 28px;
-  transform: translateY(-1px);
+  padding-left: 20px;
+  padding-right: 24px;
+  min-width: 172px;
   box-shadow: 0 4px 20px var(--accent-glow);
 }
 .btn-primary:active:not(:disabled) { transform: translateY(0); }
 
 .btn-primary .btn-arrow {
-  width: 16px;
+  width: 0;
   height: 16px;
   opacity: 0;
-  transform: translateX(-10px);
-  margin-left: -14px;
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transform: translateX(-8px);
+  margin-left: 0;
+  transition: width 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+              opacity 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+              margin-left 0.28s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .btn-primary:hover:not(:disabled) .btn-arrow {
+  width: 16px;
   opacity: 1;
   transform: translateX(0);
-  margin-left: 2px;
+  margin-left: 8px;
 }
 
 .orientation-start-button {
