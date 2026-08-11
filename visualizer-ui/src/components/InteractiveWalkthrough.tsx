@@ -263,7 +263,28 @@ export default function InteractiveWalkthrough({
           return;
         }
 
-        const resultBottom = visibleBottom - (isFirstResult ? 34 : isSecondResult ? 10 : margin);
+        if (isSecondResult) {
+          setPlacement({
+            top: Math.max(
+              margin,
+              Math.min(
+                visibleBottom - cardHeight - 20,
+                window.innerHeight - cardHeight - margin,
+              ),
+            ),
+            left: Math.max(
+              margin,
+              Math.min(
+                window.innerWidth - cardWidth - margin,
+                live.left - 54,
+              ),
+            ),
+            side: "center",
+          });
+          return;
+        }
+
+        const resultBottom = visibleBottom - (isFirstResult ? 34 : margin);
         setPlacement({
           top: Math.max(
             margin,
@@ -278,9 +299,7 @@ export default function InteractiveWalkthrough({
               window.innerWidth - cardWidth - margin,
               isFirstResult
                 ? live.left + 24
-                : isSecondResult
-                  ? live.left + 16
-                  : live.left + (live.width - cardWidth) / 2,
+                : live.left + (live.width - cardWidth) / 2,
             ),
           ),
           side: "center",
