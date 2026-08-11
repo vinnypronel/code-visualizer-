@@ -217,8 +217,9 @@ button:disabled, [role="button"][aria-disabled="true"] {
 .btn-primary {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
-  padding: 8px 16px;
+  padding: 8px 18px;
   background: var(--action);
   color: #fff;
   border-radius: 8px;
@@ -226,14 +227,29 @@ button:disabled, [role="button"][aria-disabled="true"] {
   font-weight: 600;
   cursor: pointer;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
-.btn-primary:hover {
+.btn-primary:hover:not(:disabled) {
   background: var(--action-hover);
+  padding-right: 28px;
   transform: translateY(-1px);
   box-shadow: 0 4px 20px var(--accent-glow);
 }
-.btn-primary:active { transform: translateY(0); }
+.btn-primary:active:not(:disabled) { transform: translateY(0); }
+
+.btn-primary .btn-arrow {
+  width: 16px;
+  height: 16px;
+  opacity: 0;
+  transform: translateX(-10px);
+  margin-left: -14px;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.btn-primary:hover:not(:disabled) .btn-arrow {
+  opacity: 1;
+  transform: translateX(0);
+  margin-left: 2px;
+}
 
 .orientation-start-button {
   transform-origin: left center;
