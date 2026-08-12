@@ -43,11 +43,6 @@ export default function ConsentScreen() {
 
         {/* Agreement Question & Continue Group Moved Left Next to Consent Box */}
         <div className="flex-initial w-auto min-w-[340px] max-w-[680px] flex flex-col justify-end self-stretch pb-1">
-          {choice === "agree" && (
-            <div className="mb-3">
-              <AssignmentChallenge onToken={handleChallenge} />
-            </div>
-          )}
           <div className="flex flex-col sm:flex-row items-start sm:items-end justify-start gap-4 w-full mt-auto">
             {/* Agreement Question & Option Boxes (Untouched Sizing) */}
             <fieldset className="space-y-2.5 w-full max-w-[440px] flex-shrink-0">
@@ -135,6 +130,7 @@ export default function ConsentScreen() {
                   </svg>
                 )}
               </button>
+              {choice === "agree" && <AssignmentChallenge onToken={handleChallenge} />}
             </div>
           </div>
         </div>
