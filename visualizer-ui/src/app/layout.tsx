@@ -21,12 +21,12 @@ export const metadata: Metadata = {
   keywords: ["code visualizer", "AST", "Java", "execution trace", "AI explanation"],
   icons: {
     icon: [
-      { url: "/icon.svg?v=10", type: "image/svg+xml" },
-      { url: "/icon.png?v=10", type: "image/png" },
-      { url: "/favicon.ico?v=10" },
+      { url: "/icon.svg?v=11", type: "image/svg+xml" },
+      { url: "/icon.png?v=11", type: "image/png" },
+      { url: "/favicon.ico?v=11" },
     ],
-    shortcut: "/icon.svg?v=10",
-    apple: "/icon.png?v=10",
+    shortcut: "/icon.svg?v=11",
+    apple: "/icon.png?v=11",
   },
 };
 

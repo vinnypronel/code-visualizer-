@@ -178,7 +178,7 @@ export default function HandoffScreen() {
           </h1>
           <p
             className="text-[13px]"
-            style={{ color: "var(--text-secondary)" }}
+            style={{ color: "#000000" }}
           >
             Thank you for taking part. There is one short step left.
           </p>
@@ -186,7 +186,7 @@ export default function HandoffScreen() {
 
         <p
           className="text-[13px] leading-relaxed mb-4"
-          style={{ color: "var(--text-secondary)" }}
+          style={{ color: "#000000" }}
         >
           You have finished the pre-test, the learning activity, and the post-test.
           Your responses have been recorded. The final step is a short
@@ -202,7 +202,7 @@ export default function HandoffScreen() {
         >
           <p
             className="text-[10px] uppercase tracking-wider mb-1"
-            style={{ color: "var(--text-muted)" }}
+            style={{ color: "#000000" }}
           >
             Write down your participant ID
           </p>
@@ -214,7 +214,7 @@ export default function HandoffScreen() {
           </p>
           <p
             className="text-[12px] mb-2.5"
-            style={{ color: "var(--text-secondary)" }}
+            style={{ color: "#000000" }}
           >
             The questionnaire asks for this ID. It is how your answers are matched
             to this session, and it is the only identifier we store.
@@ -228,7 +228,7 @@ export default function HandoffScreen() {
             style={{
               background: copied ? "#dcfce7" : "var(--bg-panel-2)",
               borderColor: copied ? "#86efac" : "var(--border)",
-              color: copied ? "#166534" : "var(--text-secondary)",
+              color: copied ? "#166534" : "#000000",
             }}
           >
             {copied ? (
@@ -248,12 +248,12 @@ export default function HandoffScreen() {
           <p className="text-[12.5px] font-semibold mb-1.5">Last step</p>
           <ol
             className="text-[12px] leading-snug space-y-1 list-decimal pl-5"
-            style={{ color: "var(--text-secondary)" }}
+            style={{ color: "#000000" }}
           >
             <li>Open the questionnaire using the button below.</li>
             <li>
               Enter your participant ID{" "}
-              <span className="font-mono font-bold" style={{ color: "var(--text-primary)" }}>
+              <span className="font-mono font-bold" style={{ color: "#000000" }}>
                 {participantId}
               </span>{" "}
               when prompted.
@@ -263,7 +263,7 @@ export default function HandoffScreen() {
               {QUESTIONNAIRE_MINUTES} minutes.
             </li>
           </ol>
-          <p className="text-[11px] mt-1.5" style={{ color: "var(--text-muted)" }}>
+          <p className="text-[11px] mt-1.5" style={{ color: "#000000" }}>
             The questionnaire opens in a new tab, so this page stays open if you
             need to check your ID again.
           </p>
@@ -305,13 +305,13 @@ export default function HandoffScreen() {
 
         <p
           className="text-[11px] text-center leading-relaxed"
-          style={{ color: "var(--text-muted)" }}
+          style={{ color: "#000000" }}
         >
           Thank you for helping with this research. If you have questions about the
           study or want your data removed, contact the researcher at{" "}
           <a
             href="mailto:yama@kean.edu"
-            style={{ color: "var(--text-secondary)" }}
+            style={{ color: "#000000" }}
           >
             yama@kean.edu
           </a>
