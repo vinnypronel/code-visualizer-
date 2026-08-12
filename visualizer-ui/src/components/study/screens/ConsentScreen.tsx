@@ -102,7 +102,7 @@ export default function ConsentScreen() {
             </fieldset>
 
             {/* Continue Button Joined Right Next to Options */}
-            <div className="flex flex-col items-end gap-2 flex-shrink-0 self-end pb-0.5 ml-2">
+            <div className="flex flex-col items-start gap-2 flex-shrink-0 self-end pb-0.5 ml-2">
               {choice === "agree" && <AssignmentChallenge onToken={handleChallenge} />}
               {assignError && (
                 <span className="text-[12px]" style={{ color: "var(--danger)" }}>
