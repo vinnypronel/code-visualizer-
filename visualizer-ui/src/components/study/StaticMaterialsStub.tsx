@@ -70,7 +70,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
       <h2 className="text-[17px] font-bold mb-3">{title}</h2>
       <div
         className="space-y-3 text-[13px] leading-relaxed"
-        style={{ color: "var(--text-secondary)" }}
+        style={{ color: "var(--text-primary)" }}
       >
         {children}
       </div>
@@ -119,7 +119,7 @@ function WorkedTraceTable() {
                   className="border px-3 py-2 font-mono whitespace-nowrap"
                   style={{
                     borderColor: "var(--border)",
-                    color: index === 0 ? "var(--text-primary)" : "var(--text-secondary)",
+                    color: "var(--text-primary)",
                   }}
                 >
                   {cell}
@@ -145,7 +145,7 @@ export default function StaticMaterialsStub({
       <div className="mx-auto w-full max-w-6xl px-6 py-8 space-y-6">
         <div>
           <h1 className="text-xl font-bold mb-2">Java Object-Reference Reading: Static Learning</h1>
-          <p className="text-[13px]" style={{ color: "var(--text-secondary)" }}>
+          <p className="text-[13px]" style={{ color: "var(--text-primary)" }}>
             Read each section carefully. These materials teach the Java concepts
             needed to trace object references and determine a program&apos;s final output.
           </p>
@@ -272,7 +272,7 @@ Noah, 21`}</CodeBlock>
             </h2>
           </div>
 
-          <p className="text-[13px] mb-3.5 text-[var(--text-secondary)]">
+          <p className="text-[13px] mb-3.5 text-[var(--text-primary)]">
             Before continuing to the post-test, keep these 4 core Java object-reference takeaways in mind:
           </p>
 
@@ -282,7 +282,7 @@ Noah, 21`}</CodeBlock>
                 <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block flex-shrink-0" />
                 1. Reference vs. Object
               </div>
-              <p style={{ color: "var(--text-secondary)" }}>
+              <p style={{ color: "var(--text-primary)" }}>
                 Class variables store memory addresses (references), not full objects. Multiple variables can refer to the same object.
               </p>
             </div>
@@ -292,7 +292,7 @@ Noah, 21`}</CodeBlock>
                 <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block flex-shrink-0" />
                 2. Assignment Copies References
               </div>
-              <p style={{ color: "var(--text-secondary)" }}>
+              <p style={{ color: "var(--text-primary)" }}>
                 Writing <code>b = a</code> copies the reference address from <code>a</code> into <code>b</code> without creating a new object.
               </p>
             </div>
@@ -302,7 +302,7 @@ Noah, 21`}</CodeBlock>
                 <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block flex-shrink-0" />
                 3. Shared Field Modifications
               </div>
-              <p style={{ color: "var(--text-secondary)" }}>
+              <p style={{ color: "var(--text-primary)" }}>
                 Modifying <code>b.name = &quot;...&quot;</code> changes data inside the shared object, immediately visible through all variables pointing to it.
               </p>
             </div>
@@ -312,7 +312,7 @@ Noah, 21`}</CodeBlock>
                 <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block flex-shrink-0" />
                 4. Reassignment Only Redirects One Variable
               </div>
-              <p style={{ color: "var(--text-secondary)" }}>
+              <p style={{ color: "var(--text-primary)" }}>
                 Reassigning <code>b = c</code> changes where <code>b</code> points. It does not alter other variables or erase existing objects.
               </p>
             </div>
@@ -327,7 +327,7 @@ Noah, 21`}</CodeBlock>
             {onBackToPretest}
             <div>
               <h2 className="text-[15px] font-bold">Reading complete</h2>
-              <p className="mt-1 text-[13px]" style={{ color: "var(--text-secondary)" }}>
+              <p className="mt-1 text-[13px]" style={{ color: "var(--text-primary)" }}>
                 You reviewed every object-reference concept used in the trace exercise.
               </p>
             </div>
