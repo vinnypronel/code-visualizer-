@@ -36,6 +36,7 @@ export interface SessionState {
   seq: number | null;
   condition: Condition | null;
   phase: Phase;
+  selectedLessonId?: string | null;
   pretestResponses: TestResponses;
   posttestResponses: TestResponses;
 }

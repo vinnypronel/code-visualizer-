@@ -9,6 +9,7 @@
  */
 
 import type { ReactNode } from "react";
+import { useStudy } from "@/components/study/StudyProvider";
 
 /* The five participant-facing stages, in order, for the progress indicator. */
 export const STAGES = [
@@ -23,7 +24,7 @@ interface StudyShellProps {
   /* 0-based index into STAGES for the active stage. */
   stageIndex: number;
   /* Screen heading, e.g. "Pre-test". */
-  heading: string;
+  heading?: string;
   /* Optional subheading line under the heading. */
   subheading?: string;
   /* Optional timer element shown in the header (right side). */
@@ -55,6 +56,9 @@ export default function StudyShell({
   fluid = false,
   noScroll = false,
 }: StudyShellProps) {
+  const { session } = useStudy();
+  const isStatic = session.condition === "static";
+
   return (
     <div
       className="flex flex-col h-full w-full"
@@ -66,7 +70,7 @@ export default function StudyShell({
         style={{ borderColor: "var(--border)", background: "var(--bg-header)" }}
       >
         <div className="w-full px-4 sm:px-6 py-1.5 flex items-center justify-between gap-4 min-h-[46px]">
-          {/* Left: Kean Logo + Title */}
+          {/* Left: Kean Logo + Title + Version Badge */}
           <div className="flex items-center gap-2.5 flex-shrink-0">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -74,12 +78,34 @@ export default function StudyShell({
               alt="Kean University"
               className="h-10 sm:h-12 w-auto object-contain flex-shrink-0"
             />
-            <span
-              className="text-xs sm:text-sm font-mono uppercase tracking-wider font-extrabold whitespace-nowrap hidden lg:inline"
-              style={{ color: "var(--text-primary)" }}
-            >
-              Code Visualizer Study
-            </span>
+            <div className="flex flex-col">
+              <span
+                className="text-xs sm:text-sm font-mono uppercase tracking-wider font-extrabold whitespace-nowrap hidden lg:inline"
+                style={{ color: "var(--text-primary)" }}
+              >
+                Code Visualizer Study
+              </span>
+              <span
+                className="text-[10px] font-mono inline-flex items-center w-fit font-semibold"
+                style={{
+                  color: "var(--accent)",
+                }}
+              >
+                <span>
+                  {isStatic
+                    ? "Java Object-Reference Reading: Static Learning"
+                    : session.selectedLessonId === "arraylist"
+                      ? "Array List: Contiguous Storage & Resizing"
+                      : session.selectedLessonId === "stack"
+                        ? "Stack: LIFO Stack Push Operations"
+                        : session.selectedLessonId === "livetrace"
+                          ? "Live Trace: multiply(5, 10)"
+                          : session.selectedLessonId === "linkedlist" || !session.selectedLessonId
+                            ? "Linked List: Insertion & Linking"
+                            : "Custom Java Code"}
+                </span>
+              </span>
+            </div>
           </div>
 
           {/* Center: Stage Tracker */}

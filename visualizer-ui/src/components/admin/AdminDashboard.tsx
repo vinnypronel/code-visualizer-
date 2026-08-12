@@ -5,13 +5,13 @@
  *
  * Rows arrive fully formed from the server component; every number on screen is
  * derived here so the condition filter recomputes without a round trip. The
- * layout goes headline stats -> comparison -> flow -> per-item breakdown ->
+ * layout goes compact study snapshot -> comparison -> flow -> per-item breakdown ->
  * raw participant table, which is the order a researcher reads the study in.
  */
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Download, LogOut, RefreshCw, X } from "lucide-react";
+import { ArrowLeft, Download, LogOut, RefreshCw, X } from "lucide-react";
 import {
   conditionLabel,
   endedByCounts,
@@ -35,7 +35,6 @@ import {
   Legend,
   SERIES,
   SlopeChart,
-  StatTile,
   type SlopePoint,
 } from "./charts";
 
@@ -155,6 +154,15 @@ export default function AdminDashboard({
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
+              onClick={() => router.push("/")}
+              className="inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium"
+              style={{ background: "var(--bg-panel)", borderColor: "#e2e8f0", color: "var(--text-secondary)" }}
+            >
+              <ArrowLeft size={13} aria-hidden="true" />
+              Back to Home
+            </button>
+            <button
+              type="button"
               onClick={() => router.refresh()}
               className="inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium"
               style={{ background: "var(--bg-panel)", borderColor: "#e2e8f0", color: "var(--text-secondary)" }}
@@ -190,30 +198,46 @@ export default function AdminDashboard({
           </p>
         )}
 
-        <div className="mb-5 flex flex-wrap items-center gap-2">
-          <span className="mr-1 text-xs font-medium uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
-            Condition
-          </span>
-          {filterButton("all", "All", all.length)}
-          {filterButton("ai", "AI visualizer", all.filter((v) => v.condition === "ai").length)}
-          {filterButton("static", "Static materials", all.filter((v) => v.condition === "static").length)}
-        </div>
+        <div
+          className="mb-5 flex flex-wrap items-center gap-x-5 gap-y-3 rounded-lg border px-4 py-3"
+          style={{ background: "var(--bg-panel)", borderColor: "#e2e8f0" }}
+        >
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="mr-1 text-[10px] font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>
+              Condition
+            </span>
+            {filterButton("all", "All", all.length)}
+            {filterButton("ai", "AI visualizer", all.filter((v) => v.condition === "ai").length)}
+            {filterButton("static", "Static materials", all.filter((v) => v.condition === "static").length)}
+          </div>
 
-        <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-5">
-          <StatTile label="Participants" value={String(views.length)} hint={`${all.length} total in DB`} />
-          <StatTile
-            label="Completed flow"
-            value={String(completed)}
-            hint={views.length > 0 ? `${Math.round((completed / views.length) * 100)}% of filtered` : "no rows"}
-          />
-          <StatTile label="Scored pre and post" value={String(scored.length)} hint="both tests submitted" />
-          <StatTile
-            label="Mean gain"
-            value={pct(overallGain)}
-            hint="post minus pre, percentage points"
-            accent={overallGain != null && overallGain > 0 ? "var(--success)" : undefined}
-          />
-          <StatTile label="Median session" value={medianTotal == null ? "-" : `${medianTotal}m`} hint="consent to handoff" />
+          <div className="hidden h-9 w-px xl:block" style={{ background: "#e2e8f0" }} />
+
+          <dl className="flex min-w-0 flex-1 flex-wrap items-center justify-start gap-x-6 gap-y-2 xl:justify-end">
+            {[
+              { label: "Participants", value: String(views.length), detail: `${all.length} total` },
+              {
+                label: "Completed",
+                value: String(completed),
+                detail: views.length > 0 ? `${Math.round((completed / views.length) * 100)}%` : "no rows",
+              },
+              { label: "Scored pairs", value: String(scored.length), detail: "pre + post" },
+              { label: "Mean gain", value: pct(overallGain), detail: "percentage points" },
+              { label: "Session", value: medianTotal == null ? "-" : `${medianTotal}m`, detail: "median" },
+            ].map((metric) => (
+              <div key={metric.label} className="flex items-baseline gap-2 whitespace-nowrap">
+                <dt className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
+                  {metric.label}
+                </dt>
+                <dd className="text-base font-bold tabular-nums" style={{ color: "var(--text-primary)" }}>
+                  {metric.value}
+                </dd>
+                <span className="text-[10px]" style={{ color: "var(--text-muted)" }}>
+                  {metric.detail}
+                </span>
+              </div>
+            ))}
+          </dl>
         </div>
 
         <div className="mb-5 grid gap-4 lg:grid-cols-2">

@@ -65,19 +65,26 @@ export default function GlobalError({
 
           <button
             type="button"
+            className="btn-primary"
             onClick={reset}
-            style={{
-              padding: "9px 18px",
-              fontSize: 13,
-              fontWeight: 600,
-              color: "#fff",
-              background: "#16805b",
-              border: "none",
-              borderRadius: 8,
-              cursor: "pointer",
-            }}
           >
-            Try again
+            <span>Try again</span>
+            <svg
+              className="btn-arrow"
+              width="16"
+              height="16"
+              viewBox="0 0 16 16"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M6 12L10 8L6 4"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
           </button>
 
           <p

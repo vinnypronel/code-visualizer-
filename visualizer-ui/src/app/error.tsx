@@ -21,6 +21,7 @@
  */
 
 import { useEffect } from "react";
+import Image from "next/image";
 
 export default function StudyError({
   error,
@@ -39,7 +40,15 @@ export default function StudyError({
       className="flex flex-1 items-center justify-center px-6 py-16"
       style={{ background: "var(--bg-base)", color: "var(--text-primary)" }}
     >
-      <div className="w-full max-w-md text-center">
+      <div className="w-full max-w-md text-center flex flex-col items-center">
+        <Image
+          src="/icon-on-light.svg"
+          alt="Code Visualizer"
+          width={56}
+          height={56}
+          className="mb-4 h-14 w-14 object-contain"
+          priority
+        />
         <p
           className="mb-3 font-mono text-[11px] font-semibold uppercase tracking-wider"
           style={{ color: "var(--text-muted)" }}
@@ -60,7 +69,23 @@ export default function StudyError({
 
         <div className="flex flex-wrap items-center justify-center gap-3">
           <button type="button" className="btn-primary" onClick={reset}>
-            Try again
+            <span>Try again</span>
+            <svg
+              className="btn-arrow"
+              width="16"
+              height="16"
+              viewBox="0 0 16 16"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M6 12L10 8L6 4"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
           </button>
           <button
             type="button"

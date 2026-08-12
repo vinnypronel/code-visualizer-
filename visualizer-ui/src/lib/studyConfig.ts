@@ -123,5 +123,9 @@ export function conditionForSeq(seq: number): Condition {
  */
 export const QUESTIONNAIRE_MINUTES = 5;
 
+/* Dev jump signal for previewing the thank-you state inside HandoffScreen. */
+export const DEV_THANK_YOU_STORAGE_KEY = "visualizer-dev-thank-you";
+export const DEV_THANK_YOU_EVENT = "visualizer:dev-show-thank-you";
+
 /* External Microsoft Forms questionnaire URL. Public link, safe for browser. */
 export const MSFORMS_URL = process.env.NEXT_PUBLIC_MSFORMS_URL ?? "";

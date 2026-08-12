@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { motion } from "framer-motion";
-import { CheckCircle2, Code2, ArrowRight, HelpCircle, ChevronLeft, Compass, GripHorizontal } from "lucide-react";
+import { CheckCircle2, Code2, ArrowRight, HelpCircle, ChevronLeft, GripHorizontal } from "lucide-react";
 import GuideSpotlight, {
   placeGuideCard,
   usePrefersReducedMotion,
@@ -35,7 +35,6 @@ export interface InteractiveWalkthroughProps {
    */
   onPrimaryAction?: () => void;
   primaryActionLabel?: string;
-  onExploreExamples?: () => void;
   /** Keeps the editor highlight synchronized with the guide's current card. */
   onHighlightedLinesChange?: (lines: number[] | null) => void;
 }
@@ -108,7 +107,6 @@ export default function InteractiveWalkthrough({
   onBackToOrientation,
   onPrimaryAction,
   primaryActionLabel,
-  onExploreExamples,
   onHighlightedLinesChange,
 }: InteractiveWalkthroughProps) {
   const cardRef = useRef<HTMLDivElement>(null);
@@ -159,6 +157,7 @@ export default function InteractiveWalkthrough({
   const explainMoreButtonRect = useTargetRect(visible ? "#onboarding-explain-more-button" : null, visible);
   const explanationToggleRect = useTargetRect(visible ? "#onboarding-explanation-toggle" : null, visible);
   const explanationDetailsRect = useTargetRect(visible ? "#step-explanation-details" : null, visible);
+  const devJumpRect = useTargetRect(visible ? "#dev-jump-panel" : null, visible);
 
   useEffect(() => {
     onHighlightedLinesChange?.(
@@ -243,10 +242,73 @@ export default function InteractiveWalkthrough({
 
       if (activeStepData?.subPhase === "observe" && live) {
         const margin = 16;
-        const visibleBottom = Math.min(live.bottom, window.innerHeight);
         const isFirstResult = activeStepData.expectedLessonStep === 1;
         const isSecondResult = activeStepData.expectedLessonStep === 2;
         const isThirdResult = activeStepData.expectedLessonStep === 3;
+        const isStackStepTen = presetId === "stack" && currentIndex === 9;
+        const isLiveTraceStepTen = presetId === "livetrace" && currentIndex === 9;
+        const isLiveTraceStepTwelve = presetId === "livetrace" && currentIndex === 11;
+        const isLiveTraceStepFourteen = presetId === "livetrace" && currentIndex === 13;
+
+        if (isLiveTraceStepFourteen) {
+          const editorEl = document.querySelector("#onboarding-code-content");
+          const codeRect = editorEl?.getBoundingClientRect();
+          setPlacement({
+            top: codeRect
+              ? Math.max(margin, codeRect.top + 145)
+              : Math.max(margin, live.top + 145),
+            left: codeRect
+              ? Math.max(margin, codeRect.right - cardWidth + 2)
+              : margin,
+            side: "center",
+          });
+          return;
+        }
+
+        if (isLiveTraceStepTwelve) {
+          const editorEl = document.querySelector("#onboarding-code-content");
+          const codeRect = editorEl?.getBoundingClientRect();
+          setPlacement({
+            top: codeRect
+              ? Math.max(margin, codeRect.top + 217)
+              : Math.max(margin, live.top + 217),
+            left: codeRect
+              ? Math.max(margin, codeRect.right - cardWidth - 7)
+              : margin,
+            side: "center",
+          });
+          return;
+        }
+
+        if (isLiveTraceStepTen) {
+          const editorEl = document.querySelector("#onboarding-code-content");
+          const codeRect = editorEl?.getBoundingClientRect();
+          setPlacement({
+            top: codeRect
+              ? Math.max(margin, codeRect.top + 75)
+              : Math.max(margin, live.top + 75),
+            left: codeRect
+              ? Math.max(margin, codeRect.right - cardWidth - 20)
+              : margin,
+            side: "center",
+          });
+          return;
+        }
+
+        if (isStackStepTen) {
+          const editorEl = document.querySelector("#onboarding-code-content");
+          const codeRect = editorEl?.getBoundingClientRect();
+          setPlacement({
+            top: codeRect
+              ? Math.max(margin, codeRect.top + 55)
+              : Math.max(margin, live.top + 55),
+            left: codeRect
+              ? Math.max(margin, codeRect.right - cardWidth - 5)
+              : margin,
+            side: "center",
+          });
+          return;
+        }
 
         if (isThirdResult) {
           const verticalOffset = Math.min(
@@ -277,13 +339,13 @@ export default function InteractiveWalkthrough({
           setPlacement({
             top: Math.max(
               margin,
-              window.innerHeight - cardHeight - 105,
+              window.innerHeight - cardHeight - 55,
             ),
             left: Math.max(
               margin,
               Math.min(
                 window.innerWidth - cardWidth - margin,
-                live.left + 8,
+                live.left + 25,
               ),
             ),
             side: "center",
@@ -295,13 +357,13 @@ export default function InteractiveWalkthrough({
           setPlacement({
             top: Math.max(
               margin,
-              window.innerHeight - cardHeight - 105,
+              window.innerHeight - cardHeight - 55,
             ),
             left: Math.max(
               margin,
               Math.min(
                 window.innerWidth - cardWidth - margin,
-                live.left - 54,
+                live.left + 25,
               ),
             ),
             side: "center",
@@ -318,7 +380,7 @@ export default function InteractiveWalkthrough({
             margin,
             Math.min(
               window.innerWidth - cardWidth - margin,
-              isFirstResult ? live.left + 8 : live.left - 54,
+              live.left - 54,
             ),
           ),
           side: "center",
@@ -350,7 +412,7 @@ export default function InteractiveWalkthrough({
       observer?.disconnect();
       window.removeEventListener("resize", reposition);
     };
-  }, [visible, targetRect, activeStepData, currentIndex, steps?.length]);
+  }, [visible, targetRect, activeStepData, currentIndex, steps?.length, presetId]);
 
   /*
    * The card auto-places itself out of the way of whatever it is describing,
@@ -484,6 +546,7 @@ export default function InteractiveWalkthrough({
           explainMoreButtonRect,
           explanationToggleRect,
           explanationDetailsRect,
+          devJumpRect,
         ]}
         side={placement?.side ?? "center"}
         reducedMotion={reducedMotion}
@@ -629,23 +692,6 @@ export default function InteractiveWalkthrough({
               <span>{guideActionLabel}</span>
             </button>
 
-            {isFinalCard && onExploreExamples && (
-              <button
-                type="button"
-                onClick={onExploreExamples}
-                className="walkthrough-back-button flex items-center justify-center gap-1.5 rounded-md border px-3 py-2 text-[11.5px] font-semibold flex-shrink-0"
-                style={{
-                  color: "var(--accent)",
-                  background: "var(--bg-panel-2)",
-                  borderColor: "var(--border)",
-                  cursor: "pointer",
-                }}
-                aria-label="Open more Java examples"
-              >
-                <Compass size={14} className="flex-shrink-0" aria-hidden="true" />
-                <span>Try another</span>
-              </button>
-            )}
           </div>
 
           <div className="flex items-center pt-3">

@@ -6,10 +6,14 @@
  * the NODE_ENV guard below, so participants can never see or reach it.
  */
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { useStudy } from "@/components/study/StudyProvider";
 import type { Condition, Phase } from "@/lib/studyTypes";
+import {
+  DEV_THANK_YOU_EVENT,
+  DEV_THANK_YOU_STORAGE_KEY,
+} from "@/lib/studyConfig";
 
 /* Solid green so the dev controls never read as part of the study UI. */
 const GREEN_ON = "#16a34a";
@@ -22,7 +26,14 @@ const GREEN_OFF = "#14532d";
  * the condition toggle underneath. Every other phase renders identically in
  * both conditions and so takes the session's current condition.
  */
-const PHASES: { phase: Phase; label: string; condition?: Condition }[] = [
+type DevDestination = {
+  phase: Phase;
+  label: string;
+  condition?: Condition;
+  view?: "thankyou";
+};
+
+const PHASES: DevDestination[] = [
   { phase: "consent", label: "Consent" },
   { phase: "assigned", label: "Assigned" },
   { phase: "pretest", label: "Pre-test" },
@@ -30,46 +41,39 @@ const PHASES: { phase: Phase; label: string; condition?: Condition }[] = [
   { phase: "learning", label: "Learning: static", condition: "static" },
   { phase: "posttest", label: "Post-test" },
   { phase: "handoff", label: "Handoff" },
+  { phase: "handoff", label: "Thank you", view: "thankyou" },
   { phase: "declined", label: "Declined" },
 ];
 
 export default function DevJumpBar() {
   const { session, devJump } = useStudy();
   const [open, setOpen] = useState(false);
-
-  /*
-   * Sit above the study footer rather than on top of it. The footer holds the
-   * primary Continue button, and a dev control covering the exact button you
-   * need to click to test the flow is worse than useless. The height is
-   * measured rather than hardcoded because the footer is not always present
-   * (the handoff screen has none) and its height changes with the viewport.
-   */
-  const [footerHeight, setFooterHeight] = useState(0);
-
-  useEffect(() => {
-    const measure = () => {
-      const footer = document.querySelector("footer");
-      setFooterHeight(footer ? footer.getBoundingClientRect().height : 0);
-    };
-    measure();
-    window.addEventListener("resize", measure);
-    const observer = new ResizeObserver(measure);
-    observer.observe(document.body);
-    return () => {
-      window.removeEventListener("resize", measure);
-      observer.disconnect();
-    };
-  }, [session.phase]);
+  const [handoffView, setHandoffView] = useState<"thankyou" | null>(null);
 
   // Temporarily enabled in production for testing as requested
   // if (process.env.NODE_ENV === "production") return null;
 
   const condition: Condition = session.condition ?? "ai";
 
+  const jumpTo = (entry: DevDestination) => {
+    if (entry.view === "thankyou") {
+      setHandoffView("thankyou");
+      window.sessionStorage.setItem(DEV_THANK_YOU_STORAGE_KEY, "1");
+      window.dispatchEvent(new Event(DEV_THANK_YOU_EVENT));
+      devJump("handoff", entry.condition);
+      return;
+    }
+
+    setHandoffView(null);
+    window.sessionStorage.removeItem(DEV_THANK_YOU_STORAGE_KEY);
+    devJump(entry.phase, entry.condition);
+  };
+
   return (
     <div
-      className="fixed right-3 z-50 font-mono text-[11px] flex flex-col items-end"
-      style={{ pointerEvents: "auto", bottom: footerHeight + 12 }}
+      id="dev-jump-panel"
+      className="fixed right-2.5 bottom-0 font-mono text-[11px] flex flex-col items-end"
+      style={{ pointerEvents: "auto", zIndex: 2147483200 }}
     >
       {open ? (
         <div
@@ -103,12 +107,15 @@ export default function DevJumpBar() {
               // light up at the same time.
               const active =
                 session.phase === entry.phase &&
+                (entry.view === "thankyou"
+                  ? handoffView === "thankyou"
+                  : handoffView !== "thankyou") &&
                 (entry.condition === undefined || entry.condition === condition);
               return (
                 <button
                   type="button"
-                  key={`${entry.phase}-${entry.condition ?? "any"}`}
-                  onClick={() => devJump(entry.phase, entry.condition)}
+                  key={`${entry.phase}-${entry.condition ?? "any"}-${entry.view ?? "default"}`}
+                  onClick={() => jumpTo(entry)}
                   className="dev-jump-option rounded px-2 py-1 cursor-pointer transition-opacity hover:opacity-90"
                   style={{
                     background: active ? GREEN_ON : GREEN_OFF,

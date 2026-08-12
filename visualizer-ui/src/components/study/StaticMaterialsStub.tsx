@@ -138,7 +138,7 @@ export default function StaticMaterialsStub({ onContinue }: { onContinue: () => 
     <div className="h-full w-full overflow-y-auto panel-scroll">
       <div className="mx-auto w-full max-w-6xl px-6 py-8 space-y-6">
         <div>
-          <h1 className="text-xl font-bold mb-2">Java Object-Reference Reading</h1>
+          <h1 className="text-xl font-bold mb-2">Java Object-Reference Reading: Static Learning</h1>
           <p className="text-[13px]" style={{ color: "var(--text-secondary)" }}>
             Read each section carefully. These materials teach the Java concepts
             needed to trace object references and determine a program&apos;s final output.

@@ -67,7 +67,7 @@ function actionCards(actions: ActionLesson[]): WalkthroughStepDef[] {
       codeSnippet: action.code,
       showCodeOnObserve: true,
       explanationText: action.observeExplanation,
-      actionButtonLabel: action.lessonStep === actions.length ? "Finish Lesson" : "Continue",
+      actionButtonLabel: action.lessonStep === actions.length ? "View Lesson Summary" : "Continue",
       selector: MEMORY,
       placement: "center" as const,
     },
@@ -180,9 +180,9 @@ const stackSteps: WalkthroughStepDef[] = [
   },
   {
     expectedLessonStep: 1, subPhase: "run", title: "Meet the stack blueprints",
-    highlightedLines: [13, 14, 15, 16, 17, 18, 19, 20, 21, 22],
+    highlightedLines: [13, 14, 15, 16, 17, 18, 19, 20, 21],
     blueprintNote: {
-      heading: "Lines 13-22: the stack and node recipes",
+      heading: "Lines 13-21: the stack and node recipes",
       linesCode: "class MyStack {\n  Node top;\n}\n\nclass Node {\n  int value;\n  Node next;\n  Node(int value) { this.value = value; }\n}",
       details: [
         "MyStack has one reference named top that identifies the first Node in the stack.",

@@ -7,8 +7,9 @@
  */
 
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { useEffect, useState } from "react";
-import { Lock, LoaderCircle } from "lucide-react";
+import { ArrowLeft, LoaderCircle } from "lucide-react";
 
 /* mm:ss for the lockout button label. */
 function formatCountdown(seconds: number): string {
@@ -67,14 +68,66 @@ export default function AdminLoginForm() {
     "focus:border-[var(--border-active)] focus:ring-2 focus:ring-[var(--accent-glow)]";
 
   return (
-    <main className="flex h-full w-full items-center justify-center overflow-y-auto px-6 py-12">
-      <div className="w-full max-w-sm">
-        <div
-          className="mb-5 flex h-11 w-11 items-center justify-center rounded-lg"
-          style={{ background: "var(--accent-glow)", color: "var(--accent)" }}
-        >
-          <Lock size={20} strokeWidth={2} />
+    <div className="flex h-full w-full flex-col">
+      <header
+        className="flex min-h-[68px] flex-shrink-0 items-center justify-between border-b px-6 sm:px-9"
+        style={{ background: "var(--bg-header)", borderColor: "var(--border)" }}
+      >
+        <div className="flex items-center gap-3">
+          <Image
+            src="/kean-logo.png"
+            alt="Kean University"
+            width={54}
+            height={54}
+            className="h-12 w-12 object-contain"
+            priority
+          />
+          <div className="flex flex-col leading-tight">
+            <span className="font-mono text-sm font-extrabold uppercase tracking-wider" style={{ color: "var(--text-primary)" }}>
+              Code Visualizer Study
+            </span>
+            <span className="text-[11px] font-medium" style={{ color: "var(--text-muted)" }}>
+              Research dashboard
+            </span>
+          </div>
         </div>
+
+        <div className="flex items-center gap-4">
+          <button
+            type="button"
+            onClick={() => router.push("/")}
+            className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-md border transition-colors"
+            style={{
+              background: "var(--bg-panel-2)",
+              borderColor: "var(--border)",
+              color: "var(--text-secondary)",
+            }}
+          >
+            <ArrowLeft size={13} aria-hidden="true" />
+            Back to Home
+          </button>
+
+          <Image
+            src="/ur2phd-logo.png"
+            alt="UR2PhD Mentoring"
+            width={180}
+            height={48}
+            className="h-11 w-auto object-contain"
+            priority
+          />
+        </div>
+      </header>
+
+      <main className="flex min-h-0 flex-1 w-full items-center justify-center overflow-y-auto px-6 py-12">
+        <div className="w-full max-w-sm">
+        <Image
+          src="/icon-on-light.svg"
+          alt="Code Visualizer"
+          width={56}
+          height={56}
+          className="mb-5 h-14 w-14 object-contain"
+          priority
+        />
 
         <h1 className="text-2xl font-semibold" style={{ color: "var(--text-primary)" }}>
           Researcher sign in
@@ -148,7 +201,8 @@ export default function AdminLoginForm() {
                 : "Sign in"}
           </button>
         </form>
-      </div>
-    </main>
+        </div>
+      </main>
+    </div>
   );
 }

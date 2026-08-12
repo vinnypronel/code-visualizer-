@@ -9,10 +9,15 @@
  */
 
 import { useEffect, useState } from "react";
-import { ArrowLeft, CheckCircle2, ExternalLink } from "lucide-react";
+import { ArrowLeft, CheckCircle2 } from "lucide-react";
 import StudyShell from "@/components/study/StudyShell";
 import { useStudy } from "@/components/study/StudyProvider";
-import { MSFORMS_URL, QUESTIONNAIRE_MINUTES } from "@/lib/studyConfig";
+import {
+  DEV_THANK_YOU_EVENT,
+  DEV_THANK_YOU_STORAGE_KEY,
+  MSFORMS_URL,
+  QUESTIONNAIRE_MINUTES,
+} from "@/lib/studyConfig";
 
 export default function HandoffScreen() {
   const { session, logEvent, returnToConsent } = useStudy();
@@ -23,6 +28,20 @@ export default function HandoffScreen() {
   useEffect(() => {
     void logEvent("questionnaire_shown");
   }, [logEvent]);
+
+  useEffect(() => {
+    const showDevThankYou = () => {
+      window.sessionStorage.removeItem(DEV_THANK_YOU_STORAGE_KEY);
+      setQuestionnaireOpened(true);
+    };
+
+    window.addEventListener(DEV_THANK_YOU_EVENT, showDevThankYou);
+    if (window.sessionStorage.getItem(DEV_THANK_YOU_STORAGE_KEY) === "1") {
+      showDevThankYou();
+    }
+
+    return () => window.removeEventListener(DEV_THANK_YOU_EVENT, showDevThankYou);
+  }, []);
 
   const copyId = async () => {
     try {
@@ -40,13 +59,18 @@ export default function HandoffScreen() {
 
   if (questionnaireOpened) {
     return (
-      <StudyShell
-        stageIndex={4}
-        noScroll
-        heading="Thank you for participating"
-        subheading="The questionnaire is open in another tab."
-      >
+      <StudyShell stageIndex={4} noScroll>
         <div className="mx-auto max-w-xl py-4 text-center">
+          <h1 className="text-2xl font-bold mb-1" style={{ color: "var(--text-primary)" }}>
+            Thank you for participating
+          </h1>
+          <p
+            className="text-[13.5px] mb-5 font-medium"
+            style={{ color: "var(--text-secondary)" }}
+          >
+            The questionnaire is open in another tab.
+          </p>
+
           <CheckCircle2
             aria-hidden="true"
             className="mx-auto mb-4"

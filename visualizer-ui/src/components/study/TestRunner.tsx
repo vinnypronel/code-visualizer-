@@ -291,14 +291,14 @@ export default function TestRunner({
           border: "1px solid #94a3b8",
         }}
       >
-        <ul className="space-y-1.5 text-[12.5px] font-medium" style={{ color: "#0f172a" }}>
-          {TEST_INSTRUCTIONS.map((line) => (
+        <ol className="space-y-1.5 text-[12.5px] font-medium" style={{ color: "#0f172a" }}>
+          {TEST_INSTRUCTIONS.map((line, index) => (
             <li key={line} className="flex gap-2">
-              <span style={{ color: "#475569" }}>-</span>
+              <span className="font-bold select-none min-w-[18px]" style={{ color: "#475569" }}>{index + 1}.</span>
               <span>{line}</span>
             </li>
           ))}
-        </ul>
+        </ol>
       </div>
 
       {/* Questions */}

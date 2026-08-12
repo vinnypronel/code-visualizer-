@@ -12,6 +12,14 @@ export const dynamic = "force-dynamic";
 export const metadata = {
   title: "Researcher sign in - Study Dashboard",
   robots: { index: false, follow: false },
+  icons: {
+    icon: [
+      { url: "/icon.svg?v=10", type: "image/svg+xml" },
+      { url: "/icon.png?v=10", type: "image/png" },
+      { url: "/favicon.ico?v=10" },
+    ],
+    shortcut: "/icon.svg?v=10",
+  },
 };
 
 export default async function AdminLoginPage() {

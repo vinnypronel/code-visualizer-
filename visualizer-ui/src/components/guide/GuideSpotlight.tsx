@@ -313,15 +313,15 @@ function PointerArrow({
       >
         <path
           d="M 42 11 L 17 11"
-          stroke="#0b4f7a"
+          stroke="#10b981"
           strokeWidth="6"
           strokeLinecap="round"
           fill="none"
         />
         <polygon
           points="2,11 19,3 19,19"
-          fill="#0b4f7a"
-          stroke="#0b4f7a"
+          fill="#10b981"
+          stroke="#10b981"
           strokeWidth="1.5"
           strokeLinejoin="round"
         />

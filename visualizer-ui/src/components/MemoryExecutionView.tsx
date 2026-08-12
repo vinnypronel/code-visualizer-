@@ -99,6 +99,8 @@ interface MemoryExecutionViewProps {
   spotlightStackVars?: string[];
   spotlightHeapObjects?: string[];
   spotlightHeapFields?: string[];
+  enteringStackVars?: string[];
+  enteringHeapObjects?: string[];
   dataMovement?: DataMovement;
   callouts?: MemoryCallout[];
   hoveredElement?: string | null;
@@ -115,6 +117,8 @@ export default function MemoryExecutionView({
   spotlightStackVars = [],
   spotlightHeapObjects = [],
   spotlightHeapFields = [],
+  enteringStackVars = [],
+  enteringHeapObjects = [],
   dataMovement,
   callouts = [],
   hoveredElement = null,
@@ -414,8 +418,10 @@ export default function MemoryExecutionView({
 
   // Handle micro-animations for data movement (value sliding)
   useEffect(() => {
-    setAnim(null);
-    if (!dataMovement || !containerRef.current) return;
+    const clearTimer = setTimeout(() => setAnim(null), 0);
+    if (!dataMovement || !containerRef.current) {
+      return () => clearTimeout(clearTimer);
+    }
 
     const timer = setTimeout(() => {
       if (!containerRef.current) return;
@@ -445,7 +451,10 @@ export default function MemoryExecutionView({
       }
     }, 180); // Small delay to let the DOM elements position themselves first
 
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(clearTimer);
+      clearTimeout(timer);
+    };
   }, [currentStep, dataMovement]);
 
   // Hex color codes mapping for path stroke colors
@@ -663,13 +672,14 @@ export default function MemoryExecutionView({
                     frame.variables.map((v, vIdx) => {
                       const isHovered = hoveredElement === `stack-${v.name}`;
                       const isSpotlighted = spotlightStackVars.includes(v.name);
+                      const isNewVariable = enteringStackVars.includes(v.name);
                       
                       /* Stage 1: the variable is created on the stack first. */
                       const varClass = isHovered
                         ? "hover-pulse"
                         : hasSpotlight
                           ? isSpotlighted
-                            ? "spotlight-active-blue reveal-stage-1"
+                            ? `spotlight-active-blue${isNewVariable ? " reveal-stage-1" : ""}`
                             : "spotlight-dim"
                           : "";
 
@@ -708,6 +718,38 @@ export default function MemoryExecutionView({
                         </div>
                       );
                     })
+                  )}
+
+                  {frame.calculation && (
+                    <div
+                      className="spotlight-active-green mt-2 rounded-md border-2 px-3 py-2.5"
+                      style={{
+                        background: "rgba(16, 185, 129, 0.1)",
+                        borderColor: "#10b981",
+                      }}
+                    >
+                      <div className="mb-1 flex items-center justify-between gap-2">
+                        <span
+                          className="text-[9px] font-mono font-bold uppercase tracking-wider"
+                          style={{ color: "#047857" }}
+                        >
+                          Expression evaluated
+                        </span>
+                        <span className="changed-badge">Changed</span>
+                      </div>
+                      <div className="flex items-center justify-between gap-3 font-mono font-bold">
+                        <span className="text-[11px]" style={{ color: "var(--text-primary)" }}>
+                          {frame.calculation.expression}
+                        </span>
+                        <span className="text-[12px]" style={{ color: "var(--text-secondary)" }}>=</span>
+                        <span
+                          className="rounded-md px-2.5 py-1 text-sm"
+                          style={{ color: "#047857", background: "#d1fae5" }}
+                        >
+                          {frame.calculation.result}
+                        </span>
+                      </div>
+                    </div>
                   )}
                 </div>
               </div>
@@ -752,13 +794,14 @@ export default function MemoryExecutionView({
               Object.values(heap).map((obj) => {
                 const isCardHovered = hoveredElement === `heap-${obj.id}`;
                 const isCardSpotlighted = spotlightHeapObjects.includes(obj.id);
+                const isNewObject = enteringHeapObjects.includes(obj.id);
                 
                 /* Stage 2: the object the variable points at arrives next. */
                 const cardClass = isCardHovered
                   ? "hover-pulse"
                   : hasSpotlight
                     ? isCardSpotlighted
-                      ? "spotlight-active-purple reveal-stage-2"
+                      ? `spotlight-active-purple${isNewObject ? " reveal-stage-2" : ""}`
                       : "spotlight-dim"
                     : "";
 
@@ -789,16 +832,16 @@ export default function MemoryExecutionView({
                       transition: "opacity 0.35s ease, transform 0.35s ease",
                     }}
                   >
-                    <div className="rounded-md w-[180px] overflow-hidden" style={{ background: "var(--bg-panel)" }}>
+                    <div className="rounded-md w-[210px] overflow-hidden" style={{ background: "var(--bg-panel)" }}>
                       {/* Object Header */}
-                      <div className="px-3 py-1.5 border-b flex items-center justify-between" style={{ background: "#e8f1f8", borderColor: "var(--border)" }}>
-                        <span className="text-[10px] font-bold font-mono" style={{ color: "var(--text-secondary)" }}>
+                      <div className="px-3 py-1.5 border-b flex items-center justify-between gap-1.5" style={{ background: "#e8f1f8", borderColor: "var(--border)" }}>
+                        <span className="text-[10px] font-bold font-mono flex-shrink-0" style={{ color: "var(--text-secondary)" }}>
                           {friendlyName}
                         </span>
-                        <span className="text-[10px] font-mono font-bold" style={{ color: "var(--text-primary)" }}>
+                        <span className="text-[10px] font-mono font-bold flex-shrink-0" style={{ color: "var(--text-primary)" }}>
                           {obj.className}
                         </span>
-                        {isCardSpotlighted && <span className="changed-badge">Changed</span>}
+                        {isCardSpotlighted && <span className="changed-badge flex-shrink-0">Changed</span>}
                       </div>
 
                       {/* Fields/Slots renderer */}
@@ -818,7 +861,7 @@ export default function MemoryExecutionView({
                                  * the line actually wrote stays unmarked. */
                                 const slotClass = hasSpotlight
                                   ? isSlotSpotlighted
-                                    ? "spotlight-active-green reveal-stage-3"
+                                    ? "spotlight-active-green"
                                     : ""
                                   : "";
 
@@ -847,7 +890,7 @@ export default function MemoryExecutionView({
                                * the last thing to land, alongside the arrow. */
                               const fieldClass = hasSpotlight
                                 ? isFieldSpotlighted
-                                  ? "spotlight-active-purple bg-purple-950/20 reveal-stage-3"
+                                  ? "spotlight-active-purple bg-purple-950/20"
                                   : ""
                                 : "";
 
@@ -858,14 +901,22 @@ export default function MemoryExecutionView({
                                 <div
                                   key={fIdx}
                                   data-ref-source={`heap-${obj.id}-${field.name}`}
-                                  className={`flex items-center justify-between text-[11px] font-mono py-1 px-1.5 border-b last:border-0 rounded ${fieldClass}`}
+                                  className={`flex items-center justify-between gap-2 text-[11px] font-mono py-1 px-1.5 border-b last:border-0 rounded ${fieldClass}`}
                                   style={{ borderColor: "var(--border)" }}
                                 >
-                                  <span className="min-w-0 font-semibold" style={{ color: "var(--text-secondary)" }}>{field.name}</span>
+                                  <div className="flex items-center gap-1.5 min-w-0">
+                                    <span className="font-semibold flex-shrink-0" style={{ color: "var(--text-secondary)" }}>
+                                      {field.name}
+                                    </span>
+                                    {isFieldSpotlighted && (
+                                      <span className="changed-badge text-[7px] px-1 py-0 flex-shrink-0">
+                                        Changed
+                                      </span>
+                                    )}
+                                  </div>
                                   
                                   {/* Field reference value */}
-                                  <span className="flex flex-shrink-0 items-center gap-1.5">
-                                    {isFieldSpotlighted && <span className="changed-badge">Changed</span>}
+                                  <div className="flex items-center flex-shrink-0 gap-1.5">
                                     {field.isReference ? (
                                       <span
                                         className={`badge flex-shrink-0 whitespace-nowrap py-0.5 px-1.5 text-[9px] font-bold ${
@@ -875,9 +926,9 @@ export default function MemoryExecutionView({
                                         {friendlyFieldVal}
                                       </span>
                                     ) : (
-                                      <span className="text-emerald-400 font-bold">{field.value}</span>
+                                      <span className="text-emerald-400 font-bold flex-shrink-0">{field.value}</span>
                                     )}
-                                  </span>
+                                  </div>
                                 </div>
                               );
                             })}

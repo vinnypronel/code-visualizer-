@@ -69,6 +69,7 @@ export default function OnboardingTour({ isOpen, onClose, onStartWalkthrough, in
   const reducedMotion = usePrefersReducedMotion();
   const step = STEPS[activeStep];
   const targetRect = useTargetRect(isOpen ? step.selector : null, isOpen);
+  const devJumpRect = useTargetRect(isOpen ? "#dev-jump-panel" : null, isOpen);
 
   useLayoutEffect(() => {
     if (!isOpen) return;
@@ -243,6 +244,7 @@ export default function OnboardingTour({ isOpen, onClose, onStartWalkthrough, in
     <>
       <GuideSpotlight
         target={targetRect}
+        additionalTargets={[devJumpRect]}
         side={placement?.side ?? "center"}
         reducedMotion={reducedMotion}
       />

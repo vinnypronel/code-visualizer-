@@ -171,7 +171,23 @@ export default function AssignedScreen() {
                 disabled={isAssigning}
                 style={{ opacity: isAssigning ? 0.6 : 1 }}
               >
-                {isAssigning ? "Trying..." : "Try again"}
+                <span>{isAssigning ? "Trying..." : "Try again"}</span>
+                <svg
+                  className="btn-arrow"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M6 12L10 8L6 4"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
               </button>
               <p className="text-[10px] mt-3 font-mono" style={{ color: "var(--text-muted)" }}>
                 {assignError}

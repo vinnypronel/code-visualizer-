@@ -2,7 +2,8 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import dynamic from "next/dynamic";
-import { CheckCircle2, ChevronRight, Compass } from "lucide-react";
+import Image from "next/image";
+import { Check, ChevronDown, ChevronRight, Compass } from "lucide-react";
 import AiExplanationPanel from "@/components/AiExplanationPanel";
 import OnboardingTour from "@/components/OnboardingTour";
 import InteractiveWalkthrough from "@/components/InteractiveWalkthrough";
@@ -881,7 +882,7 @@ class Node {
               { name: "top", type: "Node", value: "@302", isReference: true }
             ],
             x: 20,
-            y: 20
+            y: 8
           },
           "302": {
             id: "302",
@@ -890,8 +891,8 @@ class Node {
               { name: "value", type: "int", value: "42", isReference: false },
               { name: "next", type: "Node", value: "null", isReference: true }
             ],
-            x: 60,
-            y: 75
+            x: 62,
+            y: 38
           },
           "303": {
             id: "303",
@@ -900,8 +901,8 @@ class Node {
               { name: "value", type: "int", value: "84", isReference: false },
               { name: "next", type: "Node", value: "null", isReference: true }
             ],
-            x: 60,
-            y: 25
+            x: 20,
+            y: 58
           }
         },
         arrows: [
@@ -941,7 +942,7 @@ class Node {
               { name: "top", type: "Node", value: "@302", isReference: true }
             ],
             x: 20,
-            y: 20
+            y: 8
           },
           "302": {
             id: "302",
@@ -950,8 +951,8 @@ class Node {
               { name: "value", type: "int", value: "42", isReference: false },
               { name: "next", type: "Node", value: "null", isReference: true }
             ],
-            x: 60,
-            y: 75
+            x: 62,
+            y: 38
           },
           "303": {
             id: "303",
@@ -960,8 +961,8 @@ class Node {
               { name: "value", type: "int", value: "84", isReference: false },
               { name: "next", type: "Node", value: "@302", isReference: true }
             ],
-            x: 60,
-            y: 25
+            x: 20,
+            y: 58
           }
         },
         arrows: [
@@ -1007,7 +1008,7 @@ class Node {
               { name: "top", type: "Node", value: "@303", isReference: true }
             ],
             x: 20,
-            y: 20
+            y: 8
           },
           "302": {
             id: "302",
@@ -1016,8 +1017,8 @@ class Node {
               { name: "value", type: "int", value: "42", isReference: false },
               { name: "next", type: "Node", value: "null", isReference: true }
             ],
-            x: 60,
-            y: 75
+            x: 62,
+            y: 38
           },
           "303": {
             id: "303",
@@ -1026,8 +1027,8 @@ class Node {
               { name: "value", type: "int", value: "84", isReference: false },
               { name: "next", type: "Node", value: "@302", isReference: true }
             ],
-            x: 60,
-            y: 25
+            x: 20,
+            y: 58
           }
         },
         arrows: [
@@ -1080,7 +1081,7 @@ class Node {
       // [4] call line=10, entering multiply, two frames
       { lineHighlight: 5, stack: [{ methodName: "multiply(int a, int b)", variables: [{ name: "a", type: "int", value: "5", isReference: false }, { name: "b", type: "int", value: "10", isReference: false }] }, { methodName: "main(String[] args)", variables: [{ name: "x", type: "int", value: "5", isReference: false }, { name: "y", type: "int", value: "10", isReference: false }] }], heap: {}, arrows: [], spotlightStackVars: ["a", "b"], spotlightHeapObjects: [], spotlightHeapFields: [], stdout: "", activeBlock: LT_MUL, explanation: "multiply(5, 10) called, so a second stack frame is pushed on top. Parameters a=5 and b=10 are local to multiply().", bananaDiagram: LIVE_TRACE_BANANA },
       // [5] step_line line=10, inside multiply
-      { lineHighlight: 10, stack: [{ methodName: "multiply(int a, int b)", variables: [{ name: "a", type: "int", value: "5", isReference: false }, { name: "b", type: "int", value: "10", isReference: false }] }, { methodName: "main(String[] args)", variables: [{ name: "x", type: "int", value: "5", isReference: false }, { name: "y", type: "int", value: "10", isReference: false }] }], heap: {}, arrows: [], spotlightStackVars: ["a", "b"], spotlightHeapObjects: [], spotlightHeapFields: [], stdout: "", activeBlock: LT_MUL, explanation: "Executing: return a * b → 5 × 10 = 50. The multiply frame is about to pop.", bananaDiagram: LIVE_TRACE_BANANA },
+      { lineHighlight: 10, stack: [{ methodName: "multiply(int a, int b)", variables: [{ name: "a", type: "int", value: "5", isReference: false }, { name: "b", type: "int", value: "10", isReference: false }], calculation: { expression: "a (5) × b (10)", result: "50" } }, { methodName: "main(String[] args)", variables: [{ name: "x", type: "int", value: "5", isReference: false }, { name: "y", type: "int", value: "10", isReference: false }] }], heap: {}, arrows: [], spotlightStackVars: [], spotlightHeapObjects: [], spotlightHeapFields: [], stdout: "", activeBlock: LT_MUL, explanation: "Executing: return a * b → 5 × 10 = 50. The multiply frame is about to pop.", bananaDiagram: LIVE_TRACE_BANANA },
       // [6] return line=10, multiply returning 50
       { lineHighlight: 10, stack: [{ methodName: "multiply(int a, int b)", variables: [{ name: "a", type: "int", value: "5", isReference: false }, { name: "b", type: "int", value: "10", isReference: false }, { name: "return value", type: "int", value: "50", isReference: false }] }, { methodName: "main(String[] args)", variables: [{ name: "x", type: "int", value: "5", isReference: false }, { name: "y", type: "int", value: "10", isReference: false }] }], heap: {}, arrows: [], spotlightStackVars: ["return value"], spotlightHeapObjects: [], spotlightHeapFields: [], stdout: "", activeBlock: LT_MUL, explanation: "multiply() returns 50. The frame will be popped, and main() receives the return value and will assign it to result.", bananaDiagram: LIVE_TRACE_BANANA },
       // [8] step_line line=6, result=50 assigned
@@ -1376,27 +1377,102 @@ const LESSON_GOALS: Record<string, string> = {
   livetrace: "Follow a real JVM trace through variables, a method call, a return value, and output.",
 };
 
-const LESSON_RECAPS: Record<string, Array<{ label: string; text: string }>> = {
-  linkedlist: [
-    { label: "Created", text: "Two separate Node objects." },
-    { label: "Connected", text: "head.next points to the same Node as temp." },
-    { label: "Read", text: "head.value copied 10 into value." },
-  ],
-  arraylist: [
-    { label: "Created", text: "An array and a larger replacement array." },
-    { label: "Stored", text: "Values 5 and 10 in indexed slots." },
-    { label: "Copied", text: "A value from the old storage into the new storage." },
-  ],
-  stack: [
-    { label: "Created", text: "A stack and two Node objects." },
-    { label: "Preserved", text: "The previous top through a next reference." },
-    { label: "Updated", text: "The newest Node became the stack top." },
-  ],
-  livetrace: [
-    { label: "Called", text: "multiply with x and y as arguments." },
-    { label: "Returned", text: "The computed value 50 to main." },
-    { label: "Printed", text: "Result = 50 to standard output." },
-  ],
+const LESSON_VISUALS: Record<string, { src: string; alt: string }> = {
+  linkedlist: {
+    src: "/lesson-visuals/linked-list.svg",
+    alt: "A head reference pointing to a Node containing 10, which links to a Node containing 20 and then null.",
+  },
+  arraylist: {
+    src: "/lesson-visuals/array-resize.svg",
+    alt: "Values 5 and 10 being copied from a three-slot array into a new six-slot array.",
+  },
+  stack: {
+    src: "/lesson-visuals/stack-lifo.svg",
+    alt: "The value 84 being pushed above 42 at the top of a last-in, first-out stack.",
+  },
+  livetrace: {
+    src: "/lesson-visuals/method-trace.svg",
+    alt: "The main method calling multiply with 5 and 10, and multiply returning 50.",
+  },
+};
+
+interface LessonSummaryContent {
+  overview: string;
+  finalState: string;
+  keyRule: string;
+  codeStory: Array<{ code: string; explanation: string }>;
+  visualGuide: Array<{ label: string; explanation: string }>;
+}
+
+const LESSON_SUMMARIES: Record<string, LessonSummaryContent> = {
+  linkedlist: {
+    overview: "This program creates two separate Node objects, connects them into a chain, and reads a value from the first Node. The variables point to the objects; they do not contain the objects themselves.",
+    finalState: "head → Node(10) → Node(20) → null, and value = 10.",
+    keyRule: "Object variables and next fields copy references. An int variable copies the number itself.",
+    codeStory: [
+      { code: "Node head = new Node(10);", explanation: "Create the first Node; head points to it." },
+      { code: "Node temp = new Node(20);", explanation: "Create a second Node; temp points to it." },
+      { code: "head.next = temp;", explanation: "Connect the first Node to the second Node." },
+      { code: "int value = head.value;", explanation: "Copy 10 from the first Node into value." },
+    ],
+    visualGuide: [
+      { label: "Variables", explanation: "head and temp hold object references; value directly holds 10." },
+      { label: "Memory objects", explanation: "Each Node card is a separate object with its own value and next fields." },
+      { label: "Arrows", explanation: "An arrow shows which object a reference points to." },
+    ],
+  },
+  arraylist: {
+    overview: "A Java array has numbered slots and a fixed length. This program stores two values, tracks how many are in use, and starts resizing by creating larger storage and copying a value into it.",
+    finalState: "list → [5, 10, 0], temp → [5, 0, 0, 0, 0, 0], and size = 2.",
+    keyRule: "An array cannot grow in place. Resizing means creating new storage and copying the existing values into it.",
+    codeStory: [
+      { code: "int[] list = new int[3];", explanation: "Create three slots, all starting at 0." },
+      { code: "list[0] = 5;  list[1] = 10;", explanation: "Store values at indexes 0 and 1." },
+      { code: "int size = 2;", explanation: "Record that two slots contain list values." },
+      { code: "int[] temp = new int[6];", explanation: "Create a separate, larger array." },
+      { code: "temp[0] = list[0];", explanation: "Copy 5 into the new storage." },
+    ],
+    visualGuide: [
+      { label: "Variables", explanation: "list and temp point to different arrays; size directly holds 2." },
+      { label: "Indexed slots", explanation: "Each box is one slot. Array indexes begin at 0." },
+      { label: "Changed marker", explanation: "Green identifies the slot updated by the current line." },
+    ],
+  },
+  stack: {
+    overview: "This program pushes two values onto a linked stack. Each push places a new Node at the top while keeping a link to the older Node underneath it.",
+    finalState: "s.top → Node(84) → Node(42) → null. The next value removed would be 84.",
+    keyRule: "Link the new Node to the old top before moving top. A stack is last in, first out (LIFO).",
+    codeStory: [
+      { code: "MyStack s = new MyStack();", explanation: "Create an empty stack with top = null." },
+      { code: "Node n1 = new Node(42);  s.top = n1;", explanation: "Make 42 the first top value." },
+      { code: "Node n2 = new Node(84);", explanation: "Create the next Node to push." },
+      { code: "n2.next = s.top;", explanation: "Link 84 to the previous top, 42." },
+      { code: "s.top = n2;", explanation: "Move top to 84 and finish the push." },
+    ],
+    visualGuide: [
+      { label: "Variables", explanation: "s, n1, and n2 hold references to objects." },
+      { label: "Top field", explanation: "top identifies the newest Node in the stack." },
+      { label: "Next arrows", explanation: "Following next moves from newer Nodes to older Nodes." },
+    ],
+  },
+  livetrace: {
+    overview: "This program calls multiply(5, 10). Java temporarily adds a multiply stack frame, computes 50, returns that value to main, and prints the result.",
+    finalState: "multiply is finished; main has x = 5, y = 10, result = 50, and output “Result = 50”.",
+    keyRule: "Each method call gets its own temporary stack frame. Primitive arguments and return values are copied between frames.",
+    codeStory: [
+      { code: "int x = 5;  int y = 10;", explanation: "Store 5 and 10 in main's frame." },
+      { code: "multiply(x, y)", explanation: "Open a new frame with a = 5 and b = 10." },
+      { code: "return a * b;", explanation: "Compute and return 50." },
+      { code: "int result = multiply(x, y);", explanation: "Remove multiply's frame and store 50 in main." },
+      { code: "System.out.println(...);", explanation: "Print Result = 50." },
+    ],
+    visualGuide: [
+      { label: "Stack frames", explanation: "The top card is the method currently running." },
+      { label: "Return value", explanation: "50 moves from multiply back into main." },
+      { label: "Object area", explanation: "It stays empty because this example creates no objects." },
+      { label: "Output", explanation: "stdout shows text printed by System.out.println." },
+    ],
+  },
 };
 
 function getLessonStepTitle(presetId: string, lessonStep: number): string {
@@ -1432,6 +1508,87 @@ function LessonProgress({ presetId, current, total, phase }: { presetId: string;
   );
 }
 
+function LessonCustomDropdown({
+  preset,
+  presets,
+  onPresetChange,
+}: {
+  preset: Preset;
+  presets: Preset[];
+  onPresetChange: (id: string) => void;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  return (
+    <div className="relative inline-block" ref={containerRef}>
+      <button
+        type="button"
+        onClick={() => setIsOpen((prev) => !prev)}
+        className={`flex items-center justify-between gap-3 min-w-[320px] px-3.5 py-2 text-xs font-semibold border transition-all ${
+          isOpen
+            ? "rounded-t-lg rounded-b-none border-b-transparent border-[#0284c7] bg-[var(--bg-panel)] shadow-sm"
+            : "rounded-lg border-[var(--border)] bg-[var(--bg-panel)] hover:border-[#0284c7]"
+        }`}
+        style={{ color: "var(--text-primary)" }}
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
+      >
+        <span className="truncate">{preset.name}</span>
+        <ChevronDown
+          size={15}
+          className={`text-slate-400 transition-transform duration-200 ${isOpen ? "rotate-180 text-[#0284c7]" : ""}`}
+        />
+      </button>
+
+      {isOpen && (
+        <div
+          className="absolute left-0 right-0 top-full z-50 border border-t-0 rounded-b-lg overflow-hidden shadow-xl"
+          style={{
+            background: "var(--bg-panel)",
+            borderColor: "#0284c7",
+          }}
+          role="listbox"
+        >
+          {presets.map((option) => {
+            const isSelected = option.id === preset.id;
+            return (
+              <button
+                key={option.id}
+                type="button"
+                onClick={() => {
+                  onPresetChange(option.id);
+                  setIsOpen(false);
+                }}
+                className={`w-full text-left px-3.5 py-2.5 text-xs font-medium flex items-center justify-between transition-colors ${
+                  isSelected
+                    ? "bg-sky-50 dark:bg-sky-950/40 text-[#0284c7] font-bold"
+                    : "hover:bg-slate-100 dark:hover:bg-slate-800/60 text-[var(--text-primary)]"
+                }`}
+                role="option"
+                aria-selected={isSelected}
+              >
+                <span>{option.name}</span>
+                {isSelected && <Check size={14} className="text-[#0284c7]" />}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function LessonIntro({
   preset,
   presets,
@@ -1453,18 +1610,17 @@ function LessonIntro({
   backButton?: React.ReactNode;
 }) {
   const total = Math.max(1, preset.steps.length - 1);
+  const lessonVisual = LESSON_VISUALS[preset.id];
 
   return (
     <section className="lesson-intro">
       <div className="lesson-intro-inner">
         <div className="lesson-kicker">Guided Java Lesson: Code Visualizer</div>
         {SHOW_PRESET_SELECTOR && (
-          <label className="lesson-example-select">
+          <div className="lesson-example-select">
             <span>Choose your lesson</span>
-            <select value={preset.id} onChange={(event) => onPresetChange(event.target.value)}>
-              {presets.map((option) => <option key={option.id} value={option.id}>{option.name}</option>)}
-            </select>
-          </label>
+            <LessonCustomDropdown preset={preset} presets={presets} onPresetChange={onPresetChange} />
+          </div>
         )}
         <h1>{preset.name}</h1>
         <p className="lesson-goal">{LESSON_GOALS[preset.id] ?? `Trace this example through ${total} program changes.`}</p>
@@ -1478,10 +1634,24 @@ function LessonIntro({
         <div className="lesson-intro-actions w-full flex items-center justify-between">
           <span className="lesson-intro-action-start">{backButton}</span>
           <button type="button" className="btn-primary lesson-begin-button ml-auto" onClick={onBegin}>
-            Begin Lesson <ChevronRight size={17} />
+            <span>Begin Lesson</span>
+            <svg
+              className="btn-arrow"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2.5}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+            </svg>
           </button>
         </div>
       </div>
+      {lessonVisual && (
+        <figure className="lesson-intro-visual" key={lessonVisual.src}>
+          <Image src={lessonVisual.src} alt={lessonVisual.alt} width={420} height={240} priority />
+        </figure>
+      )}
     </section>
   );
 }
@@ -1497,8 +1667,8 @@ function LessonComplete({
   onTryAnother: () => void;
   onContinueToNextStage?: () => void;
 }) {
-  const linkedList = presetId === "linkedlist" && !isCustomCode;
-  const recap = isCustomCode ? [] : LESSON_RECAPS[presetId] ?? [];
+  const summary = isCustomCode ? null : LESSON_SUMMARIES[presetId];
+  const lessonVisual = isCustomCode ? null : LESSON_VISUALS[presetId];
   const completedExampleName = isCustomCode
     ? "Your custom Java program"
     : SIMULATION_PRESETS[presetId]?.name ?? "Java program";
@@ -1506,37 +1676,54 @@ function LessonComplete({
   return (
     <section className="lesson-complete">
       <div className="lesson-complete-inner">
-        <CheckCircle2 size={34} className="text-emerald-400" />
-        <span className="lesson-kicker">Lesson complete</span>
-        <h1>
-          {linkedList
-            ? "You built and traced a linked list"
-            : isCustomCode
-              ? "You traced the code you wrote"
-              : "You completed the Java trace"}
-        </h1>
-        <p className="lesson-completed-example">
-          <span>Completed example</span>
-          <strong>{completedExampleName}</strong>
-        </p>
-        {linkedList && (
-          <div className="lesson-chain" aria-label="head points to a Node containing 10, whose next field points to a Node containing 20">
-            <span className="lesson-chain-variable">head</span><span className="lesson-chain-arrow">→</span>
-            <span className="lesson-chain-node">Node <strong>10</strong></span><span className="lesson-chain-arrow">→</span>
-            <span className="lesson-chain-node">Node <strong>20</strong></span>
-          </div>
-        )}
-        {recap.length > 0 && (
-          <div className="lesson-recap">
-            {recap.map((item) => <p key={item.label}><strong>{item.label}:</strong> {item.text}</p>)}
-          </div>
+        <h1 className="lesson-summary-title">Lesson Summary: {completedExampleName}</h1>
+        {summary && (
+          <>
+            <p className="lesson-summary-overview">{summary.overview}</p>
+
+            <div className="lesson-summary-grid">
+              <section className="lesson-summary-section" aria-labelledby="summary-code-heading">
+                <h2 id="summary-code-heading">What the code did</h2>
+                <ol className="lesson-summary-code-story">
+                  {summary.codeStory.map((item, index) => (
+                    <li key={`${item.code}-${index}`}>
+                      <span className="lesson-summary-step-number">{index + 1}</span>
+                      <div>
+                        <code>{item.code}</code>
+                        <p>{item.explanation}</p>
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+              </section>
+
+              <section className="lesson-summary-section" aria-labelledby="summary-visual-heading">
+                <h2 id="summary-visual-heading">How to read the visualization</h2>
+                {lessonVisual && (
+                  <figure className="lesson-summary-visual">
+                    <Image src={lessonVisual.src} alt={lessonVisual.alt} width={420} height={240} />
+                  </figure>
+                )}
+                <div className="lesson-summary-visual-guide">
+                  {summary.visualGuide.map((item) => (
+                    <p key={item.label}><strong>{item.label}</strong><span>{item.explanation}</span></p>
+                  ))}
+                </div>
+              </section>
+            </div>
+
+            <div className="lesson-summary-final-state">
+              <div><span>Final state</span><strong>{summary.finalState}</strong></div>
+              <div><span>Main rule to remember</span><strong>{summary.keyRule}</strong></div>
+            </div>
+          </>
         )}
         <p className="lesson-finish-note">
           {onContinueToNextStage
             ? "The required lesson is finished. Continue to the post-test when you are ready."
             : "The lesson is finished."}
         </p>
-        <div className="flex flex-wrap items-center justify-center gap-3">
+        <div className="lesson-summary-actions flex flex-wrap items-center justify-center gap-3">
           {onContinueToNextStage && (
             <button type="button" className="btn-primary" onClick={onContinueToNextStage}>
               <span>Continue to post-test</span>
@@ -1551,7 +1738,7 @@ function LessonComplete({
               </svg>
             </button>
           )}
-          <button type="button" className="btn-ghost" onClick={onTryAnother}>
+          <button type="button" className="btn-ghost lesson-try-another-button" onClick={onTryAnother}>
             <Compass size={15} aria-hidden="true" /> Try another
           </button>
         </div>
@@ -1581,6 +1768,8 @@ interface VisualizerExperienceProps {
   introBackButton?: React.ReactNode;
 }
 
+import { useStudy } from "@/components/study/StudyProvider";
+
 export default function VisualizerExperience({
   onLessonComplete,
   onContinueToNextStage,
@@ -1588,10 +1777,15 @@ export default function VisualizerExperience({
   onLessonPhaseChange,
   introBackButton,
 }: VisualizerExperienceProps = {}) {
+  const { setSelectedLessonId } = useStudy();
   const containerRef = useRef<HTMLDivElement>(null);
   const [leftW, setLeftW]   = useState(540); // px
 
   const [presetId, setPresetId]       = useState<string>(LESSON_PRESET_ID);
+
+  useEffect(() => {
+    setSelectedLessonId(presetId);
+  }, [presetId, setSelectedLessonId]);
   const [currentStep, setCurrentStep] = useState<number>(0);
   const [lessonPhase, setLessonPhase] = useState<LessonPhase>("intro");
   const [isTourOpen, setIsTourOpen]   = useState(false);
@@ -1615,6 +1809,7 @@ export default function VisualizerExperience({
 
   const activePreset = customPreset ?? SIMULATION_PRESETS[presetId] ?? SIMULATION_PRESETS[LESSON_PRESET_ID];
   const currentStepData = activePreset.steps[currentStep] || activePreset.steps[0];
+  const previousStepData = activePreset.steps[Math.max(0, currentStep - 1)] || activePreset.steps[0];
   const totalSteps = activePreset.steps.length;
   const totalLessonSteps = Math.max(1, totalSteps - 1);
   const focusStepIndex = lessonPhase === "ready"
@@ -1623,6 +1818,15 @@ export default function VisualizerExperience({
   const focusStepData = activePreset.steps[focusStepIndex] || currentStepData;
   const lessonStep = lessonPhase === "ready" ? currentStep + 1 : currentStep;
   const showResult = lessonPhase === "result";
+  const previousStackVariableNames = new Set(
+    previousStepData.stack.flatMap((frame) => frame.variables.map((variable) => variable.name)),
+  );
+  const enteringStackVars = currentStepData.stack
+    .flatMap((frame) => frame.variables.map((variable) => variable.name))
+    .filter((name) => !previousStackVariableNames.has(name));
+  const previousHeapObjectIds = new Set(Object.keys(previousStepData.heap));
+  const enteringHeapObjects = Object.keys(currentStepData.heap)
+    .filter((id) => !previousHeapObjectIds.has(id));
 
   const clamp = (v: number, lo: number, hi: number) => Math.min(Math.max(v, lo), hi);
 
@@ -1932,8 +2136,8 @@ export default function VisualizerExperience({
              * program until the new one has actually been traced. */
             activeLine={isEditing ? null : focusStepData.lineHighlight}
             activeLines={isEditing ? null : walkthroughHighlightedLines}
-            primaryLabel={showResult ? (currentStep === totalSteps - 1 ? "Finish Lesson" : "Continue") : "Run This Line"}
-            primaryAriaLabel={showResult ? (currentStep === totalSteps - 1 ? "Finish lesson" : "Continue to next step") : "Run highlighted line"}
+            primaryLabel={showResult ? (currentStep === totalSteps - 1 ? "View Lesson Summary" : "Continue") : "Run This Line"}
+            primaryAriaLabel={showResult ? (currentStep === totalSteps - 1 ? "View lesson summary" : "Continue to next step") : "Run highlighted line"}
             canGoBack={currentStep > 0}
             onStepBack={handleStepBack}
             onPrimary={handlePrimary}
@@ -1968,6 +2172,8 @@ export default function VisualizerExperience({
             spotlightStackVars={showResult ? currentStepData.spotlightStackVars : []}
             spotlightHeapObjects={showResult ? currentStepData.spotlightHeapObjects : []}
             spotlightHeapFields={showResult ? currentStepData.spotlightHeapFields : []}
+            enteringStackVars={showResult ? enteringStackVars : []}
+            enteringHeapObjects={showResult ? enteringHeapObjects : []}
             dataMovement={showResult ? currentStepData.dataMovement : undefined}
             callouts={[]}
             hoveredElement={null}
@@ -2012,7 +2218,6 @@ export default function VisualizerExperience({
           setTourInitialStep(4);
           setIsTourOpen(true);
         }}
-        onExploreExamples={() => setIsExploreOpen(true)}
         onHighlightedLinesChange={setWalkthroughHighlightedLines}
       />
 

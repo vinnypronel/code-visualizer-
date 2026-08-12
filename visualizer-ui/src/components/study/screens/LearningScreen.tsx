@@ -20,20 +20,28 @@ import { BackButtonWithTooltip } from "@/components/study/screens/TimedTestScree
 export default function LearningScreen() {
   const { session, logEvent, goTo } = useStudy();
   const [startAtMs] = useState(() => Date.now());
-  const remaining = useCountdown(900, startAtMs);
-  const urgent = remaining <= 60;
-  /*
-   * The lesson intro renders its own back control in the action row, so the top
-   * bar drops its copy there and shows it everywhere else. Static materials
-   * have no intro screen, so they keep the top-bar control throughout.
-   */
+
   const [lessonPhase, setLessonPhase] = useState<LessonPhase>("intro");
+  const [visualizerStartMs, setVisualizerStartMs] = useState<number | null>(null);
+
+  const isAi = session.condition !== "static"; // default to AI if unset
+
+  // Start recommended timer only when user enters visualizer screen (or immediately for static reading)
+  useEffect(() => {
+    if (!visualizerStartMs) {
+      if (!isAi || lessonPhase !== "intro") {
+        setVisualizerStartMs(Date.now());
+      }
+    }
+  }, [isAi, lessonPhase, visualizerStartMs]);
+
+  const countdownRemaining = useCountdown(900, visualizerStartMs ?? Date.now());
+  const remaining = visualizerStartMs ? countdownRemaining : 900;
+  const urgent = remaining <= 60;
 
   // The lesson can be replayed, so completion is logged only the first time.
   const loggedCompletionRef = useRef(false);
   const loggedExamplesRef = useRef(new Set<string>());
-
-  const isAi = session.condition !== "static"; // default to AI if unset
 
   // Log the start of the learning phase once.
   useEffect(() => {
@@ -64,7 +72,11 @@ export default function LearningScreen() {
   }, [goTo, logEvent, startAtMs]);
 
   const backToPretest = (
-    <BackButtonWithTooltip label="Back to Pre-test" onClick={() => goTo("pretest")} />
+    <BackButtonWithTooltip
+      label="Back to Pre-test"
+      onClick={() => goTo("pretest")}
+      showTooltip={false}
+    />
   );
   const showTopBarBack = !isAi || lessonPhase !== "intro";
 

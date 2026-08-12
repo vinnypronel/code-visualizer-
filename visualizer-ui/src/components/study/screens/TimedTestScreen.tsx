@@ -32,28 +32,35 @@ export function BackButtonWithTooltip({
   label,
   onClick,
   tooltipText = "Your responses will be saved automatically if you go back.",
+  showTooltip = true,
 }: {
   label: string;
   onClick: () => void;
   tooltipText?: string;
+  showTooltip?: boolean;
 }) {
   return (
     <div className="group relative inline-flex items-center">
       <button
         type="button"
         onClick={onClick}
-        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md border text-[12px] font-semibold text-slate-700 hover:text-slate-900 hover:border-slate-400 bg-white shadow-sm transition-all cursor-pointer"
-        style={{ borderColor: "var(--border)" }}
+        className="study-back-button inline-flex items-center gap-1 px-3 py-1.5 rounded-md border border-[var(--border)] text-[12px] font-semibold text-slate-700 bg-white shadow-sm cursor-pointer"
       >
-        <ChevronLeft size={14} aria-hidden="true" />
+        <ChevronLeft
+          size={14}
+          aria-hidden="true"
+          className="study-back-button-arrow"
+        />
         <span>{label}</span>
       </button>
-      <span
-        role="tooltip"
-        className="pointer-events-none absolute bottom-[calc(100%+8px)] left-0 z-50 whitespace-nowrap rounded-md bg-slate-900 px-2.5 py-1 text-[11px] font-medium text-white opacity-0 shadow-lg border border-slate-700 transition-all duration-150 group-hover:opacity-100 group-hover:translate-y-[-2px]"
-      >
-        {tooltipText}
-      </span>
+      {showTooltip && (
+        <span
+          role="tooltip"
+          className="pointer-events-none absolute top-[calc(100%+8px)] left-0 z-50 whitespace-nowrap rounded-md bg-slate-900 px-2.5 py-1 text-[11px] font-medium text-white opacity-0 shadow-lg border border-slate-700 transition-all duration-150 group-hover:opacity-100 group-hover:translate-y-[2px]"
+        >
+          {tooltipText}
+        </span>
+      )}
     </div>
   );
 }

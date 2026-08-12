@@ -47,6 +47,9 @@ interface OutboxItem {
 }
 
 const OUTBOX_KEY = "study.outbox.v1";
+const SESSION_KEY = "study.session.v1";
+const FORCE_NEW_PARAM = "new_session";
+const SESSION_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 const MAX_ATTEMPTS = 3;
 const BASE_BACKOFF_MS = 500;
 
@@ -86,6 +89,8 @@ interface StudyContextValue {
     key: string,
     value: string,
   ) => void;
+  /* Set the active lesson ID chosen during the learning phase. */
+  setSelectedLessonId: (lessonId: string) => void;
 }
 
 const StudyContext = createContext<StudyContextValue | null>(null);
@@ -95,88 +100,26 @@ const INITIAL_SESSION: SessionState = {
   seq: null,
   condition: null,
   phase: "consent",
+  selectedLessonId: null,
   pretestResponses: {},
   posttestResponses: {},
 };
 
-/*
- * Session persistence.
- *
- * Without this, the whole session lives in React memory, so a refresh, an
- * accidental tab close, or a browser restart drops the participant back on the
- * consent form with no ID. Consenting a second time mints a SECOND participant
- * ID through the atomic sequence, which splits one person's data across two
- * rows and is invisible at analysis time. Restoring instead puts them back
- * exactly where they were, with the same ID.
- *
- * Only sessions that have an ID are stored, so nothing is written before
- * consent. Restoring happens in an effect after mount rather than in the
- * initial state, so the server and the first client render agree.
- */
-const SESSION_KEY = "study.session.v1";
-
-/*
- * A stored session is abandoned after this long. It bounds the damage when a
- * shared lab machine moves from one participant to the next: a stale session
- * cannot silently attach a new person's answers to yesterday's ID.
- */
-const SESSION_MAX_AGE_MS = 12 * 60 * 60 * 1000;
-
-/* Escape hatch for a shared machine: /?new=1 always starts a clean session. */
-const FORCE_NEW_PARAM = "new";
-
 export function StudyProvider({ children }: { children: React.ReactNode }) {
-  const [session, setSession] = useState<SessionState>(INITIAL_SESSION);
+  const [session, setSession] = useState<SessionState>(
+    () => readStoredSession() ?? INITIAL_SESSION,
+  );
   const [assignError, setAssignError] = useState<string | null>(null);
   const [isAssigning, setIsAssigning] = useState(false);
+  const [outbox, setOutbox] = useState<OutboxItem[]>(readOutbox);
+  const [isFlushing, setIsFlushing] = useState(false);
 
-  // A ref that always holds the latest session, so logEvent can read the
-  // participant ID without being re-created on every state change.
   const sessionRef = useLatestRef(session);
+  const outboxRef = useLatestRef(outbox);
 
-  /*
-   * Restore a session left behind by a refresh or a closed tab. Runs once,
-   * after mount, so there is no hydration mismatch. A stored session only
-   * exists once an ID has been minted, so this can never resurrect a
-   * half-finished consent form.
-   */
   useEffect(() => {
-    const stored = readStoredSession();
-    // Setting state from an effect is exactly right here: localStorage cannot
-    // be read during render without the server and client disagreeing, so the
-    // first paint has to be the pristine session and the restore has to land
-    // immediately after mount.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (stored) setSession(stored);
-  }, []);
-
-  /*
-   * Mirror the session to storage whenever it changes, but only once it has an
-   * ID worth restoring. Writing before consent would persist nothing useful and
-   * would make a fresh visit look like a resumed one.
-   */
-  useEffect(() => {
-    if (!session.participantId) return;
     writeStoredSession(session);
   }, [session]);
-
-  const goTo = useCallback((phase: Phase) => {
-    setSession((s) => ({ ...s, phase }));
-  }, []);
-
-  const returnToConsent = useCallback(() => {
-    window.localStorage.removeItem(SESSION_KEY);
-    setAssignError(null);
-    setSession(INITIAL_SESSION);
-  }, []);
-
-  const devJump = useCallback((phase: Phase, condition?: Condition) => {
-    setSession((s) => ({
-      ...s,
-      phase,
-      condition: condition ?? s.condition ?? "ai",
-    }));
-  }, []);
 
   const declineConsent = useCallback(() => {
     setSession((s) => ({ ...s, phase: "declined" }));
@@ -185,7 +128,6 @@ export function StudyProvider({ children }: { children: React.ReactNode }) {
   const acceptConsent = useCallback(async () => {
     setIsAssigning(true);
     setAssignError(null);
-    // Instant transition: move to page 2 (assigned) immediately so the user sees skeleton loaders right away
     setSession((s) => ({
       ...s,
       phase: "assigned",
@@ -219,107 +161,111 @@ export function StudyProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const [unsavedCritical, setUnsavedCritical] = useState(false);
-
-  // Guards against two flushes racing and sending the same item twice.
-  const isFlushingRef = useRef(false);
-
-  const syncUnsavedFlag = useCallback(() => {
-    setUnsavedCritical(readOutbox().some((item) => item.critical));
+  const goTo = useCallback((phase: Phase) => {
+    setSession((s) => ({ ...s, phase }));
   }, []);
 
-  /*
-   * Drain the outbox oldest-first. Order matters: a later event for the same
-   * participant can overwrite the same columns, so a replay must not run
-   * backwards. One failure stops the drain and leaves the rest queued.
-   */
-  const flushOutbox = useCallback(async () => {
-    if (isFlushingRef.current) return;
-    isFlushingRef.current = true;
-    try {
-      let queue = readOutbox();
-      while (queue.length > 0) {
-        const [next] = queue;
-        const sent = await postLog(next.body);
-        if (!sent) break;
-        // Re-read before removing: a log that failed while we were awaiting
-        // may have appended to the stored queue in the meantime.
-        queue = readOutbox().filter((item) => item.id !== next.id);
-        writeOutbox(queue);
-      }
-    } finally {
-      isFlushingRef.current = false;
-      syncUnsavedFlag();
+  const setSelectedLessonId = useCallback((lessonId: string) => {
+    setSession((s) => ({ ...s, selectedLessonId: lessonId }));
+  }, []);
+
+  const devJump = useCallback((phase: Phase, condition?: Condition) => {
+    setSession((s) => ({
+      ...s,
+      phase,
+      condition: condition ?? s.condition ?? "ai",
+      participantId: s.participantId ?? "P000",
+    }));
+  }, []);
+
+  const returnToConsent = useCallback(() => {
+    setSession(INITIAL_SESSION);
+    if (typeof window !== "undefined") {
+      window.localStorage.removeItem(SESSION_KEY);
     }
-  }, [syncUnsavedFlag]);
+  }, []);
+
+  const flushOutbox = useCallback(async () => {
+    if (isFlushing || outboxRef.current.length === 0) return;
+    setIsFlushing(true);
+    try {
+      const current = [...outboxRef.current];
+      const remaining: OutboxItem[] = [];
+
+      for (const item of current) {
+        const ok = await postLogWithRetry(item.body);
+        if (!ok) {
+          remaining.push(item);
+        }
+      }
+
+      setOutbox(remaining);
+      writeOutbox(remaining);
+    } finally {
+      setIsFlushing(false);
+    }
+  }, [isFlushing, outboxRef]);
+
+  useEffect(() => {
+    if (outbox.length > 0) {
+      void flushOutbox();
+    }
+  }, [outbox.length, flushOutbox]);
 
   const logEvent = useCallback(
     async (event: LogEvent, payload?: LogRequestBody["payload"]) => {
-      const participantId = sessionRef.current?.participantId;
-      if (!participantId) return;
+      const currentSession = sessionRef.current;
+      const pid = currentSession.participantId;
+      if (!pid) return;
+
       const body: LogRequestBody = {
-        participant_id: participantId,
+        participant_id: pid,
         event,
         clientTimestamp: new Date().toISOString(),
         payload,
       };
 
-      /*
-       * Deliberately not awaited. The participant must never wait on a backoff,
-       * so the caller resolves immediately and delivery continues in the
-       * background.
-       */
-      void (async () => {
-        const sent = await postLogWithRetry(body);
-        if (sent) {
-          // A working connection is the cheapest moment to retry old items.
-          await flushOutbox();
-          return;
-        }
-        const critical = Boolean(body.payload?.responses);
-        writeOutbox([
-          ...readOutbox(),
-          { id: makeOutboxId(), critical, body },
-        ]);
-        syncUnsavedFlag();
-      })();
+      const critical = event === "pretest_finished" || event === "posttest_finished";
+      const ok = await postLogWithRetry(body);
+      if (!ok) {
+        const item: OutboxItem = {
+          id: makeOutboxId(),
+          critical,
+          body,
+        };
+        setOutbox((prev) => {
+          const next = [...prev, item];
+          writeOutbox(next);
+          return next;
+        });
+      }
     },
-    [sessionRef, flushOutbox, syncUnsavedFlag],
+    [sessionRef],
   );
 
-  /*
-   * Pick up anything a previous page load left behind, and retry whenever the
-   * browser reports the connection is back.
-   */
-  useEffect(() => {
-    void flushOutbox();
-    const onOnline = () => {
-      void flushOutbox();
-    };
-    window.addEventListener("online", onOnline);
-    return () => window.removeEventListener("online", onOnline);
-  }, [flushOutbox]);
+  const unsavedCritical = useMemo(
+    () => outbox.some((item) => item.critical),
+    [outbox],
+  );
 
   const downloadUnsavedResponses = useCallback(() => {
-    const queue = readOutbox();
-    if (queue.length === 0) return;
     const file = {
-      participant_id:
-        sessionRef.current?.participantId ??
-        queue[0]?.body.participant_id ??
-        null,
-      exported_at: new Date().toISOString(),
-      unsent_events: queue.map((item) => item.body),
+      exportedAt: new Date().toISOString(),
+      participant_id: sessionRef.current.participantId,
+      condition: sessionRef.current.condition,
+      outbox: outboxRef.current,
+      session: sessionRef.current,
     };
-    const url = URL.createObjectURL(
-      new Blob([JSON.stringify(file, null, 2)], { type: "application/json" }),
-    );
+    const blob = new Blob([JSON.stringify(file, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
     link.download = `unsaved-responses-${file.participant_id ?? "unknown"}.json`;
     link.click();
     URL.revokeObjectURL(url);
-  }, [sessionRef]);
+  }, [outboxRef, sessionRef]);
 
   const setResponse = useCallback(
     (which: "pretest" | "posttest", key: string, value: string) => {
@@ -347,6 +293,7 @@ export function StudyProvider({ children }: { children: React.ReactNode }) {
       devJump,
       logEvent,
       setResponse,
+      setSelectedLessonId,
     }),
     [
       session,
@@ -361,6 +308,7 @@ export function StudyProvider({ children }: { children: React.ReactNode }) {
       devJump,
       logEvent,
       setResponse,
+      setSelectedLessonId,
     ],
   );
 
@@ -380,10 +328,6 @@ export function useStudy(): StudyContextValue {
   return ctx;
 }
 
-/*
- * One POST attempt. Returns false for both a thrown network error and a
- * non-2xx response, since a 500 loses the answers just as completely.
- */
 async function postLog(body: LogRequestBody): Promise<boolean> {
   try {
     const res = await fetch("/api/session/log", {
@@ -397,11 +341,6 @@ async function postLog(body: LogRequestBody): Promise<boolean> {
   }
 }
 
-/*
- * Retry with exponential backoff. Replays are safe because the server route
- * PATCHes columns keyed by participant_id, so a duplicate rewrites the same
- * values.
- */
 async function postLogWithRetry(body: LogRequestBody): Promise<boolean> {
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt += 1) {
     if (await postLog(body)) return true;
@@ -420,16 +359,9 @@ function makeOutboxId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
-/*
- * Session storage helpers. Guarded the same way as the outbox, since this
- * module is also evaluated during server rendering. A malformed or expired
- * entry is treated as absent and cleared, so a bad value can never wedge a
- * participant on a screen they cannot leave.
- */
 function readStoredSession(): SessionState | null {
   if (typeof window === "undefined") return null;
   try {
-    // A researcher resetting a shared machine between participants.
     if (new URLSearchParams(window.location.search).has(FORCE_NEW_PARAM)) {
       window.localStorage.removeItem(SESSION_KEY);
       return null;
@@ -461,16 +393,10 @@ function writeStoredSession(session: SessionState): void {
       JSON.stringify({ savedAt: Date.now(), session }),
     );
   } catch {
-    // Storage can be full or blocked. Losing persistence is survivable; the
-    // in-memory session still carries the participant through in one sitting.
+    // ignore storage quota errors
   }
 }
 
-/*
- * The outbox lives in localStorage so a reload, a crash, or a closed laptop
- * does not take the answers with it. All access is guarded because this module
- * is also evaluated during server rendering.
- */
 function readOutbox(): OutboxItem[] {
   if (typeof window === "undefined") return [];
   try {
@@ -489,12 +415,10 @@ function writeOutbox(items: OutboxItem[]): void {
   try {
     window.localStorage.setItem(OUTBOX_KEY, JSON.stringify(items));
   } catch {
-    // A full or blocked storage leaves the in-memory warning as the only
-    // signal, which is still better than failing silently.
+    // ignore
   }
 }
 
-/* Small helper: a ref that always holds the latest value. */
 function useLatestRef<T>(value: T) {
   const ref = useRef(value);
   useEffect(() => {

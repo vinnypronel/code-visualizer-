@@ -15,6 +15,10 @@ export interface StackVariable {
 export interface StackFrame {
   methodName: string;
   variables: StackVariable[];
+  calculation?: {
+    expression: string;
+    result: string;
+  };
 }
 
 export interface HeapField {
