@@ -19,6 +19,7 @@ import {
   funnelCounts,
   itemAccuracy,
   mean,
+  median,
   summarizeCondition,
   toCsv,
   toParticipantView,
@@ -75,9 +76,10 @@ export default function AdminDashboard({
   const postItems = useMemo(() => itemAccuracy(views, "posttest"), [views]);
 
   const completed = views.filter((v) => v.completed).length;
+  const questionnaireOpened = views.filter((v) => v.questionnaireOpened).length;
   const scored = views.filter((v) => v.gain != null);
   const overallGain = mean(scored.map((v) => v.gain as number));
-  const medianTotal = mean(
+  const medianTotal = median(
     views.map((v) => v.totalMinutes).filter((n): n is number => n != null),
   );
 
@@ -217,7 +219,12 @@ export default function AdminDashboard({
             {[
               { label: "Participants", value: String(views.length), detail: `${all.length} total` },
               {
-                label: "Completed",
+                label: "Form opened",
+                value: String(questionnaireOpened),
+                detail: views.length > 0 ? `${Math.round((questionnaireOpened / views.length) * 100)}%` : "no rows",
+              },
+              {
+                label: "Submitted",
                 value: String(completed),
                 detail: views.length > 0 ? `${Math.round((completed / views.length) * 100)}%` : "no rows",
               },
@@ -453,10 +460,32 @@ export default function AdminDashboard({
 
 /* Side panel showing every submitted answer next to the expected value. */
 function ResponseInspector({ view, onClose }: { view: ParticipantView; onClose: () => void }) {
+  const router = useRouter();
+  const [markingSubmitted, setMarkingSubmitted] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const sections: { title: string; score: typeof view.pretest }[] = [
     { title: "Pre-test", score: view.pretest },
     { title: "Post-test", score: view.posttest },
   ];
+
+  async function markQuestionnaireSubmitted() {
+    setMarkingSubmitted(true);
+    setSubmitError(null);
+    try {
+      const response = await fetch("/api/admin/questionnaire-complete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ participant_id: view.participantId }),
+      });
+      if (!response.ok) throw new Error("Could not mark the questionnaire as submitted.");
+      onClose();
+      router.refresh();
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : "Update failed.");
+    } finally {
+      setMarkingSubmitted(false);
+    }
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
@@ -549,12 +578,36 @@ function ResponseInspector({ view, onClose }: { view: ParticipantView; onClose: 
             </div>
           ))}
           <div className="col-span-2">
+            <dt style={{ color: "var(--text-muted)" }}>Measured lesson</dt>
+            <dd style={{ color: "var(--text-primary)" }}>
+              {view.measuredLessonId ?? (view.condition === "static" ? "static materials" : "not completed")}
+            </dd>
+          </div>
+          <div className="col-span-2">
             <dt style={{ color: "var(--text-muted)" }}>Examples opened</dt>
             <dd style={{ color: "var(--text-primary)" }}>
               {view.examplesTried.length > 0 ? view.examplesTried.join(", ") : "none"}
             </dd>
           </div>
         </dl>
+
+        <div className="mt-5 border-t pt-4" style={{ borderColor: "#e2e8f0" }}>
+          <p className="mb-2 text-xs" style={{ color: "var(--text-secondary)" }}>
+            Questionnaire: {view.questionnaireSubmitted ? "submitted" : view.questionnaireOpened ? "opened, submission not yet confirmed" : "not opened"}
+          </p>
+          {!view.questionnaireSubmitted && (
+            <button
+              type="button"
+              onClick={markQuestionnaireSubmitted}
+              disabled={markingSubmitted}
+              className="rounded-md px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-60"
+              style={{ background: "var(--action)" }}
+            >
+              {markingSubmitted ? "Saving…" : "Mark questionnaire submitted"}
+            </button>
+          )}
+          {submitError && <p className="mt-2 text-xs" style={{ color: "var(--danger)" }}>{submitError}</p>}
+        </div>
       </aside>
     </div>
   );

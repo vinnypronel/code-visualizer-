@@ -33,6 +33,8 @@ export type ExampleId = "linkedlist" | "arraylist" | "stack" | "livetrace";
 /* The subset of session state the client tracks in memory during a run. */
 export interface SessionState {
   participantId: string | null;
+  sessionToken: string | null;
+  assignmentRequestId: string | null;
   seq: number | null;
   condition: Condition | null;
   phase: Phase;
@@ -46,6 +48,7 @@ export interface AssignResponse {
   participant_id: string;
   seq: number;
   condition: Condition;
+  session_token: string;
 }
 
 /*
@@ -70,10 +73,13 @@ export type LogEvent =
   | "learning_continue"
   | "posttest_started"
   | "posttest_finished"
-  | "questionnaire_shown";
+  | "questionnaire_shown"
+  | "questionnaire_opened";
 
 export interface LogRequestBody {
   participant_id: string;
+  session_token: string;
+  event_id: string;
   event: LogEvent;
   clientTimestamp: string;
   payload?: {

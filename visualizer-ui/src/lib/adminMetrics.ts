@@ -24,17 +24,23 @@ export interface SessionRow {
   pretest_started_at: string | null;
   pretest_finished_at: string | null;
   pretest_ended_by: string | null;
+  pretest_elapsed_seconds: number | null;
   learning_started_at: string | null;
   learning_completed_at: string | null;
   learning_continue_at: string | null;
+  learning_elapsed_seconds: number | null;
+  measured_lesson_id: string | null;
   posttest_started_at: string | null;
   posttest_finished_at: string | null;
   posttest_ended_by: string | null;
+  posttest_elapsed_seconds: number | null;
   questionnaire_shown_at: string | null;
+  questionnaire_opened_at: string | null;
   questionnaire_finished_at: string | null;
   pretest_responses: TestResponses | null;
   posttest_responses: TestResponses | null;
   examples_tried: string[] | null;
+  consent_version: string | null;
   created_at: string;
 }
 
@@ -141,6 +147,8 @@ export const FUNNEL_STAGES = [
   "Post-test started",
   "Post-test finished",
   "Questionnaire shown",
+  "Questionnaire opened",
+  "Questionnaire submitted",
 ] as const;
 
 export type FunnelStage = (typeof FUNNEL_STAGES)[number];
@@ -150,6 +158,11 @@ function minutesBetween(a: string | null, b: string | null): number | null {
   const ms = new Date(b).getTime() - new Date(a).getTime();
   if (!Number.isFinite(ms) || ms < 0) return null;
   return Math.round((ms / 60000) * 10) / 10;
+}
+
+function minutesFromSeconds(seconds: number | null): number | null {
+  if (seconds == null || !Number.isFinite(seconds) || seconds < 0) return null;
+  return Math.round((seconds / 60) * 10) / 10;
 }
 
 export interface ParticipantView {
@@ -166,7 +179,10 @@ export interface ParticipantView {
   posttestMinutes: number | null;
   totalMinutes: number | null;
   examplesTried: string[];
-  /* Reached the questionnaire handoff, i.e. finished the measured flow. */
+  measuredLessonId: string | null;
+  questionnaireOpened: boolean;
+  questionnaireSubmitted: boolean;
+  /* Confirmed questionnaire submission after Forms results are synchronized. */
   completed: boolean;
   /* AI-condition participants who never reached the lesson's terminal state. */
   lessonIncomplete: boolean;
@@ -185,6 +201,8 @@ export function toParticipantView(row: SessionRow): ParticipantView {
     row.posttest_started_at,
     row.posttest_finished_at,
     row.questionnaire_shown_at,
+    row.questionnaire_opened_at,
+    row.questionnaire_finished_at,
   ];
   let furthest = 0;
   reached.forEach((ts, i) => {
@@ -202,12 +220,15 @@ export function toParticipantView(row: SessionRow): ParticipantView {
       pretest?.percent != null && posttest?.percent != null
         ? posttest.percent - pretest.percent
         : null,
-    pretestMinutes: minutesBetween(row.pretest_started_at, row.pretest_finished_at),
-    learningMinutes: minutesBetween(row.learning_started_at, row.learning_continue_at),
-    posttestMinutes: minutesBetween(row.posttest_started_at, row.posttest_finished_at),
-    totalMinutes: minutesBetween(row.consent_completed_at, row.questionnaire_shown_at),
+    pretestMinutes: minutesFromSeconds(row.pretest_elapsed_seconds) ?? minutesBetween(row.pretest_started_at, row.pretest_finished_at),
+    learningMinutes: minutesFromSeconds(row.learning_elapsed_seconds) ?? minutesBetween(row.learning_started_at, row.learning_continue_at),
+    posttestMinutes: minutesFromSeconds(row.posttest_elapsed_seconds) ?? minutesBetween(row.posttest_started_at, row.posttest_finished_at),
+    totalMinutes: minutesBetween(row.consent_completed_at, row.questionnaire_opened_at ?? row.questionnaire_shown_at),
     examplesTried: row.examples_tried ?? [],
-    completed: Boolean(row.questionnaire_shown_at),
+    measuredLessonId: row.measured_lesson_id,
+    questionnaireOpened: Boolean(row.questionnaire_opened_at),
+    questionnaireSubmitted: Boolean(row.questionnaire_finished_at),
+    completed: Boolean(row.questionnaire_finished_at),
     lessonIncomplete: row.condition === "ai" && !row.learning_completed_at,
     furthestStageIndex: furthest,
     furthestStage: FUNNEL_STAGES[furthest],
@@ -398,8 +419,16 @@ const CSV_COLUMNS: { header: string; get: (v: ParticipantView) => string | numbe
   { header: "posttest_ended_by", get: (v) => v.row.posttest_ended_by },
   { header: "lesson_completed", get: (v) => (v.row.learning_completed_at ? "yes" : "no") },
   { header: "examples_tried", get: (v) => v.examplesTried.join(" ") },
+  { header: "measured_lesson_id", get: (v) => v.measuredLessonId },
+  { header: "questionnaire_opened", get: (v) => (v.questionnaireOpened ? "yes" : "no") },
+  { header: "questionnaire_submitted", get: (v) => (v.questionnaireSubmitted ? "yes" : "no") },
+  { header: "consent_version", get: (v) => v.row.consent_version },
+  { header: "pretest_responses_json", get: (v) => JSON.stringify(v.row.pretest_responses ?? {}) },
+  { header: "posttest_responses_json", get: (v) => JSON.stringify(v.row.posttest_responses ?? {}) },
   { header: "consent_completed_at", get: (v) => v.row.consent_completed_at },
   { header: "questionnaire_shown_at", get: (v) => v.row.questionnaire_shown_at },
+  { header: "questionnaire_opened_at", get: (v) => v.row.questionnaire_opened_at },
+  { header: "questionnaire_finished_at", get: (v) => v.row.questionnaire_finished_at },
 ];
 
 function csvCell(value: string | number | null): string {

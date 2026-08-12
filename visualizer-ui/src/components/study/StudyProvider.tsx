@@ -7,12 +7,8 @@
  * are never lost to a navigation. Writes that must be durable are POSTed to the
  * server route handlers, which own the authoritative timestamps.
  *
- * Logging is not uniformly disposable. Most events are plain timestamps, but
- * `pretest_finished` and `posttest_finished` carry the participant's actual
- * answers, which are the study's primary data. A silently dropped POST there
- * loses a whole 45-minute session with nobody noticing, so those go through a
- * retry, then a localStorage outbox that survives a reload, and only then does
- * the participant see a notice. Ordinary timestamp failures stay invisible.
+ * Every lifecycle write is retried and then placed in a localStorage outbox.
+ * Each write has a stable event ID, so retrying cannot duplicate data.
  */
 
 import {
@@ -46,8 +42,8 @@ interface OutboxItem {
   body: LogRequestBody;
 }
 
-const OUTBOX_KEY = "study.outbox.v1";
-const SESSION_KEY = "study.session.v1";
+const OUTBOX_KEY = "study.outbox.v2";
+const SESSION_KEY = "study.session.v2";
 const FORCE_NEW_PARAM = "new_session";
 const SESSION_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 const MAX_ATTEMPTS = 3;
@@ -97,6 +93,8 @@ const StudyContext = createContext<StudyContextValue | null>(null);
 
 const INITIAL_SESSION: SessionState = {
   participantId: null,
+  sessionToken: null,
+  assignmentRequestId: null,
   seq: null,
   condition: null,
   phase: "consent",
@@ -126,18 +124,25 @@ export function StudyProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const acceptConsent = useCallback(async () => {
+    const assignmentRequestId = sessionRef.current.assignmentRequestId ?? makeUuid();
+    const sessionToken = sessionRef.current.sessionToken ?? makeUuid();
     setIsAssigning(true);
     setAssignError(null);
     setSession((s) => ({
       ...s,
       phase: "assigned",
+      assignmentRequestId,
+      sessionToken,
     }));
 
     try {
       const res = await fetch("/api/session/assign", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
+        body: JSON.stringify({
+          assignment_request_id: assignmentRequestId,
+          session_token: sessionToken,
+        }),
       });
       if (!res.ok) {
         throw new Error(`assign failed with status ${res.status}`);
@@ -146,6 +151,8 @@ export function StudyProvider({ children }: { children: React.ReactNode }) {
       setSession((s) => ({
         ...s,
         participantId: data.participant_id,
+        sessionToken: data.session_token,
+        assignmentRequestId,
         seq: data.seq,
         condition: data.condition,
         phase: "assigned",
@@ -159,7 +166,7 @@ export function StudyProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsAssigning(false);
     }
-  }, []);
+  }, [sessionRef]);
 
   const goTo = useCallback((phase: Phase) => {
     setSession((s) => ({ ...s, phase }));
@@ -175,6 +182,8 @@ export function StudyProvider({ children }: { children: React.ReactNode }) {
       phase,
       condition: condition ?? s.condition ?? "ai",
       participantId: s.participantId ?? "P000",
+      sessionToken: s.sessionToken,
+      assignmentRequestId: s.assignmentRequestId,
     }));
   }, []);
 
@@ -216,16 +225,19 @@ export function StudyProvider({ children }: { children: React.ReactNode }) {
     async (event: LogEvent, payload?: LogRequestBody["payload"]) => {
       const currentSession = sessionRef.current;
       const pid = currentSession.participantId;
-      if (!pid) return;
+      const token = currentSession.sessionToken;
+      if (!pid || !token) return;
 
       const body: LogRequestBody = {
         participant_id: pid,
+        session_token: token,
+        event_id: makeUuid(),
         event,
         clientTimestamp: new Date().toISOString(),
         payload,
       };
 
-      const critical = event === "pretest_finished" || event === "posttest_finished";
+      const critical = event !== "example_attempted";
       const ok = await postLogWithRetry(body);
       if (!ok) {
         const item: OutboxItem = {
@@ -359,6 +371,10 @@ function makeOutboxId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
+function makeUuid(): string {
+  return crypto.randomUUID();
+}
+
 function readStoredSession(): SessionState | null {
   if (typeof window === "undefined") return null;
   try {
@@ -374,7 +390,12 @@ function readStoredSession(): SessionState | null {
     const savedAt = parsed?.savedAt ?? 0;
     const session = parsed?.session;
 
-    if (!session?.participantId || Date.now() - savedAt > SESSION_MAX_AGE_MS) {
+    if (
+      !session?.participantId ||
+      !session.sessionToken ||
+      !session.assignmentRequestId ||
+      Date.now() - savedAt > SESSION_MAX_AGE_MS
+    ) {
       window.localStorage.removeItem(SESSION_KEY);
       return null;
     }

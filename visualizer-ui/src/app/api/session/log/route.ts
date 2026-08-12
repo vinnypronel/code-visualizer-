@@ -1,98 +1,75 @@
 /*
- * POST /api/session/log
- *
- * Records a lifecycle event for a participant. The SERVER stamps the
- * authoritative timestamp for each event; the client-sent timestamp is ignored
- * for the stored value (kept only in the request for reference). Maps each
- * event to the matching session columns and patches the row.
+ * Authenticated, append-only study logging. The database RPC validates the
+ * private per-session token, appends study_events, and updates the sessions
+ * summary row atomically.
  */
 
-import { callRpc, patchSession } from "@/lib/supabaseServer";
+import { callRpc } from "@/lib/supabaseServer";
 import type { LogRequestBody } from "@/lib/studyTypes";
 
 export const dynamic = "force-dynamic";
 
+const CLIENT_EVENTS = new Set([
+  "pretest_started", "pretest_finished", "learning_started",
+  "learning_completed", "example_attempted", "learning_continue",
+  "posttest_started", "posttest_finished", "questionnaire_shown",
+  "questionnaire_opened",
+]);
 const EXAMPLE_IDS = new Set(["linkedlist", "arraylist", "stack", "livetrace"]);
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-function validExampleId(value: unknown): value is string {
-  return typeof value === "string" && EXAMPLE_IDS.has(value);
-}
-
-function patchForEvent(
-  body: LogRequestBody,
-  serverNow: string,
-): Record<string, unknown> {
+function payloadIsValid(body: LogRequestBody): boolean {
   const payload = body.payload ?? {};
-  switch (body.event) {
-    case "pretest_started":
-      return { pretest_started_at: serverNow };
-    case "pretest_finished":
-      return {
-        pretest_finished_at: serverNow,
-        pretest_ended_by: payload.ended_by ?? null,
-        pretest_responses: payload.responses ?? {},
-      };
-    case "learning_started":
-      return { learning_started_at: serverNow };
-    case "learning_completed":
-      return { learning_completed_at: serverNow };
-    case "example_attempted":
-      return {};
-    case "learning_continue":
-      return { learning_continue_at: serverNow };
-    case "posttest_started":
-      return { posttest_started_at: serverNow };
-    case "posttest_finished":
-      return {
-        posttest_finished_at: serverNow,
-        posttest_ended_by: payload.ended_by ?? null,
-        posttest_responses: payload.responses ?? {},
-      };
-    case "questionnaire_shown":
-      return { questionnaire_shown_at: serverNow };
-    default:
-      throw new Error(`unknown event: ${String(body.event)}`);
+  if (payload.elapsed_seconds !== undefined && (
+    !Number.isInteger(payload.elapsed_seconds) ||
+    payload.elapsed_seconds < 0 ||
+    payload.elapsed_seconds > 86_400
+  )) return false;
+  if (body.event === "example_attempted" || body.event === "learning_completed") {
+    if (!payload.example_id || !EXAMPLE_IDS.has(payload.example_id)) return false;
   }
+  if (body.event === "pretest_finished" || body.event === "posttest_finished") {
+    if (payload.ended_by !== "timer" && payload.ended_by !== "manual") return false;
+    if (!payload.responses || typeof payload.responses !== "object" || Array.isArray(payload.responses)) return false;
+  }
+  return true;
 }
 
 export async function POST(request: Request) {
   try {
     const body = (await request.json()) as LogRequestBody;
-    if (!body?.participant_id || !body?.event) {
+    if (!body?.participant_id || !body?.session_token || !body?.event_id || !body?.event) {
       return Response.json(
-        { error: "participant_id and event are required" },
+        { error: "participant_id, session_token, event_id, and event are required" },
         { status: 400 },
       );
     }
-    const serverNow = new Date().toISOString();
-    if (body.event === "example_attempted") {
-      const exampleId = body.payload?.example_id;
-      if (!validExampleId(exampleId)) {
-        return Response.json({ error: "a valid example_id is required" }, { status: 400 });
-      }
-      await callRpc("record_example_attempt", {
-        p_participant_id: body.participant_id,
-        p_example_id: exampleId,
-      });
-      return Response.json({ ok: true, serverTimestamp: serverNow });
+    if (!CLIENT_EVENTS.has(body.event)) {
+      return Response.json({ error: "Invalid client event" }, { status: 400 });
     }
-    if (body.event === "learning_completed" && body.payload?.example_id !== undefined) {
-      const exampleId = body.payload.example_id;
-      if (!validExampleId(exampleId)) {
-        return Response.json({ error: "a valid example_id is required" }, { status: 400 });
-      }
-      // Completion records the measured choice again as an idempotent safety
-      // net in case the earlier Begin Lesson event was delayed or interrupted.
-      await callRpc("record_example_attempt", {
-        p_participant_id: body.participant_id,
-        p_example_id: exampleId,
-      });
+    if (
+      !/^P\d{3,}$/.test(body.participant_id) ||
+      !UUID_PATTERN.test(body.session_token) ||
+      !UUID_PATTERN.test(body.event_id) ||
+      !Number.isFinite(new Date(body.clientTimestamp).getTime()) ||
+      !payloadIsValid(body)
+    ) {
+      return Response.json({ error: "Invalid study event data" }, { status: 400 });
     }
-    const patch = patchForEvent(body, serverNow);
-    await patchSession(body.participant_id, patch);
-    return Response.json({ ok: true, serverTimestamp: serverNow });
+
+    const serverTimestamp = await callRpc<string>("record_study_event", {
+      p_participant_id: body.participant_id,
+      p_session_token: body.session_token,
+      p_event_id: body.event_id,
+      p_event_type: body.event,
+      p_client_timestamp: body.clientTimestamp,
+      p_payload: body.payload ?? {},
+    });
+
+    return Response.json({ ok: true, serverTimestamp });
   } catch (err) {
     const message = err instanceof Error ? err.message : "log failed";
-    return Response.json({ error: message }, { status: 500 });
+    const unauthorized = message.includes("invalid study session") || message.includes("28000");
+    return Response.json({ error: message }, { status: unauthorized ? 401 : 500 });
   }
 }

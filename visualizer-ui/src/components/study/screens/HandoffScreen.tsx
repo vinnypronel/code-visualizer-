@@ -54,6 +54,7 @@ export default function HandoffScreen() {
   };
 
   const showThankYouPage = () => {
+    void logEvent("questionnaire_opened");
     window.setTimeout(() => setQuestionnaireOpened(true), 0);
   };
 

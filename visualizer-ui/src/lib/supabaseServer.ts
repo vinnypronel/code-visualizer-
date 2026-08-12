@@ -62,7 +62,17 @@ export async function callRpc<T>(
  */
 export async function selectAllSessions<T>(): Promise<T[]> {
   const { url, key } = getConfig();
-  const res = await fetch(`${url}/rest/v1/sessions?select=*&order=seq.asc`, {
+  const columns = [
+    "participant_id", "seq", "condition", "consent_completed_at",
+    "pretest_started_at", "pretest_finished_at", "pretest_ended_by",
+    "pretest_elapsed_seconds", "learning_started_at", "learning_completed_at",
+    "learning_continue_at", "learning_elapsed_seconds", "measured_lesson_id",
+    "posttest_started_at", "posttest_finished_at", "posttest_ended_by",
+    "posttest_elapsed_seconds", "questionnaire_shown_at", "questionnaire_opened_at",
+    "questionnaire_finished_at", "pretest_responses", "posttest_responses",
+    "examples_tried", "consent_version", "created_at",
+  ].join(",");
+  const res = await fetch(`${url}/rest/v1/sessions?select=${columns}&order=seq.asc`, {
     method: "GET",
     headers: baseHeaders(key),
     cache: "no-store",
@@ -95,4 +105,15 @@ export async function patchSession(
     const detail = await res.text();
     throw new Error(`Session patch failed (${res.status}): ${detail}`);
   }
+}
+
+/* Researcher-only questionnaire reconciliation. Returns false for an unknown ID. */
+export async function markQuestionnaireFinished(
+  participantId: string,
+  finishedAt: string,
+): Promise<boolean> {
+  return callRpc<boolean>("mark_questionnaire_finished_admin", {
+    p_participant_id: participantId,
+    p_finished_at: finishedAt,
+  });
 }

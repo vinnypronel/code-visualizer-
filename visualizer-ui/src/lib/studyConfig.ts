@@ -6,8 +6,6 @@
  * Do NOT put secrets here (Supabase keys live only in server env vars).
  */
 
-import type { Condition } from "@/lib/studyTypes";
-
 /*
  * STUDY_MODE
  *   false -> dev and demo mode. `/` renders the visualizer directly, no study.
@@ -21,11 +19,13 @@ export const STUDY_MODE = true;
 /*
  * RAND_LEARNING_TOOL
  *   false -> every participant gets the AI-assisted tool.
- *   true  -> assign the learning tool by participant ID parity.
- *            Odd seq  (P001, P003, ...) -> AI tool.
- *            Even seq (P002, P004, ...) -> static materials.
+ *   true  -> use randomized blocks of two, keeping condition counts balanced
+ *            while randomly changing which condition appears first per block.
  */
 export const RAND_LEARNING_TOOL = true;
+
+/* Bump whenever the participant-facing consent content materially changes. */
+export const CONSENT_VERSION = "2026-08-12-v1";
 
 /* Timer durations, in seconds. Pre-test and post-test both count down. */
 export const PRETEST_DURATION_SECONDS = 10 * 60;
@@ -106,16 +106,6 @@ export function hasGuidedWalkthrough(presetId: string, isCustomCode = false): bo
 
 /* How long the browser waits on /api/trace before giving up, in milliseconds. */
 export const TRACE_REQUEST_TIMEOUT_MS = 25_000;
-
-/*
- * Deterministic condition assignment from the atomic sequence number.
- * Shared by the client (to render the right branch) and the server (to store
- * the condition when the participant row is created).
- */
-export function conditionForSeq(seq: number): Condition {
-  if (!RAND_LEARNING_TOOL) return "ai";
-  return seq % 2 === 1 ? "ai" : "static";
-}
 
 /*
  * Rough time the external questionnaire takes, shown on the handoff screen.

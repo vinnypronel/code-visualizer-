@@ -20,22 +20,21 @@ import { BackButtonWithTooltip } from "@/components/study/screens/TimedTestScree
 export default function LearningScreen() {
   const { session, logEvent, goTo } = useStudy();
   const [startAtMs] = useState(() => Date.now());
-
-  const [lessonPhase, setLessonPhase] = useState<LessonPhase>("intro");
-  const [visualizerStartMs, setVisualizerStartMs] = useState<number | null>(null);
-
   const isAi = session.condition !== "static"; // default to AI if unset
 
-  // Start recommended timer only when user enters visualizer screen (or immediately for static reading)
-  useEffect(() => {
-    if (!visualizerStartMs) {
-      if (!isAi || lessonPhase !== "intro") {
-        setVisualizerStartMs(Date.now());
-      }
-    }
-  }, [isAi, lessonPhase, visualizerStartMs]);
+  const [lessonPhase, setLessonPhase] = useState<LessonPhase>("intro");
+  const [visualizerStartMs, setVisualizerStartMs] = useState<number | null>(
+    () => (isAi ? null : startAtMs),
+  );
 
-  const countdownRemaining = useCountdown(900, visualizerStartMs ?? Date.now());
+  const handleLessonPhaseChange = useCallback((phase: LessonPhase) => {
+    setLessonPhase(phase);
+    if (phase !== "intro") {
+      setVisualizerStartMs((current) => current ?? Date.now());
+    }
+  }, []);
+
+  const countdownRemaining = useCountdown(900, visualizerStartMs ?? startAtMs);
   const remaining = visualizerStartMs ? countdownRemaining : 900;
   const urgent = remaining <= 60;
 
@@ -59,17 +58,17 @@ export default function LearningScreen() {
     loggedCompletionRef.current = true;
     handleExampleAttempt(exampleId);
     void logEvent("learning_completed", {
-      elapsed_seconds: Math.floor((Date.now() - startAtMs) / 1000),
+      elapsed_seconds: Math.floor((Date.now() - (visualizerStartMs ?? startAtMs)) / 1000),
       example_id: exampleId,
     });
-  }, [handleExampleAttempt, logEvent, startAtMs]);
+  }, [handleExampleAttempt, logEvent, startAtMs, visualizerStartMs]);
 
   const proceed = useCallback(() => {
     void logEvent("learning_continue", {
-      elapsed_seconds: Math.floor((Date.now() - startAtMs) / 1000),
+      elapsed_seconds: Math.floor((Date.now() - (visualizerStartMs ?? startAtMs)) / 1000),
     });
     goTo("posttest");
-  }, [goTo, logEvent, startAtMs]);
+  }, [goTo, logEvent, startAtMs, visualizerStartMs]);
 
   const backToPretest = (
     <BackButtonWithTooltip
@@ -101,7 +100,7 @@ export default function LearningScreen() {
           onLessonComplete={handleLessonComplete}
           onContinueToNextStage={proceed}
           onExampleAttempt={handleExampleAttempt}
-          onLessonPhaseChange={setLessonPhase}
+          onLessonPhaseChange={handleLessonPhaseChange}
           introBackButton={backToPretest}
         />
       ) : (

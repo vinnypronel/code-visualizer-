@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db:check": "node scripts/check-study-database.mjs",
+    "db:smoke": "node scripts/smoke-study-database.mjs"
   },
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",

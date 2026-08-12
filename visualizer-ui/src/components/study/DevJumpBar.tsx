@@ -51,8 +51,7 @@ export default function DevJumpBar() {
   const [open, setOpen] = useState(false);
   const [handoffView, setHandoffView] = useState<"thankyou" | null>(null);
 
-  // Temporarily enabled in production for testing as requested
-  // if (process.env.NODE_ENV === "production") return null;
+  if (process.env.NODE_ENV === "production") return null;
 
   const condition: Condition = session.condition ?? "ai";
 

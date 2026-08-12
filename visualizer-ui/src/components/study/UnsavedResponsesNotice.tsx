@@ -1,8 +1,8 @@
 "use client";
 
 /*
- * A persistent, non-blocking notice shown only when the participant's test
- * answers are still sitting in the client outbox. It is deliberately not a
+ * A persistent, non-blocking notice shown when important study data is still
+ * sitting in the client outbox. It is deliberately not a
  * modal and does not gate navigation: the session should keep running, since
  * the answers are already captured and can still be recovered. It exists so a
  * failure is visible to the participant and to the researcher standing next to
@@ -28,7 +28,7 @@ export default function UnsavedResponsesNotice() {
       }}
     >
       <p className="text-[12px] leading-snug flex-1">
-        Your answers have not been saved yet. Please keep this page open and
+        Some study data has not been saved yet. Please keep this page open and
         tell the researcher.
       </p>
       <button
