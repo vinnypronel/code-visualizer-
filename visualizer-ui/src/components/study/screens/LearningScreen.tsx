@@ -78,7 +78,7 @@ export default function LearningScreen() {
       showTooltip={false}
     />
   );
-  const showTopBarBack = !isAi || lessonPhase !== "intro";
+  const showTopBarBack = isAi && lessonPhase !== "intro";
 
   return (
     <StudyShell
@@ -105,7 +105,7 @@ export default function LearningScreen() {
           introBackButton={backToPretest}
         />
       ) : (
-        <StaticMaterialsStub onContinue={proceed} />
+        <StaticMaterialsStub onContinue={proceed} onBackToPretest={backToPretest} />
       )}
     </StudyShell>
   );

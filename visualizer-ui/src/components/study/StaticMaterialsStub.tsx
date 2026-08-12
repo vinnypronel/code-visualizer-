@@ -133,7 +133,13 @@ function WorkedTraceTable() {
   );
 }
 
-export default function StaticMaterialsStub({ onContinue }: { onContinue: () => void }) {
+export default function StaticMaterialsStub({
+  onContinue,
+  onBackToPretest,
+}: {
+  onContinue: () => void;
+  onBackToPretest?: React.ReactNode;
+}) {
   return (
     <div className="h-full w-full overflow-y-auto panel-scroll">
       <div className="mx-auto w-full max-w-6xl px-6 py-8 space-y-6">
@@ -317,11 +323,14 @@ Noah, 21`}</CodeBlock>
           className="flex flex-col items-start justify-between gap-4 border-t py-6 sm:flex-row sm:items-center"
           style={{ borderColor: "var(--border)" }}
         >
-          <div>
-            <h2 className="text-[15px] font-bold">Reading complete</h2>
-            <p className="mt-1 text-[13px]" style={{ color: "var(--text-secondary)" }}>
-              You reviewed every object-reference concept used in the trace exercise.
-            </p>
+          <div className="flex items-center gap-4">
+            {onBackToPretest}
+            <div>
+              <h2 className="text-[15px] font-bold">Reading complete</h2>
+              <p className="mt-1 text-[13px]" style={{ color: "var(--text-secondary)" }}>
+                You reviewed every object-reference concept used in the trace exercise.
+              </p>
+            </div>
           </div>
           <button type="button" className="btn-primary" onClick={onContinue}>
             <span>Continue to post-test</span>

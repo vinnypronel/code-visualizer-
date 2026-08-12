@@ -56,7 +56,7 @@ export default function StudyShell({
   fluid = false,
   noScroll = false,
 }: StudyShellProps) {
-  const { session } = useStudy();
+  const { session, returnToConsent } = useStudy();
   const isStatic = session.condition === "static";
 
   return (
@@ -71,16 +71,25 @@ export default function StudyShell({
       >
         <div className="w-full px-4 sm:px-6 py-1.5 flex items-center justify-between gap-4 min-h-[46px]">
           {/* Left: Kean Logo + Title + Version Badge */}
-          <div className="flex items-center gap-2.5 flex-shrink-0">
+          <div
+            onClick={returnToConsent}
+            role="button"
+            tabIndex={0}
+            title="Back to Home"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") returnToConsent();
+            }}
+            className="flex items-center gap-2.5 flex-shrink-0 cursor-pointer group"
+          >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/kean-logo.png"
               alt="Kean University"
-              className="h-10 sm:h-12 w-auto object-contain flex-shrink-0"
+              className="h-10 sm:h-12 w-auto object-contain flex-shrink-0 transition-transform group-hover:scale-105"
             />
             <div className="flex flex-col">
               <span
-                className="text-xs sm:text-sm font-mono uppercase tracking-wider font-extrabold whitespace-nowrap hidden lg:inline"
+                className="text-xs sm:text-sm font-mono uppercase tracking-wider font-extrabold whitespace-nowrap hidden lg:inline group-hover:text-[var(--accent)] transition-colors"
                 style={{ color: "var(--text-primary)" }}
               >
                 Code Visualizer Study
