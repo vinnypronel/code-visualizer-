@@ -8,8 +8,8 @@ import { BackButtonWithTooltip } from "@/components/study/screens/TimedTestScree
 /* Typewriter text animation component anchored left-to-right */
 function TypewriterText({
   text,
-  speed = 28,
-  delay = 200,
+  speed = 16,
+  delay = 150,
 }: {
   text: string;
   speed?: number;
@@ -30,8 +30,8 @@ function TypewriterText({
         setDisplayedText(text.slice(0, index));
         const char = text[index - 1];
         index++;
-        // Human typing cadence: pause slightly at periods/commas
-        const pause = char === "." || char === "," ? 160 : Math.floor(Math.random() * 15);
+        // Human typing cadence: slight pause at periods/commas
+        const pause = char === "." || char === "," ? 70 : Math.floor(Math.random() * 8);
         timeoutId = setTimeout(typeNextChar, speed + pause);
       } else {
         setIsTyping(false);
@@ -49,9 +49,7 @@ function TypewriterText({
   return (
     <span className="inline-block text-left font-medium">
       {displayedText}
-      {isTyping && (
-        <span className="inline-block w-[2px] h-[1.1em] bg-emerald-600 ml-0.5 animate-pulse align-middle" />
-      )}
+      <span className="inline-block w-[2px] h-[1.1em] bg-current ml-1 animate-caret-blink align-middle" />
     </span>
   );
 }
@@ -65,15 +63,16 @@ export default function AssignedScreen() {
     <StudyShell
       stageIndex={1}
       heading=""
+      noScroll
       footer={
         <div className="w-full flex items-center justify-between gap-3">
           <BackButtonWithTooltip
-            label="Back to Consent Form"
+            label="Back to Home"
             onClick={returnToConsent}
-            tooltipText="Going back to the Consent Form will reset your assigned Participant ID."
+            tooltipText="Going back will reset your assigned Participant ID."
           />
           <button
-            className="btn-primary min-w-[180px] justify-center text-xs py-2.5 px-6"
+            className="btn-primary min-w-[180px] text-xs py-2.5 px-6"
             disabled={isLoading}
             style={{
               opacity: isLoading ? 0.6 : 1,
@@ -81,12 +80,23 @@ export default function AssignedScreen() {
             }}
             onClick={() => goTo("pretest")}
           >
-            {isLoading ? "Assigning ID..." : "Continue to the pre-test"}
+            <span>{isLoading ? "Assigning ID..." : "Continue to the pre-test"}</span>
+            {!isLoading && (
+              <svg
+                className="btn-arrow"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2.5}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+              </svg>
+            )}
           </button>
         </div>
       }
     >
-      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-180px)] py-4 text-center">
+      <div className="flex flex-col items-center justify-center text-center w-full my-auto py-2">
         {/* Big Centered Title */}
         <h1 className="text-3xl sm:text-4xl font-extrabold mb-2" style={{ color: "var(--text-primary)" }}>
           {isLoading ? "Generating your Participant ID" : "Your Participant ID"}
@@ -97,7 +107,7 @@ export default function AssignedScreen() {
           {isLoading ? (
             "Please wait a moment while we assign your unique study session..."
           ) : (
-            <TypewriterText text="Please write this down. You will need it for the questionnaire at the end." speed={30} />
+            <TypewriterText text="Please write this down. You will need it for the questionnaire at the end." speed={16} />
           )}
         </p>
 

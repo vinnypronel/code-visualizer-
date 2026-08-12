@@ -34,7 +34,7 @@ export default function DeclinedScreen() {
 
         <div className="flex items-center justify-center gap-3 pt-3 border-t" style={{ borderColor: "#cbd5e1" }}>
           <BackButtonWithTooltip
-            label="Back to Consent Form"
+            label="Back to Home"
             onClick={returnToConsent}
             tooltipText="Return to the Consent Form to change your response."
           />

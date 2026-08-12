@@ -6,6 +6,7 @@
  * controlled: it holds no state, it reports every change up via onChange.
  */
 
+import { Code2 } from "lucide-react";
 import type { Field, GridCell, TestDef } from "@/data/tests";
 import { TEST_INSTRUCTIONS } from "@/data/tests";
 import type { TestResponses } from "@/lib/studyTypes";
@@ -16,24 +17,104 @@ interface TestRunnerProps {
   onChange: (key: string, value: string) => void;
 }
 
-function CodeBlock({ code, caption }: { code: string; caption?: string }) {
+function highlightJavaLine(line: string) {
+  const commentIdx = line.indexOf("//");
+  let codePart = line;
+  let commentPart = "";
+
+  if (commentIdx !== -1) {
+    codePart = line.slice(0, commentIdx);
+    commentPart = line.slice(commentIdx);
+  }
+
+  const stringRegex = /(".*?"|'.*?')/g;
+  const parts: { type: "string" | "code"; value: string }[] = [];
+  let lastIndex = 0;
+  let match;
+
+  while ((match = stringRegex.exec(codePart)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push({ type: "code", value: codePart.slice(lastIndex, match.index) });
+    }
+    parts.push({ type: "string", value: match[0] });
+    lastIndex = stringRegex.lastIndex;
+  }
+  if (lastIndex < codePart.length) {
+    parts.push({ type: "code", value: codePart.slice(lastIndex) });
+  }
+
+  const renderCodeTokens = (codeStr: string) => {
+    const tokens = codeStr.split(/(\s+|[().,;={}\[\]])/);
+    return tokens.map((token, i) => {
+      if (!token) return null;
+      if (["class", "public", "static", "void", "new", "int", "return", "this", "if", "else", "for", "while", "boolean", "double"].includes(token)) {
+        return <span key={i} style={{ color: "#569cd6", fontWeight: "bold" }}>{token}</span>;
+      }
+      if (["String", "Dog", "Node", "Object", "System", "ArrayList", "LinkedList", "Stack"].includes(token)) {
+        return <span key={i} style={{ color: "#4ec9b0", fontWeight: "600" }}>{token}</span>;
+      }
+      if (/^\d+$/.test(token)) {
+        return <span key={i} style={{ color: "#b5cea8" }}>{token}</span>;
+      }
+      return <span key={i} style={{ color: "#e2e8f0" }}>{token}</span>;
+    });
+  };
+
   return (
-    <div className="my-3">
-      {caption && (
-        <p className="text-[13px] font-semibold mb-2" style={{ color: "#0f172a" }}>{caption}</p>
+    <>
+      {parts.map((p, idx) =>
+        p.type === "string" ? (
+          <span key={idx} style={{ color: "#ce9178" }}>{p.value}</span>
+        ) : (
+          <span key={idx}>{renderCodeTokens(p.value)}</span>
+        )
       )}
-      <pre
-        className="font-mono text-[12.5px] leading-relaxed rounded-lg p-4 overflow-x-auto"
-        style={{
-          background: "var(--bg-base)",
-          border: "1px solid #94a3b8",
-          color: "#000000",
-          fontWeight: 500,
-          whiteSpace: "pre",
-        }}
-      >
-        {code}
-      </pre>
+      {commentPart && (
+        <span style={{ color: "#6a9955", fontStyle: "italic" }}>{commentPart}</span>
+      )}
+    </>
+  );
+}
+
+function CodeBlock({ code, caption }: { code: string; caption?: string }) {
+  const lines = code.split("\n");
+
+  return (
+    <div className="my-4">
+      {caption && (
+        <p className="text-[13.5px] font-bold mb-2.5" style={{ color: "#0f172a" }}>
+          {caption}
+        </p>
+      )}
+      <div className="rounded-xl border border-[#30363d] overflow-hidden shadow-lg" style={{ background: "#0d1117" }}>
+        {/* Header bar */}
+        <div className="flex items-center justify-between px-4 py-2 bg-[#161b22] border-b border-[#30363d] text-[11px] font-mono select-none" style={{ color: "#8b949e" }}>
+          <div className="flex items-center gap-2">
+            <Code2 size={14} style={{ color: "#38bdf8" }} />
+            <span className="font-bold tracking-wide uppercase text-[10px] text-slate-300">
+              Java Source Code
+            </span>
+          </div>
+          <span className="text-[10px] text-slate-400 font-mono">{lines.length} lines</span>
+        </div>
+
+        {/* Code view with line numbers */}
+        <div className="p-4 overflow-x-auto font-mono text-[12.5px] leading-relaxed flex">
+          {/* Line numbers column */}
+          <div className="select-none text-right pr-4 border-r border-[#21262d] font-mono text-[12px] space-y-0.5" style={{ color: "#484f58", minWidth: "2.5rem" }}>
+            {lines.map((_, i) => (
+              <div key={i}>{i + 1}</div>
+            ))}
+          </div>
+
+          {/* Code lines */}
+          <div className="pl-4 space-y-0.5 whitespace-pre flex-1">
+            {lines.map((line, i) => (
+              <div key={i}>{highlightJavaLine(line)}</div>
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -49,6 +130,8 @@ function TextInput({
   placeholder?: string;
   onChange: (v: string) => void;
 }) {
+  const isFilled = value.trim().length > 0;
+
   return (
     <label className="block my-3">
       <span className="block text-[13px] font-semibold mb-1.5" style={{ color: "#0f172a" }}>{label}</span>
@@ -58,10 +141,10 @@ function TextInput({
         value={value}
         placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-md px-3 py-2 text-[13px] font-semibold outline-none transition-colors focus:border-slate-500"
+        className="w-full rounded-md px-3 py-2 text-[13px] font-semibold outline-none transition-all"
         style={{
-          background: "#ffffff",
-          border: "1px solid #94a3b8",
+          background: isFilled ? "#a7f3d0" : "#ffffff",
+          border: isFilled ? "2px solid #10b981" : "1px solid #94a3b8",
           color: "#000000",
         }}
       />
@@ -84,7 +167,7 @@ function GridField({
 }) {
   return (
     <div className="my-4">
-      {caption && <p className="text-[13px] font-semibold mb-2" style={{ color: "#0f172a" }}>{caption}</p>}
+      {caption && <p className="text-[13.5px] font-bold mb-2.5" style={{ color: "#0f172a" }}>{caption}</p>}
       <div className="overflow-x-auto rounded-lg border shadow-sm" style={{ borderColor: "#64748b" }}>
         <table className="w-full border-collapse text-[12.5px]">
           <thead>
@@ -108,38 +191,52 @@ function GridField({
           <tbody>
             {rows.map((row, ri) => (
               <tr key={ri}>
-                {row.map((cell, ci) =>
-                  cell.t === "ro" ? (
+                {row.map((cell, ci) => {
+                  if (cell.t === "ro") {
+                    const isPrefilledAnswer = ci > 0;
+                    return (
+                      <td
+                        key={ci}
+                        className="px-3.5 py-2.5 font-mono font-bold"
+                        style={{
+                          border: isPrefilledAnswer ? "2px solid #10b981" : "1px solid #94a3b8",
+                          color: "#0f172a",
+                          whiteSpace: "nowrap",
+                          background: isPrefilledAnswer ? "#a7f3d0" : "#f8fafc",
+                        }}
+                      >
+                        {cell.text}
+                      </td>
+                    );
+                  }
+
+                  const cellVal = responses[cell.key] ?? "";
+                  const isFilled = cellVal.trim().length > 0;
+
+                  return (
                     <td
                       key={ci}
-                      className="px-3.5 py-2.5 font-mono font-bold"
+                      className="p-0 transition-colors"
                       style={{
-                        border: "1px solid #94a3b8",
-                        color: "#0f172a",
-                        whiteSpace: "nowrap",
-                        background: "#f8fafc",
+                        border: isFilled ? "2px solid #10b981" : "1px solid #94a3b8",
+                        backgroundColor: isFilled ? "#a7f3d0" : "#ffffff",
                       }}
-                    >
-                      {cell.text}
-                    </td>
-                  ) : (
-                    <td
-                      key={ci}
-                      className="p-0"
-                      style={{ border: "1px solid #94a3b8" }}
                     >
                       <input
                         type="text"
                         required
-                        value={responses[cell.key] ?? ""}
+                        value={cellVal}
                         placeholder={cell.placeholder}
                         onChange={(e) => onChange(cell.key, e.target.value)}
-                        className="w-full px-3.5 py-2.5 text-[12.5px] font-bold outline-none bg-white focus:bg-emerald-50/40"
-                        style={{ color: "#000000" }}
+                        className="w-full px-3.5 py-2.5 text-[12.5px] font-bold outline-none transition-colors"
+                        style={{
+                          color: "#000000",
+                          backgroundColor: isFilled ? "#a7f3d0" : "#ffffff",
+                        }}
                       />
                     </td>
-                  ),
-                )}
+                  );
+                })}
               </tr>
             ))}
           </tbody>

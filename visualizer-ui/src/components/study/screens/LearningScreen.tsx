@@ -13,6 +13,7 @@ import { useStudy } from "@/components/study/StudyProvider";
 import { formatMMSS, useCountdown } from "@/components/study/useTimers";
 import StaticMaterialsStub from "@/components/study/StaticMaterialsStub";
 import VisualizerExperience from "@/components/visualizer/VisualizerExperience";
+import type { LessonPhase } from "@/components/visualizer/VisualizerExperience";
 
 import { BackButtonWithTooltip } from "@/components/study/screens/TimedTestScreen";
 
@@ -21,6 +22,12 @@ export default function LearningScreen() {
   const [startAtMs] = useState(() => Date.now());
   const remaining = useCountdown(900, startAtMs);
   const urgent = remaining <= 60;
+  /*
+   * The lesson intro renders its own back control in the action row, so the top
+   * bar drops its copy there and shows it everywhere else. Static materials
+   * have no intro screen, so they keep the top-bar control throughout.
+   */
+  const [lessonPhase, setLessonPhase] = useState<LessonPhase>("intro");
 
   // The lesson can be replayed, so completion is logged only the first time.
   const loggedCompletionRef = useRef(false);
@@ -56,6 +63,11 @@ export default function LearningScreen() {
     goTo("posttest");
   }, [goTo, logEvent, startAtMs]);
 
+  const backToPretest = (
+    <BackButtonWithTooltip label="Back to Pre-test" onClick={() => goTo("pretest")} />
+  );
+  const showTopBarBack = !isAi || lessonPhase !== "intro";
+
   return (
     <StudyShell
       stageIndex={2}
@@ -63,10 +75,7 @@ export default function LearningScreen() {
       fluid
       timer={
         <div className="flex items-center gap-3">
-          <BackButtonWithTooltip
-            label="Back to Pre-test"
-            onClick={() => goTo("pretest")}
-          />
+          {showTopBarBack && backToPretest}
           <TimerChip
             label="Recommended time left"
             value={formatMMSS(remaining)}
@@ -80,6 +89,8 @@ export default function LearningScreen() {
           onLessonComplete={handleLessonComplete}
           onContinueToNextStage={proceed}
           onExampleAttempt={handleExampleAttempt}
+          onLessonPhaseChange={setLessonPhase}
+          introBackButton={backToPretest}
         />
       ) : (
         <StaticMaterialsStub onContinue={proceed} />

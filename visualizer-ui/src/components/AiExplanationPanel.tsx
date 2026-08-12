@@ -24,11 +24,9 @@ export default function AiExplanationPanel({
   whyItMatters,
 }: AiExplanationPanelProps) {
   const [detailsOpen, setDetailsOpen] = useState(false);
-  /* Visible by default. The ready-state guidance in this panel is the only place
-   * that tells a participant what to look for before they run a line, so hiding it
-   * until after the run would withhold the instruction they need. Collapsing stays
-   * available as a manual choice and is remembered across steps. */
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  /* Collapsed by default. Collapsing stays available as a manual choice and
+   * is remembered across steps. */
+  const [isCollapsed, setIsCollapsed] = useState(true);
 
   const runStateLabel = showResult ? "Line executed" : "Ready to run";
   const runStateCopy = showResult

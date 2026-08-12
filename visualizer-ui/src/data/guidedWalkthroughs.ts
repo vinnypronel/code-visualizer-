@@ -5,6 +5,8 @@ export interface WalkthroughStepDef {
   expectedLessonStep: number;
   subPhase: WalkthroughSubPhase;
   title: string;
+  /** Source lines this guide card is currently explaining in the editor. */
+  highlightedLines?: number[];
   lineNumber?: number;
   codeSnippet?: string;
   showCodeOnObserve?: boolean;
@@ -48,6 +50,7 @@ function actionCards(actions: ActionLesson[]): WalkthroughStepDef[] {
       expectedLessonStep: action.lessonStep,
       subPhase: "run" as const,
       title: action.runTitle,
+      highlightedLines: [action.line],
       lineNumber: action.line,
       codeSnippet: action.code,
       explanationText: action.runExplanation,
@@ -59,6 +62,7 @@ function actionCards(actions: ActionLesson[]): WalkthroughStepDef[] {
       expectedLessonStep: action.lessonStep,
       subPhase: "observe" as const,
       title: action.observeTitle,
+      highlightedLines: [action.line],
       lineNumber: action.line,
       codeSnippet: action.code,
       showCodeOnObserve: true,
@@ -75,6 +79,7 @@ const linkedListSteps: WalkthroughStepDef[] = [
     expectedLessonStep: 1,
     subPhase: "run",
     title: "Understanding the basics",
+    highlightedLines: [1, 2],
     setupNote: {
       heading: "Lines 1-2: where Java starts",
       line1Code: "public class LinkedListDemo {",
@@ -93,6 +98,7 @@ const linkedListSteps: WalkthroughStepDef[] = [
     expectedLessonStep: 1,
     subPhase: "run",
     title: "Meet the Node blueprint",
+    highlightedLines: [10, 11, 12, 13, 14, 15, 16],
     blueprintNote: {
       heading: "Lines 10-16: how Java builds a Node",
       linesCode: "class Node {\n  int value;\n  Node next;\n  Node(int value) {\n    this.value = value;\n  }\n}",
@@ -121,6 +127,7 @@ const linkedListSteps: WalkthroughStepDef[] = [
 const arrayListSteps: WalkthroughStepDef[] = [
   {
     expectedLessonStep: 1, subPhase: "run", title: "Understanding the basics",
+    highlightedLines: [1, 2],
     setupNote: {
       heading: "Lines 1-2: where Java starts",
       line1Code: "public class ArrayListDemo {",
@@ -133,6 +140,7 @@ const arrayListSteps: WalkthroughStepDef[] = [
   },
   {
     expectedLessonStep: 1, subPhase: "run", title: "How an array works",
+    highlightedLines: [3, 4, 5],
     blueprintNote: {
       heading: "Before line 3: arrays and indexes",
       linesCode: "int[] list = new int[3];\nlist[0] = 5;\nlist[1] = 10;",
@@ -159,6 +167,7 @@ const arrayListSteps: WalkthroughStepDef[] = [
 const stackSteps: WalkthroughStepDef[] = [
   {
     expectedLessonStep: 1, subPhase: "run", title: "Understanding the basics",
+    highlightedLines: [1, 2],
     setupNote: {
       heading: "Lines 1-2: where Java starts",
       line1Code: "public class StackDemo {",
@@ -171,6 +180,7 @@ const stackSteps: WalkthroughStepDef[] = [
   },
   {
     expectedLessonStep: 1, subPhase: "run", title: "Meet the stack blueprints",
+    highlightedLines: [13, 14, 15, 16, 17, 18, 19, 20, 21, 22],
     blueprintNote: {
       heading: "Lines 13-22: the stack and node recipes",
       linesCode: "class MyStack {\n  Node top;\n}\n\nclass Node {\n  int value;\n  Node next;\n  Node(int value) { this.value = value; }\n}",
@@ -197,6 +207,7 @@ const stackSteps: WalkthroughStepDef[] = [
 const liveTraceSteps: WalkthroughStepDef[] = [
   {
     expectedLessonStep: 1, subPhase: "run", title: "Understanding the basics",
+    highlightedLines: [1, 2],
     setupNote: {
       heading: "Lines 1-2: where Java starts",
       line1Code: "public class Sample {",
@@ -209,6 +220,7 @@ const liveTraceSteps: WalkthroughStepDef[] = [
   },
   {
     expectedLessonStep: 1, subPhase: "run", title: "Meet the multiply method",
+    highlightedLines: [9, 10, 11],
     blueprintNote: {
       heading: "Lines 9-11: a second method",
       linesCode: "public static int multiply(int a, int b) {\n  return a * b;\n}",

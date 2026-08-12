@@ -69,6 +69,7 @@ function objectRefTable(
   }
   return {
     kind: "grid",
+    caption: "1.1 Trace the values after each step in the table below:",
     columns: ["After Step", ...columns],
     rows,
   };
@@ -110,8 +111,8 @@ b = a;                        // Step 5`,
           code: `System.out.println(b.name + ", " + b.age);
 System.out.println(c.name + ", " + c.age);`,
         },
-        { kind: "text", key: "q1.output.line1", label: "Line 1 output" },
-        { kind: "text", key: "q1.output.line2", label: "Line 2 output" },
+        { kind: "text", key: "q1.output.line1", label: "1.2a) Line 1 output" },
+        { kind: "text", key: "q1.output.line2", label: "1.2b) Line 2 output" },
       ],
     },
   ],
@@ -153,8 +154,8 @@ x = y;                            // Step 5`,
           code: `System.out.println(x.title + ", " + x.pages);
 System.out.println(z.title + ", " + z.pages);`,
         },
-        { kind: "text", key: "q1.output.line1", label: "Line 1 output" },
-        { kind: "text", key: "q1.output.line2", label: "Line 2 output" },
+        { kind: "text", key: "q1.output.line1", label: "1.2a) Line 1 output" },
+        { kind: "text", key: "q1.output.line2", label: "1.2b) Line 2 output" },
       ],
     },
   ],

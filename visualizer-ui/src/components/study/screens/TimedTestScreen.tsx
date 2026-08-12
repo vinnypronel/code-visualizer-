@@ -132,15 +132,15 @@ export default function TimedTestScreen({
         <>
           {which === "pretest" ? (
             <BackButtonWithTooltip
-              label="Back to Consent Form"
+              label="Back to Home"
               onClick={returnToConsent}
-              tooltipText="Going back to the Consent Form will reset your assigned Participant ID and answers."
+              tooltipText="Going back will reset your assigned Participant ID and answers."
             />
           ) : (
             <BackButtonWithTooltip
-              label="Back to Pre-test"
-              onClick={() => goTo("pretest")}
-              tooltipText="Going back will reset your progress for this section."
+              label="Back to Learning"
+              onClick={() => goTo("learning")}
+              tooltipText="Going back will return you to the learning activity."
             />
           )}
 

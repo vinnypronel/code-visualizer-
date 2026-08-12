@@ -56,6 +56,25 @@ export async function callRpc<T>(
 }
 
 /*
+ * Read every session row, newest first. Used only by the admin dashboard, which
+ * is server-rendered behind the researcher login, so the full row (including
+ * captured responses) never reaches an unauthenticated browser.
+ */
+export async function selectAllSessions<T>(): Promise<T[]> {
+  const { url, key } = getConfig();
+  const res = await fetch(`${url}/rest/v1/sessions?select=*&order=seq.asc`, {
+    method: "GET",
+    headers: baseHeaders(key),
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    const detail = await res.text();
+    throw new Error(`Session read failed (${res.status}): ${detail}`);
+  }
+  return (await res.json()) as T[];
+}
+
+/*
  * Patch a single session row, matched by participant_id. Values for jsonb
  * columns may be plain objects. Uses Prefer: return=minimal to avoid echoing
  * the row back.

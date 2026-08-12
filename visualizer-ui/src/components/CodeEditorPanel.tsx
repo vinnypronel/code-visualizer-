@@ -35,6 +35,7 @@ export type RunState =
 interface CodeEditorPanelProps {
   code: string;
   activeLine: number | null;
+  activeLines?: number[] | null;
   primaryLabel: string;
   primaryAriaLabel: string;
   canGoBack: boolean;
@@ -61,6 +62,7 @@ interface CodeEditorPanelProps {
 export default function CodeEditorPanel({
   code,
   activeLine,
+  activeLines,
   primaryLabel,
   primaryAriaLabel,
   canGoBack,
@@ -137,7 +139,7 @@ export default function CodeEditorPanel({
     });
   };
 
-  // Sync Monaco line highlighting decorations with activeLine
+  // A guide card can describe a range; otherwise highlight the execution line.
   useEffect(() => {
     if (!editorRef.current || !monacoRef.current) return;
 
@@ -145,20 +147,24 @@ export default function CodeEditorPanel({
       decorationsRef.current.clear();
     }
 
-    if (activeLine !== null && activeLine !== undefined) {
-      decorationsRef.current = editorRef.current.createDecorationsCollection([
-        {
-          range: new monacoRef.current.Range(activeLine, 1, activeLine, 1),
+    const linesToHighlight = activeLines ?? (
+      activeLine !== null && activeLine !== undefined ? [activeLine] : []
+    );
+
+    if (linesToHighlight.length > 0) {
+      decorationsRef.current = editorRef.current.createDecorationsCollection(
+        linesToHighlight.map((line) => ({
+          range: new monacoRef.current.Range(line, 1, line, 1),
           options: {
             isWholeLine: true,
             className: "exec-highlight-line",
             marginClassName: "exec-highlight-margin",
           },
-        },
-      ]);
-      editorRef.current.revealLineInCenter(activeLine);
+        })),
+      );
+      editorRef.current.revealLineInCenter(linesToHighlight[0]);
     }
-  }, [activeLine, code, editorReady]);
+  }, [activeLine, activeLines, code, editorReady]);
 
   return (
     <div id="onboarding-editor-panel" className="flex flex-col h-full bg-slate-950" style={{ background: "#1e1e1e" }}>

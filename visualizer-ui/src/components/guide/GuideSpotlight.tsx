@@ -284,8 +284,8 @@ function PointerArrow({
 
   const loop =
     axis === "x"
-      ? { x: [travel, 0, travel], opacity: [0.82, 1, 0.82] }
-      : { y: [travel, 0, travel], opacity: [0.82, 1, 0.82] };
+      ? { x: [travel, 0, travel], opacity: 1 }
+      : { y: [travel, 0, travel], opacity: 1 };
 
   const staticState = axis === "x" ? { x: travel / 2, opacity: 1 } : { y: travel / 2, opacity: 1 };
 
@@ -305,16 +305,26 @@ function PointerArrow({
         viewBox="0 0 44 22"
         width={length}
         height={thickness}
-        style={{ transform: `rotate(${rotation}deg)`, display: "block" }}
+        style={{
+          transform: `rotate(${rotation}deg)`,
+          display: "block",
+          filter: "drop-shadow(0px 2px 5px rgba(0, 0, 0, 0.4))",
+        }}
       >
         <path
           d="M 42 11 L 17 11"
           stroke="#0b4f7a"
-          strokeWidth="4.5"
+          strokeWidth="6"
           strokeLinecap="round"
           fill="none"
         />
-        <polygon points="2,11 19,3 19,19" fill="#0b4f7a" />
+        <polygon
+          points="2,11 19,3 19,19"
+          fill="#0b4f7a"
+          stroke="#0b4f7a"
+          strokeWidth="1.5"
+          strokeLinejoin="round"
+        />
       </svg>
     </motion.div>
   );

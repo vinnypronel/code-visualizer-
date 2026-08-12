@@ -95,6 +95,15 @@ button:disabled, [role="button"][aria-disabled="true"] {
   to   { stroke-dashoffset: 0; }
 }
 
+@keyframes caret-blink {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+
+.animate-caret-blink {
+  animation: caret-blink 1s infinite;
+}
+
 /* ─── Physical Data Sliding Animation ─── */
 @keyframes slide-value {
   0% {
@@ -539,6 +548,25 @@ button:disabled, [role="button"][aria-disabled="true"] {
 .lesson-begin-button {
   min-width: 150px;
   justify-content: center;
+}
+
+/*
+ * Action row under the intro's step bar. Back sits under the first step, Begin
+ * under the last, matching the width of the step bar directly above it.
+ */
+.lesson-intro-actions {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+/* Holds the row's left edge even when the study passes no back control. */
+.lesson-intro-action-start {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1px;
 }
 
 .lesson-complete-inner {

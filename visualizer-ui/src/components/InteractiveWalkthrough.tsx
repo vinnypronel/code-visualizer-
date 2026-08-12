@@ -36,6 +36,8 @@ export interface InteractiveWalkthroughProps {
   onPrimaryAction?: () => void;
   primaryActionLabel?: string;
   onExploreExamples?: () => void;
+  /** Keeps the editor highlight synchronized with the guide's current card. */
+  onHighlightedLinesChange?: (lines: number[] | null) => void;
 }
 
 const PRIMARY_BUTTON_SELECTOR = "#onboarding-playback-controls";
@@ -107,6 +109,7 @@ export default function InteractiveWalkthrough({
   onPrimaryAction,
   primaryActionLabel,
   onExploreExamples,
+  onHighlightedLinesChange,
 }: InteractiveWalkthroughProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [placement, setPlacement] = useState<{ top: number; left: number; side: GuideSide } | null>(null);
@@ -156,6 +159,14 @@ export default function InteractiveWalkthrough({
   const explainMoreButtonRect = useTargetRect(visible ? "#onboarding-explain-more-button" : null, visible);
   const explanationToggleRect = useTargetRect(visible ? "#onboarding-explanation-toggle" : null, visible);
   const explanationDetailsRect = useTargetRect(visible ? "#step-explanation-details" : null, visible);
+
+  useEffect(() => {
+    onHighlightedLinesChange?.(
+      visible ? (activeStepData?.highlightedLines ?? null) : null,
+    );
+
+    return () => onHighlightedLinesChange?.(null);
+  }, [activeStepData, onHighlightedLinesChange, visible]);
 
   /* Keep the strong code line treatment on while the guide is running so the
    * line the card is talking about is obvious in the editor. */
@@ -567,6 +578,11 @@ export default function InteractiveWalkthrough({
               <div className="flex items-center gap-1.5 text-[10px] font-mono text-[#16a34a] font-bold uppercase tracking-wider mb-0.5">
                 <Code2 size={12} aria-hidden="true" />
                 <span>Line {activeStepData.lineNumber}</span>
+                {isObserve && (
+                  <span className="normal-case font-semibold text-[9.5px] text-[#16a34a] bg-[#16a34a]/10 px-1.5 py-0.5 rounded border border-[#16a34a]/30">
+                    has been run already
+                  </span>
+                )}
               </div>
               <div className="px-2.5 py-1.5 rounded-md bg-slate-950 border border-[#16a34a]/30 font-mono text-[11.5px] overflow-x-auto shadow-inner">
                 <JavaSyntax code={activeStepData.codeSnippet} />

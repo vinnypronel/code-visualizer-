@@ -1360,7 +1360,7 @@ function looksLikePreset(value: unknown): value is Preset {
   );
 }
 
-type LessonPhase = "intro" | "ready" | "result" | "complete";
+export type LessonPhase = "intro" | "ready" | "result" | "complete";
 
 const LESSON_STEP_TITLES: Record<string, string[]> = {
   linkedlist: ["Create the first Node", "Create the second Node", "Link the Nodes", "Read a field"],
@@ -1437,11 +1437,20 @@ function LessonIntro({
   presets,
   onPresetChange,
   onBegin,
+  backButton,
 }: {
   preset: Preset;
   presets: Preset[];
   onPresetChange: (id: string) => void;
   onBegin: () => void;
+  /*
+   * Rendered at the left end of the action row. The study harness passes its
+   * "Back to Pre-test" control here so the intro screen carries the two
+   * navigation choices side by side instead of splitting them between the page
+   * and the top bar. Undefined outside the study, where there is nothing to go
+   * back to.
+   */
+  backButton?: React.ReactNode;
 }) {
   const total = Math.max(1, preset.steps.length - 1);
 
@@ -1460,9 +1469,18 @@ function LessonIntro({
         <h1>{preset.name}</h1>
         <p className="lesson-goal">{LESSON_GOALS[preset.id] ?? `Trace this example through ${total} program changes.`}</p>
         <LessonProgress presetId={preset.id} current={1} total={total} phase="intro" />
-        <button type="button" className="btn-primary lesson-begin-button" onClick={onBegin}>
-          Begin Lesson <ChevronRight size={17} />
-        </button>
+        {/*
+         * Back sits under the first step, Begin under the last, so each button
+         * lands beneath the step it leads to. Space-between rather than a fixed
+         * offset, because the step count varies by lesson (four here, seven for
+         * the live trace).
+         */}
+        <div className="lesson-intro-actions w-full flex items-center justify-between">
+          <span className="lesson-intro-action-start">{backButton}</span>
+          <button type="button" className="btn-primary lesson-begin-button ml-auto" onClick={onBegin}>
+            Begin Lesson <ChevronRight size={17} />
+          </button>
+        </div>
       </div>
     </section>
   );
@@ -1521,7 +1539,16 @@ function LessonComplete({
         <div className="flex flex-wrap items-center justify-center gap-3">
           {onContinueToNextStage && (
             <button type="button" className="btn-primary" onClick={onContinueToNextStage}>
-              Continue to post-test <ChevronRight size={15} aria-hidden="true" />
+              <span>Continue to post-test</span>
+              <svg
+                className="btn-arrow"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2.5}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+              </svg>
             </button>
           )}
           <button type="button" className="btn-ghost" onClick={onTryAnother}>
@@ -1544,12 +1571,22 @@ interface VisualizerExperienceProps {
   onLessonComplete?: (exampleId: string) => void;
   onContinueToNextStage?: () => void;
   onExampleAttempt?: (exampleId: string) => void;
+  /*
+   * Reported whenever the lesson state machine moves. The study harness uses it
+   * to place its back control: the intro screen renders one inline, so the top
+   * bar hides its own to avoid showing the same action twice.
+   */
+  onLessonPhaseChange?: (phase: LessonPhase) => void;
+  /* Back control rendered in the intro screen's action row. */
+  introBackButton?: React.ReactNode;
 }
 
 export default function VisualizerExperience({
   onLessonComplete,
   onContinueToNextStage,
   onExampleAttempt,
+  onLessonPhaseChange,
+  introBackButton,
 }: VisualizerExperienceProps = {}) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [leftW, setLeftW]   = useState(540); // px
@@ -1560,6 +1597,7 @@ export default function VisualizerExperience({
   const [isTourOpen, setIsTourOpen]   = useState(false);
   const [tourInitialStep, setTourInitialStep] = useState(0);
   const [isWalkthroughActive, setIsWalkthroughActive] = useState<boolean>(false);
+  const [walkthroughHighlightedLines, setWalkthroughHighlightedLines] = useState<number[] | null>(null);
   const [isExploreOpen, setIsExploreOpen] = useState(false);
 
   /*
@@ -1816,6 +1854,10 @@ export default function VisualizerExperience({
     if (lessonPhase === "complete") onLessonComplete?.(presetId);
   }, [lessonPhase, onLessonComplete, presetId]);
 
+  useEffect(() => {
+    onLessonPhaseChange?.(lessonPhase);
+  }, [lessonPhase, onLessonPhaseChange]);
+
   const activeLineNumber = focusStepData.lineHighlight ?? 1;
   const activeLineText = activePreset.code
     .split("\n")[Math.max(0, activeLineNumber - 1)]
@@ -1834,6 +1876,7 @@ export default function VisualizerExperience({
         preset={activePreset}
         presets={Object.values(SIMULATION_PRESETS)}
         onPresetChange={handlePresetChange}
+        backButton={introBackButton}
         onBegin={() => {
           onExampleAttempt?.(activePreset.id);
           setLessonPhase("ready");
@@ -1888,6 +1931,7 @@ export default function VisualizerExperience({
             /* No line highlight while editing: the steps belong to the old
              * program until the new one has actually been traced. */
             activeLine={isEditing ? null : focusStepData.lineHighlight}
+            activeLines={isEditing ? null : walkthroughHighlightedLines}
             primaryLabel={showResult ? (currentStep === totalSteps - 1 ? "Finish Lesson" : "Continue") : "Run This Line"}
             primaryAriaLabel={showResult ? (currentStep === totalSteps - 1 ? "Finish lesson" : "Continue to next step") : "Run highlighted line"}
             canGoBack={currentStep > 0}
@@ -1969,6 +2013,7 @@ export default function VisualizerExperience({
           setIsTourOpen(true);
         }}
         onExploreExamples={() => setIsExploreOpen(true)}
+        onHighlightedLinesChange={setWalkthroughHighlightedLines}
       />
 
       <PostLessonExplorerModal

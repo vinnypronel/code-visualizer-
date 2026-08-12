@@ -39,6 +39,10 @@ interface StudyShellProps {
    * the exact same header, stepper, timer, and footer chrome.
    */
   fluid?: boolean;
+  /*
+   * Disables vertical scrolling on the page content and locks it to the viewport height.
+   */
+  noScroll?: boolean;
 }
 
 export default function StudyShell({
@@ -49,6 +53,7 @@ export default function StudyShell({
   children,
   footer,
   fluid = false,
+  noScroll = false,
 }: StudyShellProps) {
   return (
     <div
@@ -140,7 +145,7 @@ export default function StudyShell({
 
           {/* Right: Timer + UR2PhD Logo */}
           <div className="flex items-center gap-3 flex-shrink-0 ml-auto">
-            {timer}
+            {timer && <div className="mr-6 sm:mr-12">{timer}</div>}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/ur2phd-logo.png"
@@ -155,8 +160,8 @@ export default function StudyShell({
       {fluid ? (
         <main className="flex-1 min-h-0 overflow-hidden">{children}</main>
       ) : (
-        <main className="flex-1 min-h-0 overflow-y-auto panel-scroll">
-          <div className="w-full max-w-[1440px] pl-20 sm:pl-44 pr-6 sm:pr-12 py-5 sm:py-6">
+        <main className={`flex-1 min-h-0 ${noScroll ? "overflow-hidden flex flex-col items-center justify-center" : "overflow-y-auto panel-scroll"}`}>
+          <div className={`w-full max-w-[1440px] ${noScroll ? "px-4 sm:px-6 py-2 flex-1 flex flex-col justify-center items-center mx-auto" : "pl-20 sm:pl-44 pr-6 sm:pr-12 py-5 sm:py-6"}`}>
             {heading && <h1 className="text-xl font-bold mb-1">{heading}</h1>}
             {subheading && (
               <p
@@ -166,7 +171,7 @@ export default function StudyShell({
                 {subheading}
               </p>
             )}
-            <div className={subheading ? "" : "mt-4"}>{children}</div>
+            <div className={noScroll ? "w-full flex-1 flex flex-col justify-center items-center" : subheading ? "" : "mt-4"}>{children}</div>
           </div>
         </main>
       )}
