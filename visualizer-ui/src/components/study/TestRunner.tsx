@@ -187,6 +187,8 @@ function DualBoxCell({
   const headerParts = colHeader ? colHeader.split("/").map((s) => s.trim()) : [];
   const placeholder1 = headerParts[0] || "value 1";
   const placeholder2 = headerParts[1] || "value 2";
+  const displayedSub1 = isNotCreated ? "" : sub1;
+  const displayedSub2 = isNotCreated ? "" : sub2;
 
   const handleSub1Change = (v1: string) => {
     const trimmed = v1.trim();
@@ -247,58 +249,68 @@ function DualBoxCell({
     lineHeight: "1.25rem",
   };
 
-  if (isNotCreated) {
-    return (
-      <div className="w-full h-full flex items-center px-3.5 py-2 font-mono text-[12.5px] font-bold text-slate-900 bg-white">
-        <input
-          type="text"
-          value="(not yet created)"
-          onChange={(e) => {
-            if (e.target.value !== "(not yet created)") {
-              onChange(e.target.value);
-            }
-          }}
-          className="w-full font-mono text-[12.5px] font-bold text-slate-900 bg-transparent outline-none"
-          style={monoStyle}
-        />
-      </div>
-    );
-  }
-
-  const sub1Len = sub1 ? sub1.length : placeholder1.length;
-  const sub2Len = sub2 ? sub2.length : placeholder2.length;
+  const sub1Len = displayedSub1 ? displayedSub1.length : placeholder1.length;
+  const sub2Len = displayedSub2 ? displayedSub2.length : placeholder2.length;
 
   return (
-    <div className="w-full h-full flex items-center px-3.5 py-2.5 font-mono text-[12.5px] font-bold text-slate-900 bg-white">
-      <input
-        ref={inputRef1}
-        type="text"
-        value={sub1}
-        placeholder={placeholder1}
-        onChange={(e) => handleSub1Change(e.target.value)}
-        onKeyDown={handleKeyDown1}
-        className="font-mono text-[12.5px] font-bold text-slate-900 bg-transparent outline-none p-0 m-0 border-none text-left"
-        style={{
-          ...monoStyle,
-          width: `${Math.max(sub1Len, 2)}ch`,
-        }}
-      />
-      <span className="font-mono font-bold text-[12.5px] text-slate-900 select-none whitespace-pre">
-        {" / "}
-      </span>
-      <input
-        ref={inputRef2}
-        type="text"
-        value={sub2}
-        placeholder={placeholder2}
-        onChange={(e) => handleSub2Change(e.target.value)}
-        onKeyDown={handleKeyDown2}
-        className="font-mono text-[12.5px] font-bold text-slate-900 bg-transparent outline-none p-0 m-0 border-none text-left"
-        style={{
-          ...monoStyle,
-          width: `${Math.max(sub2Len, 2)}ch`,
-        }}
-      />
+    <div className="flex min-w-[360px] items-center gap-2 bg-white px-2.5 py-2">
+      <div
+        className={`flex min-w-0 flex-1 items-center rounded-md border px-2.5 py-1.5 transition-colors ${
+          isNotCreated
+            ? "border-slate-200 bg-slate-100 opacity-55"
+            : "border-slate-400 bg-white focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100"
+        }`}
+      >
+        <input
+          ref={inputRef1}
+          type="text"
+          value={displayedSub1}
+          placeholder={placeholder1}
+          disabled={isNotCreated}
+          aria-label={`${placeholder1} value`}
+          onChange={(e) => handleSub1Change(e.target.value)}
+          onKeyDown={handleKeyDown1}
+          className="min-w-0 font-mono text-[12.5px] font-bold text-slate-900 placeholder:text-slate-400 bg-transparent outline-none p-0 m-0 border-none text-left disabled:cursor-not-allowed"
+          style={{
+            ...monoStyle,
+            width: `${Math.max(sub1Len, 2)}ch`,
+          }}
+        />
+        <span className="font-mono font-bold text-[12.5px] text-slate-900 select-none whitespace-pre">
+          {" / "}
+        </span>
+        <input
+          ref={inputRef2}
+          type="text"
+          value={displayedSub2}
+          placeholder={placeholder2}
+          disabled={isNotCreated}
+          aria-label={`${placeholder2} value`}
+          onChange={(e) => handleSub2Change(e.target.value)}
+          onKeyDown={handleKeyDown2}
+          className="min-w-0 font-mono text-[12.5px] font-bold text-slate-900 placeholder:text-slate-400 bg-transparent outline-none p-0 m-0 border-none text-left disabled:cursor-not-allowed"
+          style={{
+            ...monoStyle,
+            width: `${Math.max(sub2Len, 2)}ch`,
+          }}
+        />
+      </div>
+
+      <span className="text-[11px] font-bold uppercase text-slate-500">or</span>
+
+      <button
+        type="button"
+        aria-pressed={isNotCreated}
+        aria-label={`Mark ${colHeader ?? "this variable"} as not yet created`}
+        onClick={() => onChange(isNotCreated ? "" : "(not yet created)")}
+        className={`shrink-0 rounded-md border px-2.5 py-2 text-[11.5px] font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 ${
+          isNotCreated
+            ? "border-blue-600 bg-blue-100 text-blue-900"
+            : "border-slate-400 bg-slate-50 text-slate-700 hover:border-blue-500 hover:bg-blue-50 hover:text-blue-800"
+        }`}
+      >
+        {isNotCreated ? "✓ Not yet created" : "Not yet created"}
+      </button>
     </div>
   );
 }
@@ -325,6 +337,9 @@ function GridField({
   return (
     <div className="my-4">
       {caption && <p className="text-[13.5px] font-bold mb-2.5" style={{ color: "#0f172a" }}>{caption}</p>}
+      <p className="mb-2 text-[12px] font-medium text-slate-600">
+        In each cell, enter both field values or choose <strong>Not yet created</strong> if that variable does not exist after the step.
+      </p>
       <div className="overflow-x-auto rounded-lg border shadow-sm" style={{ borderColor: "#64748b" }}>
         <table className="w-full border-collapse text-[12.5px]">
           <thead>

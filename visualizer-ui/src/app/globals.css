@@ -294,6 +294,22 @@ button:disabled, [role="button"][aria-disabled="true"] {
   transform: translateY(-50%) translateX(0);
 }
 
+/* The post-lesson load button is already wide enough for its arrow. Keep its
+   width stable on hover, align the play icon to the left, and reveal only the
+   arrow so the control does not appear to grow without explanation. */
+.post-lesson-load-button {
+  justify-content: flex-start;
+  gap: 7px;
+  min-width: 208px;
+  padding-left: 16px;
+  padding-right: 40px;
+}
+
+.post-lesson-load-button:hover:not(:disabled) {
+  min-width: 208px;
+  padding-right: 40px;
+}
+
 .orientation-start-button {
   transform-origin: left center;
   transition:

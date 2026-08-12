@@ -219,9 +219,11 @@ export default function CodeEditorPanel({
           }}
         />
         <button
+          type="button"
           onClick={handleCopy}
-          className="absolute top-3 right-3 p-1.5 rounded-md bg-slate-900/60 border border-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-900 transition-all z-10"
+          className="absolute bottom-3 right-3 p-1.5 rounded-md bg-slate-900/60 border border-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-900 transition-all z-10"
           title="Copy Code"
+          aria-label={copied ? "Code copied" : "Copy code"}
         >
           {copied ? <Check size={13} className="text-emerald-500" /> : <Copy size={13} />}
         </button>

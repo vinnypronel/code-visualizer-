@@ -43,7 +43,8 @@ interface OutboxItem {
 }
 
 const OUTBOX_KEY = "study.outbox.v2";
-const SESSION_KEY = "study.session.v2";
+const SESSION_KEY = "study.session.v3";
+const LEGACY_SESSION_KEYS = ["study.session.v1", "study.session.v2"];
 const FORCE_NEW_PARAM = "new_session";
 const SESSION_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 const MAX_ATTEMPTS = 3;
@@ -190,7 +191,8 @@ export function StudyProvider({ children }: { children: React.ReactNode }) {
   const returnToConsent = useCallback(() => {
     setSession(INITIAL_SESSION);
     if (typeof window !== "undefined") {
-      window.localStorage.removeItem(SESSION_KEY);
+      window.sessionStorage.removeItem(SESSION_KEY);
+      LEGACY_SESSION_KEYS.forEach((key) => window.localStorage.removeItem(key));
     }
   }, []);
 
@@ -379,11 +381,15 @@ function readStoredSession(): SessionState | null {
   if (typeof window === "undefined") return null;
   try {
     if (new URLSearchParams(window.location.search).has(FORCE_NEW_PARAM)) {
-      window.localStorage.removeItem(SESSION_KEY);
+      window.sessionStorage.removeItem(SESSION_KEY);
+      LEGACY_SESSION_KEYS.forEach((key) => window.localStorage.removeItem(key));
       return null;
     }
 
-    const raw = window.localStorage.getItem(SESSION_KEY);
+    /* sessionStorage isolates simultaneous study tabs. localStorage caused a
+     * second participant in the same browser profile to reuse the first
+     * participant's ID and token. It still survives ordinary page reloads. */
+    const raw = window.sessionStorage.getItem(SESSION_KEY);
     if (!raw) return null;
 
     const parsed = JSON.parse(raw) as { savedAt?: number; session?: SessionState };
@@ -396,7 +402,7 @@ function readStoredSession(): SessionState | null {
       !session.assignmentRequestId ||
       Date.now() - savedAt > SESSION_MAX_AGE_MS
     ) {
-      window.localStorage.removeItem(SESSION_KEY);
+      window.sessionStorage.removeItem(SESSION_KEY);
       return null;
     }
 
@@ -409,7 +415,7 @@ function readStoredSession(): SessionState | null {
 function writeStoredSession(session: SessionState): void {
   if (typeof window === "undefined") return;
   try {
-    window.localStorage.setItem(
+    window.sessionStorage.setItem(
       SESSION_KEY,
       JSON.stringify({ savedAt: Date.now(), session }),
     );

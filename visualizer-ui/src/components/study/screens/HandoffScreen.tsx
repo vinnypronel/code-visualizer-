@@ -9,7 +9,7 @@
  */
 
 import { useEffect, useState } from "react";
-import { ArrowLeft, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Check, CheckCircle2, Copy } from "lucide-react";
 import StudyShell from "@/components/study/StudyShell";
 import { useStudy } from "@/components/study/StudyProvider";
 import {
@@ -112,13 +112,20 @@ export default function HandoffScreen() {
               <button
                 type="button"
                 onClick={copyId}
-                className="text-[12px] font-mono px-3 py-1 rounded-md border"
+                aria-label={copied ? "Participant ID copied" : "Copy participant ID"}
+                aria-live="polite"
+                className="inline-flex min-w-[96px] items-center justify-center gap-1.5 rounded-md border px-3 py-1.5 font-mono text-[12px] font-semibold transition-colors"
                 style={{
-                  background: "var(--bg-panel-2)",
-                  borderColor: "var(--border)",
-                  color: "var(--text-secondary)",
+                  background: copied ? "#dcfce7" : "var(--bg-panel-2)",
+                  borderColor: copied ? "#86efac" : "var(--border)",
+                  color: copied ? "#166534" : "var(--text-secondary)",
                 }}
               >
+                {copied ? (
+                  <Check size={14} strokeWidth={2.5} aria-hidden="true" />
+                ) : (
+                  <Copy size={14} aria-hidden="true" />
+                )}
                 {copied ? "Copied" : "Copy ID"}
               </button>
               <button
@@ -163,13 +170,20 @@ export default function HandoffScreen() {
   }
 
   return (
-    <StudyShell
-      stageIndex={4}
-      noScroll
-      heading="You are done with the session"
-      subheading="Thank you for taking part. There is one short step left."
-    >
+    <StudyShell stageIndex={4} noScroll>
       <div className="flex flex-col max-w-3xl mx-auto my-auto py-2 text-center w-full">
+        <div className="mb-4">
+          <h1 className="text-xl font-bold mb-1">
+            You are done with the session
+          </h1>
+          <p
+            className="text-[13px]"
+            style={{ color: "var(--text-secondary)" }}
+          >
+            Thank you for taking part. There is one short step left.
+          </p>
+        </div>
+
         <p
           className="text-[13px] leading-relaxed mb-4"
           style={{ color: "var(--text-secondary)" }}
@@ -206,14 +220,22 @@ export default function HandoffScreen() {
             to this session, and it is the only identifier we store.
           </p>
           <button
+            type="button"
             onClick={copyId}
-            className="text-[11px] font-mono px-3 py-1 rounded-md"
+            aria-label={copied ? "Participant ID copied" : "Copy participant ID"}
+            aria-live="polite"
+            className="inline-flex min-w-[96px] items-center justify-center gap-1.5 rounded-md border px-3 py-1.5 font-mono text-[11.5px] font-semibold transition-colors"
             style={{
-              background: "var(--bg-panel-2)",
-              border: "1px solid var(--border)",
-              color: "var(--text-secondary)",
+              background: copied ? "#dcfce7" : "var(--bg-panel-2)",
+              borderColor: copied ? "#86efac" : "var(--border)",
+              color: copied ? "#166534" : "var(--text-secondary)",
             }}
           >
+            {copied ? (
+              <Check size={14} strokeWidth={2.5} aria-hidden="true" />
+            ) : (
+              <Copy size={14} aria-hidden="true" />
+            )}
             {copied ? "Copied" : "Copy ID"}
           </button>
         </div>

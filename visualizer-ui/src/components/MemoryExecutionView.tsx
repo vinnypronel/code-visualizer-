@@ -2,13 +2,22 @@
 
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { Layers, HardDrive } from "lucide-react";
-import { StackFrame, HeapObject, RefArrow, DataMovement, ActiveBlock, MemoryCallout } from "@/types/visualizer";
+import {
+  StackFrame,
+  HeapObject,
+  RefArrow,
+  DataMovement,
+  ActiveBlock,
+  MemoryCallout,
+} from "@/types/visualizer";
 
 export function getFriendlyAddressLabel(value: string): string {
   if (!value) return value;
   const clean = value.replace("@", "");
-  if (clean === "101" || clean === "201" || clean === "301") return "[Object 1]";
-  if (clean === "102" || clean === "202" || clean === "302") return "[Object 2]";
+  if (clean === "101" || clean === "201" || clean === "301")
+    return "[Object 1]";
+  if (clean === "102" || clean === "202" || clean === "302")
+    return "[Object 2]";
   if (clean === "303") return "[Object 3]";
   return value;
 }
@@ -83,7 +92,8 @@ const HEAP_TOP_INSET_PX = 48;
 const STACK_TOP_INSET_PX = 8;
 
 // Elements that must keep their own pointer behaviour if any are added later.
-const DRAG_IGNORE_SELECTOR = "button, a, input, select, textarea, [role=\"button\"]";
+const DRAG_IGNORE_SELECTOR =
+  'button, a, input, select, textarea, [role="button"]';
 
 function clamp(value: number, min: number, max: number): number {
   if (min > max) return min;
@@ -126,8 +136,16 @@ export default function MemoryExecutionView({
   activeBlock,
 }: MemoryExecutionViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [svgPaths, setSvgPaths] = useState<Array<{ id: string; d: string; color: string }>>([]);
-  const [anim, setAnim] = useState<{ value: string; x1: number; y1: number; x2: number; y2: number } | null>(null);
+  const [svgPaths, setSvgPaths] = useState<
+    Array<{ id: string; signature: string; d: string; color: string }>
+  >([]);
+  const [anim, setAnim] = useState<{
+    value: string;
+    x1: number;
+    y1: number;
+    x2: number;
+    y2: number;
+  } | null>(null);
   const [calloutPositions, setCalloutPositions] = useState<
     Array<{ callout: MemoryCallout; top: number; left: number }>
   >([]);
@@ -152,23 +170,6 @@ export default function MemoryExecutionView({
 
   const hasMovedBoxes = Object.keys(boxOffsets).length > 0;
 
-  /*
-   * Which arrows this line is responsible for. Fading every arrow on every step
-   * would make links the student already understands flicker back in, so only
-   * arrows touching something the step marked as changed are staged. Anchor ids
-   * here must match the data-ref attributes further down.
-   */
-  const revealedArrowIds = useMemo(() => {
-    const ids = new Set<string>();
-    for (const arrow of arrows) {
-      const fromNewVariable = spotlightStackVars.some((name) => arrow.source === `stack-${name}`);
-      const toNewObject = spotlightHeapObjects.some((id) => arrow.target === `heap-${id}`);
-      const fromChangedField = spotlightHeapFields.some((field) => arrow.source === `heap-${field}`);
-      if (fromNewVariable || toNewObject || fromChangedField) ids.add(arrow.id);
-    }
-    return ids;
-  }, [arrows, spotlightStackVars, spotlightHeapObjects, spotlightHeapFields]);
-
   // Check if current step has any active spotlight focal points
   const hasSpotlight =
     spotlightStackVars.length > 0 ||
@@ -186,8 +187,12 @@ export default function MemoryExecutionView({
 
     const calculated = arrows
       .map((arrow) => {
-        const sourceEl = container.querySelector(`[data-ref-source="${arrow.source}"]`);
-        const targetEl = container.querySelector(`[data-ref-target="${arrow.target}"]`);
+        const sourceEl = container.querySelector(
+          `[data-ref-source="${arrow.source}"]`,
+        );
+        const targetEl = container.querySelector(
+          `[data-ref-target="${arrow.target}"]`,
+        );
 
         if (!sourceEl || !targetEl) return null;
 
@@ -212,11 +217,17 @@ export default function MemoryExecutionView({
 
         return {
           id: arrow.id,
+          signature: `${arrow.id}|${arrow.source}|${arrow.target}`,
           d,
           color: arrow.color || "blue",
         };
       })
-      .filter(Boolean) as Array<{ id: string; d: string; color: string }>;
+      .filter(Boolean) as Array<{
+      id: string;
+      signature: string;
+      d: string;
+      color: string;
+    }>;
 
     setSvgPaths(calculated);
   }, [arrows]);
@@ -232,7 +243,11 @@ export default function MemoryExecutionView({
     const width = 220;
     const gap = 10;
     const estimatedHeight = 92;
-    const nextPositions: Array<{ callout: MemoryCallout; top: number; left: number }> = [];
+    const nextPositions: Array<{
+      callout: MemoryCallout;
+      top: number;
+      left: number;
+    }> = [];
 
     callouts.forEach((callout, index) => {
       const targetEl =
@@ -256,7 +271,10 @@ export default function MemoryExecutionView({
       }
 
       left = Math.max(12, Math.min(containerRect.width - width - 12, left));
-      top = Math.max(64, Math.min(containerRect.height - estimatedHeight - 12, top + index * 4));
+      top = Math.max(
+        64,
+        Math.min(containerRect.height - estimatedHeight - 12, top + index * 4),
+      );
 
       nextPositions.push({ callout, left, top });
     });
@@ -266,15 +284,20 @@ export default function MemoryExecutionView({
       .forEach((position, index, positions) => {
         for (let prevIndex = 0; prevIndex < index; prevIndex += 1) {
           const previous = positions[prevIndex];
-          const horizontallyClose = Math.abs(position.left - previous.left) < width * 0.75;
-          const verticallyClose = position.top < previous.top + estimatedHeight + 8;
+          const horizontallyClose =
+            Math.abs(position.left - previous.left) < width * 0.75;
+          const verticallyClose =
+            position.top < previous.top + estimatedHeight + 8;
 
           if (horizontallyClose && verticallyClose) {
             position.top = previous.top + estimatedHeight + 8;
           }
         }
 
-        position.top = Math.min(position.top, containerRect.height - estimatedHeight - 12);
+        position.top = Math.min(
+          position.top,
+          containerRect.height - estimatedHeight - 12,
+        );
       });
 
     setCalloutPositions(nextPositions);
@@ -285,7 +308,11 @@ export default function MemoryExecutionView({
   // because no re-render happens mid-drag, it cannot race the 50ms step
   // recompute or the ResizeObserver. The offset is committed to state on drop.
   const handleBoxPointerDown = useCallback(
-    (event: React.PointerEvent<HTMLDivElement>, key: string, topInset: number) => {
+    (
+      event: React.PointerEvent<HTMLDivElement>,
+      key: string,
+      topInset: number,
+    ) => {
       if (event.button !== 0 || dragRef.current) return;
       if ((event.target as HTMLElement).closest(DRAG_IGNORE_SELECTOR)) return;
 
@@ -310,9 +337,11 @@ export default function MemoryExecutionView({
         // Travel limits are derived once, from the gap between the box edges
         // and its zone edges at press time.
         minDx: base.dx + (boundsRect.left + DRAG_EDGE_PADDING_PX - elRect.left),
-        maxDx: base.dx + (boundsRect.right - DRAG_EDGE_PADDING_PX - elRect.right),
+        maxDx:
+          base.dx + (boundsRect.right - DRAG_EDGE_PADDING_PX - elRect.right),
         minDy: base.dy + (boundsRect.top + topInset - elRect.top),
-        maxDy: base.dy + (boundsRect.bottom - DRAG_EDGE_PADDING_PX - elRect.bottom),
+        maxDy:
+          base.dy + (boundsRect.bottom - DRAG_EDGE_PADDING_PX - elRect.bottom),
         moved: false,
       };
     },
@@ -328,7 +357,11 @@ export default function MemoryExecutionView({
       const rawDy = event.clientY - drag.startY;
 
       if (!drag.moved) {
-        if (Math.abs(rawDx) < DRAG_THRESHOLD_PX && Math.abs(rawDy) < DRAG_THRESHOLD_PX) return;
+        if (
+          Math.abs(rawDx) < DRAG_THRESHOLD_PX &&
+          Math.abs(rawDy) < DRAG_THRESHOLD_PX
+        )
+          return;
         drag.moved = true;
         // Capture only once this is genuinely a drag, so a plain click is
         // never retargeted away from the badge the participant pressed.
@@ -397,7 +430,16 @@ export default function MemoryExecutionView({
       updateCalloutPositions();
     }, 50);
     return () => clearTimeout(timer);
-  }, [currentStep, stack, heap, arrows, callouts, boxOffsets, updatePaths, updateCalloutPositions]);
+  }, [
+    currentStep,
+    stack,
+    heap,
+    arrows,
+    callouts,
+    boxOffsets,
+    updatePaths,
+    updateCalloutPositions,
+  ]);
 
   // Recalculate paths on resize events
   useEffect(() => {
@@ -427,8 +469,12 @@ export default function MemoryExecutionView({
       if (!containerRef.current) return;
       const container = containerRef.current;
 
-      const fromEl = container.querySelector(`[data-ref-source="${dataMovement.from}"]`);
-      const toEl = container.querySelector(`[data-ref-source="${dataMovement.to}"]`);
+      const fromEl = container.querySelector(
+        `[data-ref-source="${dataMovement.from}"]`,
+      );
+      const toEl = container.querySelector(
+        `[data-ref-source="${dataMovement.to}"]`,
+      );
 
       if (fromEl && toEl) {
         const containerRect = container.getBoundingClientRect();
@@ -466,8 +512,12 @@ export default function MemoryExecutionView({
   };
 
   return (
-    <div id="onboarding-memory-view" ref={containerRef} className="flex flex-col h-full relative overflow-hidden" style={{ background: "var(--bg-panel-2)" }}>
-      
+    <div
+      id="onboarding-memory-view"
+      ref={containerRef}
+      className="flex flex-col h-full relative overflow-hidden"
+      style={{ background: "var(--bg-panel-2)" }}
+    >
       {/* Visualizer SVG Reference Overlay Layer */}
       <svg className="absolute inset-0 w-full h-full pointer-events-none z-20">
         <defs>
@@ -523,13 +573,13 @@ export default function MemoryExecutionView({
           const colorHex = strokeColorMap[p.color] || "#3b82f6";
           return (
             <path
-              key={p.id}
+              key={p.signature}
               d={p.d}
               fill="none"
               stroke={colorHex}
               strokeWidth={2}
               markerEnd={`url(#arrow-${p.color})`}
-              className={`ref-pointer ref-pointer-active${revealedArrowIds.has(p.id) ? " reveal-arrow" : ""}`}
+              className="ref-pointer ref-pointer-active reveal-arrow"
             />
           );
         })}
@@ -540,15 +590,17 @@ export default function MemoryExecutionView({
         <div
           key={currentStep} // Key triggers React re-mount which fires CSS animation keyframe
           className="animate-slide-value pointer-events-none flex min-w-max flex-col items-center justify-center rounded-md border px-3 py-1.5 font-mono shadow-sm"
-          style={{
-            "--start-x": `${anim.x1}px`,
-            "--start-y": `${anim.y1}px`,
-            "--target-x": `${anim.x2}px`,
-            "--target-y": `${anim.y2}px`,
-            transform: "translate(-50%, -50%)",
-            background: "var(--bg-panel)",
-            borderColor: "var(--accent)",
-          } as React.CSSProperties}
+          style={
+            {
+              "--start-x": `${anim.x1}px`,
+              "--start-y": `${anim.y1}px`,
+              "--target-x": `${anim.x2}px`,
+              "--target-y": `${anim.y2}px`,
+              transform: "translate(-50%, -50%)",
+              background: "var(--bg-panel)",
+              borderColor: "var(--accent)",
+            } as React.CSSProperties
+          }
         >
           <span
             className="text-[8px] font-bold uppercase leading-none"
@@ -583,7 +635,12 @@ export default function MemoryExecutionView({
       >
         <div className="flex items-center gap-2">
           <Layers size={16} className="text-[var(--accent)]" />
-          <span className="text-xs font-semibold" style={{ color: "var(--text-primary)" }}>What Java Is Doing: Visualization Workbench</span>
+          <span
+            className="text-xs font-semibold"
+            style={{ color: "var(--text-primary)" }}
+          >
+            What Java Is Doing: Visualization Workbench
+          </span>
         </div>
         <div className="flex items-center gap-3">
           {hasMovedBoxes && (
@@ -596,24 +653,36 @@ export default function MemoryExecutionView({
               Reset layout
             </button>
           )}
-          <span className="text-[10px]" style={{ color: "var(--text-muted)" }}>Changed items are marked</span>
+          <span className="text-[10px]" style={{ color: "var(--text-muted)" }}>
+            Changed items are marked
+          </span>
         </div>
       </div>
 
       <div className="memory-zones flex-1 flex min-h-0 relative z-10">
-        
         {/* The Stack Zone (Left Column) */}
         <div
           id="onboarding-stack-zone"
           data-drag-bounds
           className="memory-variables-zone w-[280px] flex-shrink-0 flex flex-col border-r px-4 py-4 overflow-y-auto"
-          style={{ borderColor: "var(--border)", background: "var(--bg-panel)" }}
+          style={{
+            borderColor: "var(--border)",
+            background: "var(--bg-panel)",
+          }}
         >
           <div className="flex items-center gap-1.5 mb-4 flex-shrink-0">
             <Layers size={13} style={{ color: "var(--text-secondary)" }} />
             <div>
-              <h3 className="text-xs font-bold" style={{ color: "var(--text-primary)" }}>Stack</h3>
-              <span className="text-[9px] font-sans block leading-normal mt-0.5 font-normal" style={{ color: "var(--text-secondary)" }}>
+              <h3
+                className="text-xs font-bold"
+                style={{ color: "var(--text-primary)" }}
+              >
+                Stack
+              </h3>
+              <span
+                className="text-[9px] font-sans block leading-normal mt-0.5 font-normal"
+                style={{ color: "var(--text-secondary)" }}
+              >
                 Local variables and references
               </span>
             </div>
@@ -621,9 +690,15 @@ export default function MemoryExecutionView({
 
           {activeBlock && (
             <div className="mb-3 flex items-center gap-1.5 flex-shrink-0">
-              <span className="text-[9px] uppercase tracking-wider font-bold font-mono" style={{ color: "var(--text-muted)" }}>scope</span>
+              <span
+                className="text-[9px] uppercase tracking-wider font-bold font-mono"
+                style={{ color: "var(--text-muted)" }}
+              >
+                scope
+              </span>
               <span className="badge badge-blue text-[9px] py-0.5 px-1.5 font-mono">
-                {activeBlock.label} · lines {activeBlock.beginLine}-{activeBlock.endLine}
+                {activeBlock.label} · lines {activeBlock.beginLine}-
+                {activeBlock.endLine}
               </span>
             </div>
           )}
@@ -634,133 +709,195 @@ export default function MemoryExecutionView({
               const frameOffset = boxOffsets[frameKey] ?? { dx: 0, dy: 0 };
 
               return (
-              <div
-                key={idx}
-                className="rounded-lg border overflow-hidden shadow-sm"
-                onPointerDown={(event) => handleBoxPointerDown(event, frameKey, STACK_TOP_INSET_PX)}
-                onPointerMove={handleBoxPointerMove}
-                onPointerUp={handleBoxPointerUp}
-                onPointerCancel={handleBoxPointerUp}
-                style={{
-                  borderColor: "var(--border)",
-                  background: "var(--bg-panel)",
-                  // The CSS translate property is used instead of transform so
-                  // the offset survives the spotlight and hover classes, which
-                  // set transform with !important.
-                  translate: `${frameOffset.dx}px ${frameOffset.dy}px`,
-                  cursor: "grab",
-                  touchAction: "none",
-                }}
-              >
-                {/* Method Frame Header */}
-                <div className="px-3.5 py-2 border-b flex items-center justify-between" style={{ background: "#e8f1f8", borderColor: "var(--border)" }}>
-                  <span className="text-xs font-mono font-bold" style={{ color: "var(--text-primary)" }}>
-                    {frame.methodName}
-                  </span>
-                  <span className="text-[8px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded font-mono" style={{ color: "var(--text-secondary)", background: "#ffffff" }}>
-                    Frame
-                  </span>
-                </div>
-
-                {/* Local Variables List */}
-                <div className="p-3 space-y-2">
-                  {frame.variables.length === 0 ? (
-                    <span className="text-[10px] block text-center py-3 px-4 font-mono max-w-[200px] mx-auto leading-normal" style={{ color: "var(--text-muted)" }}>
-                      No variables yet.
+                <div
+                  key={idx}
+                  className="rounded-lg border overflow-hidden shadow-sm"
+                  onPointerDown={(event) =>
+                    handleBoxPointerDown(event, frameKey, STACK_TOP_INSET_PX)
+                  }
+                  onPointerMove={handleBoxPointerMove}
+                  onPointerUp={handleBoxPointerUp}
+                  onPointerCancel={handleBoxPointerUp}
+                  style={{
+                    borderColor: "var(--border)",
+                    background: "var(--bg-panel)",
+                    // The CSS translate property is used instead of transform so
+                    // the offset survives the spotlight and hover classes, which
+                    // set transform with !important.
+                    translate: `${frameOffset.dx}px ${frameOffset.dy}px`,
+                    cursor: "grab",
+                    touchAction: "none",
+                  }}
+                >
+                  {/* Method Frame Header */}
+                  <div
+                    className="px-3.5 py-2 border-b flex items-center justify-between"
+                    style={{
+                      background: "#e8f1f8",
+                      borderColor: "var(--border)",
+                    }}
+                  >
+                    <span
+                      className="text-xs font-mono font-bold"
+                      style={{ color: "var(--text-primary)" }}
+                    >
+                      {frame.methodName}
                     </span>
-                  ) : (
-                    frame.variables.map((v, vIdx) => {
-                      const isHovered = hoveredElement === `stack-${v.name}`;
-                      const isSpotlighted = spotlightStackVars.includes(v.name);
-                      const isNewVariable = enteringStackVars.includes(v.name);
-                      
-                      /* Stage 1: the variable is created on the stack first. */
-                      const varClass = isHovered
-                        ? "hover-pulse"
-                        : hasSpotlight
-                          ? isSpotlighted
-                            ? `spotlight-active-blue${isNewVariable ? " reveal-stage-1" : ""}`
-                            : "spotlight-dim"
-                          : "";
-
-                      const friendlyVal = getFriendlyAddressLabel(v.value);
-                      const styles = getObjectColorStyles(v.value.replace("@", ""));
-
-                      return (
-                        <div
-                          key={vIdx}
-                          data-ref-source={`stack-${v.name}`}
-                          className={`flex items-center justify-between p-2.5 rounded-md border transition-all ${varClass}`}
-                          style={{ background: "var(--bg-panel-2)", borderColor: "var(--border)" }}
-                        >
-                          <div className="flex flex-col leading-tight">
-                            <span className="text-[8px] font-mono font-bold" style={{ color: "var(--text-muted)" }}>
-                              {v.type}
-                            </span>
-                            <span className="text-xs font-mono font-bold" style={{ color: "var(--text-primary)" }}>
-                              {v.name}
-                            </span>
-                            {isSpotlighted && <span className="changed-badge mt-1">Changed</span>}
-                          </div>
-
-                          {/* Values layout */}
-                          {v.isReference ? (
-                            <span
-                              className={`badge ${styles.badge} font-mono text-[10px] py-1 px-2 cursor-help`}
-                            >
-                              {friendlyVal}
-                            </span>
-                          ) : (
-                            <span className="badge badge-green font-mono text-[10px] py-1 px-2">
-                              {v.value}
-                            </span>
-                          )}
-                        </div>
-                      );
-                    })
-                  )}
-
-                  {frame.calculation && (
-                    <div
-                      className="spotlight-active-green mt-2 rounded-md border-2 px-3 py-2.5"
+                    <span
+                      className="text-[8px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded font-mono"
                       style={{
-                        background: "rgba(16, 185, 129, 0.1)",
-                        borderColor: "#10b981",
+                        color: "var(--text-secondary)",
+                        background: "#ffffff",
                       }}
                     >
-                      <div className="mb-1 flex items-center justify-between gap-2">
-                        <span
-                          className="text-[9px] font-mono font-bold uppercase tracking-wider"
-                          style={{ color: "#047857" }}
-                        >
-                          Expression evaluated
-                        </span>
-                        <span className="changed-badge">Changed</span>
+                      Frame
+                    </span>
+                  </div>
+
+                  {/* Local Variables List */}
+                  <div className="p-3 space-y-2">
+                    {frame.variables.length === 0 ? (
+                      <span
+                        className="text-[10px] block text-center py-3 px-4 font-mono max-w-[200px] mx-auto leading-normal"
+                        style={{ color: "var(--text-muted)" }}
+                      >
+                        No variables yet.
+                      </span>
+                    ) : (
+                      frame.variables.map((v, vIdx) => {
+                        const isHovered = hoveredElement === `stack-${v.name}`;
+                        const isSpotlighted = spotlightStackVars.includes(
+                          v.name,
+                        );
+                        const isNewVariable = enteringStackVars.includes(
+                          v.name,
+                        );
+
+                        /* Stage 1: the variable is created on the stack first. */
+                        const varClass = isHovered
+                          ? "hover-pulse"
+                          : hasSpotlight
+                            ? isSpotlighted
+                              ? `spotlight-active-blue${isNewVariable ? " reveal-stage-1" : ""}`
+                              : "spotlight-dim"
+                            : "";
+
+                        const friendlyVal = getFriendlyAddressLabel(v.value);
+                        const styles = getObjectColorStyles(
+                          v.value.replace("@", ""),
+                        );
+
+                        return (
+                          <div
+                            key={vIdx}
+                            data-ref-source={`stack-${v.name}`}
+                            className={`flex items-center justify-between p-2.5 rounded-md border transition-all ${varClass}`}
+                            style={{
+                              background: "var(--bg-panel-2)",
+                              borderColor: "var(--border)",
+                            }}
+                          >
+                            <div className="flex flex-col leading-tight">
+                              <span
+                                className="text-[8px] font-mono font-bold"
+                                style={{ color: "var(--text-muted)" }}
+                              >
+                                {v.type}
+                              </span>
+                              <span
+                                className="text-xs font-mono font-bold"
+                                style={{ color: "var(--text-primary)" }}
+                              >
+                                {v.name}
+                              </span>
+                              {isSpotlighted && (
+                                <span className="changed-badge mt-1">
+                                  Changed
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Values layout */}
+                            {v.isReference ? (
+                              <span
+                                className={`badge ${styles.badge} font-mono text-[10px] py-1 px-2 cursor-help`}
+                              >
+                                {friendlyVal}
+                              </span>
+                            ) : (
+                              <span className="badge badge-green font-mono text-[10px] py-1 px-2">
+                                {v.value}
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })
+                    )}
+
+                    {frame.calculation && (
+                      <div
+                        className="spotlight-active-green mt-2 rounded-md border-2 px-3 py-2.5"
+                        style={{
+                          background: "rgba(16, 185, 129, 0.1)",
+                          borderColor: "#10b981",
+                        }}
+                      >
+                        <div className="mb-1 flex items-center justify-between gap-2">
+                          <span
+                            className="text-[9px] font-mono font-bold uppercase tracking-wider"
+                            style={{ color: "#047857" }}
+                          >
+                            Expression evaluated
+                          </span>
+                          <span className="changed-badge">Changed</span>
+                        </div>
+                        <div className="flex items-center justify-between gap-3 font-mono font-bold">
+                          <span
+                            className="text-[11px]"
+                            style={{ color: "var(--text-primary)" }}
+                          >
+                            {frame.calculation.expression}
+                          </span>
+                          <span
+                            className="text-[12px]"
+                            style={{ color: "var(--text-secondary)" }}
+                          >
+                            =
+                          </span>
+                          <span
+                            className="rounded-md px-2.5 py-1 text-sm"
+                            style={{ color: "#047857", background: "#d1fae5" }}
+                          >
+                            {frame.calculation.result}
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex items-center justify-between gap-3 font-mono font-bold">
-                        <span className="text-[11px]" style={{ color: "var(--text-primary)" }}>
-                          {frame.calculation.expression}
-                        </span>
-                        <span className="text-[12px]" style={{ color: "var(--text-secondary)" }}>=</span>
-                        <span
-                          className="rounded-md px-2.5 py-1 text-sm"
-                          style={{ color: "#047857", background: "#d1fae5" }}
-                        >
-                          {frame.calculation.result}
-                        </span>
-                      </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
-              </div>
               );
             })}
           </div>
 
           {stdout && (
-            <div className="mt-4 pt-3 border-t flex-shrink-0" style={{ borderColor: "var(--border)" }}>
-              <span className="text-[9px] uppercase tracking-wider font-bold font-mono block mb-1.5" style={{ color: "var(--text-muted)" }}>stdout</span>
-              <pre className="text-[11px] font-mono rounded-md px-3 py-2 border whitespace-pre-wrap leading-relaxed" style={{ color: "var(--success)", background: "var(--bg-panel-2)", borderColor: "var(--border)" }}>
+            <div
+              className="mt-4 pt-3 border-t flex-shrink-0"
+              style={{ borderColor: "var(--border)" }}
+            >
+              <span
+                className="text-[9px] uppercase tracking-wider font-bold font-mono block mb-1.5"
+                style={{ color: "var(--text-muted)" }}
+              >
+                stdout
+              </span>
+              <pre
+                className="text-[11px] font-mono rounded-md px-3 py-2 border whitespace-pre-wrap leading-relaxed"
+                style={{
+                  color: "var(--success)",
+                  background: "var(--bg-panel-2)",
+                  borderColor: "var(--border)",
+                }}
+              >
                 {stdout}
               </pre>
             </div>
@@ -776,9 +913,18 @@ export default function MemoryExecutionView({
           <div className="absolute top-4 left-6 flex items-center gap-1.5 pointer-events-none">
             <HardDrive size={13} style={{ color: "var(--text-secondary)" }} />
             <div>
-              <h3 className="text-xs font-bold" style={{ color: "var(--text-primary)" }}>Objects: Memory</h3>
-              <span className="text-[9px] font-sans block leading-normal mt-0.5 font-normal" style={{ color: "var(--text-secondary)" }}>
-                Created with <code>new</code> <span style={{ color: "var(--text-muted)" }}>(Heap)</span>
+              <h3
+                className="text-xs font-bold"
+                style={{ color: "var(--text-primary)" }}
+              >
+                Objects: Memory
+              </h3>
+              <span
+                className="text-[9px] font-sans block leading-normal mt-0.5 font-normal"
+                style={{ color: "var(--text-secondary)" }}
+              >
+                Created with <code>new</code>{" "}
+                <span style={{ color: "var(--text-muted)" }}>(Heap)</span>
               </span>
             </div>
           </div>
@@ -786,7 +932,10 @@ export default function MemoryExecutionView({
           {/* Cards Space */}
           <div className="memory-objects-canvas relative w-full h-full min-h-[300px]">
             {Object.values(heap).length === 0 ? (
-              <div className="absolute inset-0 flex flex-col items-center justify-center text-center gap-2 pointer-events-none p-6" style={{ color: "var(--text-muted)" }}>
+              <div
+                className="absolute inset-0 flex flex-col items-center justify-center text-center gap-2 pointer-events-none p-6"
+                style={{ color: "var(--text-muted)" }}
+              >
                 <HardDrive size={24} className="opacity-30" />
                 <span className="text-xs">No objects yet.</span>
               </div>
@@ -795,7 +944,7 @@ export default function MemoryExecutionView({
                 const isCardHovered = hoveredElement === `heap-${obj.id}`;
                 const isCardSpotlighted = spotlightHeapObjects.includes(obj.id);
                 const isNewObject = enteringHeapObjects.includes(obj.id);
-                
+
                 /* Stage 2: the object the variable points at arrives next. */
                 const cardClass = isCardHovered
                   ? "hover-pulse"
@@ -815,7 +964,9 @@ export default function MemoryExecutionView({
                     key={obj.id}
                     data-ref-target={`heap-${obj.id}`}
                     className={`memory-object-card absolute p-0.5 rounded-lg shadow-md transition-all ${cardClass}`}
-                    onPointerDown={(event) => handleBoxPointerDown(event, cardKey, HEAP_TOP_INSET_PX)}
+                    onPointerDown={(event) =>
+                      handleBoxPointerDown(event, cardKey, HEAP_TOP_INSET_PX)
+                    }
                     onPointerMove={handleBoxPointerMove}
                     onPointerUp={handleBoxPointerUp}
                     onPointerCancel={handleBoxPointerUp}
@@ -832,28 +983,59 @@ export default function MemoryExecutionView({
                       transition: "opacity 0.35s ease, transform 0.35s ease",
                     }}
                   >
-                    <div className="rounded-md w-[210px] overflow-hidden" style={{ background: "var(--bg-panel)" }}>
+                    <div
+                      className="rounded-md w-[210px] overflow-hidden"
+                      style={{ background: "var(--bg-panel)" }}
+                    >
                       {/* Object Header */}
-                      <div className="px-3 py-1.5 border-b flex items-center justify-between gap-1.5" style={{ background: "#e8f1f8", borderColor: "var(--border)" }}>
-                        <span className="text-[10px] font-bold font-mono flex-shrink-0" style={{ color: "var(--text-secondary)" }}>
+                      <div
+                        className="px-3 py-1.5 border-b flex items-center justify-between gap-1.5"
+                        style={{
+                          background: "#e8f1f8",
+                          borderColor: "var(--border)",
+                        }}
+                      >
+                        <span
+                          className="text-[10px] font-bold font-mono flex-shrink-0"
+                          style={{ color: "var(--text-secondary)" }}
+                        >
                           {friendlyName}
                         </span>
-                        <span className="text-[10px] font-mono font-bold flex-shrink-0" style={{ color: "var(--text-primary)" }}>
+                        <span
+                          className="text-[10px] font-mono font-bold flex-shrink-0"
+                          style={{ color: "var(--text-primary)" }}
+                        >
                           {obj.className}
                         </span>
-                        {isCardSpotlighted && <span className="changed-badge flex-shrink-0">Changed</span>}
+                        {isCardSpotlighted && (
+                          <span className="changed-badge flex-shrink-0">
+                            Changed
+                          </span>
+                        )}
                       </div>
 
                       {/* Fields/Slots renderer */}
                       <div className="p-2.5">
                         {obj.isArray ? (
                           <div className="flex flex-col gap-1.5">
-                            <span className="text-[9px] uppercase tracking-wider font-bold font-mono" style={{ color: "var(--text-muted)" }}>
+                            <span
+                              className="text-[9px] uppercase tracking-wider font-bold font-mono"
+                              style={{ color: "var(--text-muted)" }}
+                            >
                               Slots (length: {obj.arrayValues?.length})
                             </span>
-                            <div className="grid grid-cols-3 gap-1 p-1 rounded-md border" style={{ background: "var(--bg-panel-2)", borderColor: "var(--border)" }}>
+                            <div
+                              className="grid grid-cols-3 gap-1 p-1 rounded-md border"
+                              style={{
+                                background: "var(--bg-panel-2)",
+                                borderColor: "var(--border)",
+                              }}
+                            >
                               {obj.arrayValues?.map((value, aIdx) => {
-                                const isSlotSpotlighted = spotlightHeapFields.includes(`${obj.id}-${aIdx}`);
+                                const isSlotSpotlighted =
+                                  spotlightHeapFields.includes(
+                                    `${obj.id}-${aIdx}`,
+                                  );
                                 /* An array slot is a field like any other, so
                                  * it earns the same stage-3 reveal and the same
                                  * CHANGED marker. Without them the panel says
@@ -870,13 +1052,25 @@ export default function MemoryExecutionView({
                                     key={aIdx}
                                     data-ref-source={`heap-${obj.id}-${aIdx}`}
                                     className={`flex flex-col items-center p-1 rounded border ${slotClass}`}
-                                    style={{ background: "var(--bg-panel)", borderColor: "var(--border)" }}
+                                    style={{
+                                      background: "var(--bg-panel)",
+                                      borderColor: "var(--border)",
+                                    }}
                                   >
-                                    <span className="text-[8px] font-mono" style={{ color: "var(--text-muted)" }}>[{aIdx}]</span>
+                                    <span
+                                      className="text-[8px] font-mono"
+                                      style={{ color: "var(--text-muted)" }}
+                                    >
+                                      [{aIdx}]
+                                    </span>
                                     <span className="text-xs font-mono font-bold text-emerald-400">
                                       {value}
                                     </span>
-                                    {isSlotSpotlighted && <span className="changed-badge mt-1">Changed</span>}
+                                    {isSlotSpotlighted && (
+                                      <span className="changed-badge mt-1">
+                                        Changed
+                                      </span>
+                                    )}
                                   </div>
                                 );
                               })}
@@ -885,7 +1079,10 @@ export default function MemoryExecutionView({
                         ) : (
                           <div className="space-y-1.5">
                             {obj.fields?.map((field, fIdx) => {
-                              const isFieldSpotlighted = spotlightHeapFields.includes(`${obj.id}-${field.name}`);
+                              const isFieldSpotlighted =
+                                spotlightHeapFields.includes(
+                                  `${obj.id}-${field.name}`,
+                                );
                               /* Stage 3: a field changing inside an object is
                                * the last thing to land, alongside the arrow. */
                               const fieldClass = hasSpotlight
@@ -894,8 +1091,12 @@ export default function MemoryExecutionView({
                                   : ""
                                 : "";
 
-                              const friendlyFieldVal = getFriendlyAddressLabel(field.value);
-                              const fStyles = getObjectColorStyles(field.value.replace("@", ""));
+                              const friendlyFieldVal = getFriendlyAddressLabel(
+                                field.value,
+                              );
+                              const fStyles = getObjectColorStyles(
+                                field.value.replace("@", ""),
+                              );
 
                               return (
                                 <div
@@ -905,7 +1106,10 @@ export default function MemoryExecutionView({
                                   style={{ borderColor: "var(--border)" }}
                                 >
                                   <div className="flex items-center gap-1.5 min-w-0">
-                                    <span className="font-semibold flex-shrink-0" style={{ color: "var(--text-secondary)" }}>
+                                    <span
+                                      className="font-semibold flex-shrink-0"
+                                      style={{ color: "var(--text-secondary)" }}
+                                    >
                                       {field.name}
                                     </span>
                                     {isFieldSpotlighted && (
@@ -914,19 +1118,23 @@ export default function MemoryExecutionView({
                                       </span>
                                     )}
                                   </div>
-                                  
+
                                   {/* Field reference value */}
                                   <div className="flex items-center flex-shrink-0 gap-1.5">
                                     {field.isReference ? (
                                       <span
                                         className={`badge flex-shrink-0 whitespace-nowrap py-0.5 px-1.5 text-[9px] font-bold ${
-                                          field.value !== "null" ? fStyles.badge : "bg-[#eef2f6] text-[#5f6b7a]"
+                                          field.value !== "null"
+                                            ? fStyles.badge
+                                            : "bg-[#eef2f6] text-[#5f6b7a]"
                                         }`}
                                       >
                                         {friendlyFieldVal}
                                       </span>
                                     ) : (
-                                      <span className="text-emerald-400 font-bold flex-shrink-0">{field.value}</span>
+                                      <span className="text-emerald-400 font-bold flex-shrink-0">
+                                        {field.value}
+                                      </span>
                                     )}
                                   </div>
                                 </div>
@@ -973,9 +1181,7 @@ function MemoryCalloutBox({
       <p className="text-[9px] font-bold uppercase tracking-wider font-mono">
         {callout.title}
       </p>
-      <p className="mt-1 text-[10px] leading-relaxed">
-        {callout.body}
-      </p>
+      <p className="mt-1 text-[10px] leading-relaxed">{callout.body}</p>
     </aside>
   );
 }

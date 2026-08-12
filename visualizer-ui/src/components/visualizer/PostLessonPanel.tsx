@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Pencil, Play } from "lucide-react";
+import { ArrowRight, Pencil, Play } from "lucide-react";
 
 /*
  * Post-lesson options shown after every required line has run.
@@ -89,12 +89,13 @@ export default function PostLessonPanel({
           </label>
           <button
             type="button"
-            className="btn-primary"
+            className="btn-primary post-lesson-load-button"
             onClick={() => onLoadExample(choice)}
             disabled={otherExamples.length === 0}
           >
             <Play size={15} aria-hidden="true" />
             <span>Load example</span>
+            <ArrowRight className="btn-arrow" size={16} aria-hidden="true" />
           </button>
         </div>
       </div>

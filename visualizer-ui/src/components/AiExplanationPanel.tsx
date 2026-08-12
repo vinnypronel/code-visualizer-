@@ -78,7 +78,7 @@ export default function AiExplanationPanel({
           </h2>
         </div>
 
-        <div className={`flex items-center gap-2 ${isCollapsed ? "mr-16" : ""}`}>
+        <div className="flex items-center gap-2">
           {!isCollapsed && (
             <button
               id="onboarding-explain-more-button"

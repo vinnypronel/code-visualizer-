@@ -11,13 +11,30 @@ import { CheckCircle2 } from "lucide-react";
  * rules rather than receiving the Dog or Book test answers.
  */
 
-const JAVA_TOKEN_PATTERN = /(\/\/[^\n]*|"(?:\\.|[^"\\])*"|\b(?:class|new|int|this|public|private|protected|static|void|return)\b|\b(?:String|Student|System)\b|\b\d+\b)/g;
-const JAVA_KEYWORDS = ["class", "new", "int", "this", "public", "private", "protected", "static", "void", "return"];
+const JAVA_TOKEN_PATTERN =
+  /(\/\/[^\n]*|"(?:\\.|[^"\\])*"|\b(?:class|new|int|this|public|private|protected|static|void|return)\b|\b(?:String|Student|System)\b|\b\d+\b)/g;
+const JAVA_KEYWORDS = [
+  "class",
+  "new",
+  "int",
+  "this",
+  "public",
+  "private",
+  "protected",
+  "static",
+  "void",
+  "return",
+];
 const JAVA_TYPES = ["String", "Student", "System"];
 
 function isJavaToken(token: string): boolean {
-  return token.startsWith("//") || token.startsWith('"') || /^\d+$/.test(token) ||
-    JAVA_KEYWORDS.includes(token) || JAVA_TYPES.includes(token);
+  return (
+    token.startsWith("//") ||
+    token.startsWith('"') ||
+    /^\d+$/.test(token) ||
+    JAVA_KEYWORDS.includes(token) ||
+    JAVA_TYPES.includes(token)
+  );
 }
 
 function javaTokenColor(token: string): string {
@@ -34,7 +51,9 @@ function JavaCode({ code }: { code: string }) {
       {code.split(JAVA_TOKEN_PATTERN).map((token, index) => (
         <span
           key={`${index}-${token}`}
-          style={isJavaToken(token) ? { color: javaTokenColor(token) } : undefined}
+          style={
+            isJavaToken(token) ? { color: javaTokenColor(token) } : undefined
+          }
         >
           {token}
         </span>
@@ -61,15 +80,28 @@ function CodeBlock({ children }: { children: string }) {
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({
+  title,
+  children,
+  className = "",
+  contentClassName = "",
+}: {
+  title: string;
+  children: React.ReactNode;
+  className?: string;
+  contentClassName?: string;
+}) {
   return (
     <section
-      className="rounded-xl p-5"
-      style={{ background: "var(--bg-panel)", border: "1px solid var(--border)" }}
+      className={`rounded-xl p-5 ${className}`}
+      style={{
+        background: "var(--bg-panel)",
+        border: "1px solid var(--border)",
+      }}
     >
       <h2 className="text-[17px] font-bold mb-3">{title}</h2>
       <div
-        className="space-y-3 text-[13px] leading-relaxed"
+        className={`space-y-3 text-[13px] leading-relaxed ${contentClassName}`}
         style={{ color: "var(--text-primary)" }}
       >
         {children}
@@ -95,7 +127,10 @@ function WorkedTraceTable() {
   ];
 
   return (
-    <div className="overflow-x-auto rounded-lg border" style={{ borderColor: "var(--border)" }}>
+    <div
+      className="overflow-x-auto rounded-lg border"
+      style={{ borderColor: "var(--border)" }}
+    >
       <table className="w-full border-collapse text-[12px]">
         <thead>
           <tr style={{ background: "var(--bg-panel-2)" }}>
@@ -103,7 +138,10 @@ function WorkedTraceTable() {
               <th
                 key={heading}
                 className="border px-3 py-2 text-left font-bold whitespace-nowrap"
-                style={{ borderColor: "var(--border)", color: "var(--text-primary)" }}
+                style={{
+                  borderColor: "var(--border)",
+                  color: "var(--text-primary)",
+                }}
               >
                 {heading}
               </th>
@@ -144,26 +182,35 @@ export default function StaticMaterialsStub({
     <div className="h-full w-full overflow-y-auto panel-scroll">
       <div className="mx-auto w-full max-w-6xl px-6 py-8 space-y-6">
         <div>
-          <h1 className="text-xl font-bold mb-2">Java Object-Reference Reading: Static Learning</h1>
+          <h1 className="text-xl font-bold mb-2">
+            Java Object-Reference Reading: Static Learning
+          </h1>
           <p className="text-[13px]" style={{ color: "var(--text-primary)" }}>
             Read each section carefully. These materials teach the Java concepts
-            needed to trace object references and determine a program&apos;s final output.
+            needed to trace object references and determine a program&apos;s
+            final output.
           </p>
         </div>
 
         {/* 2-Column Grid Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
           {/* Left Column: Section 1 & Section 3 */}
-          <div className="space-y-6">
-            <Section title="1. Track Variables and Objects Separately">
+          <div className="flex flex-col gap-6">
+            <Section title="1) Track Variables and Objects Separately">
               <p>
-                A variable whose type is a class does not contain the whole object.
-                It contains a <strong style={{ color: "var(--text-primary)" }}>reference</strong> that identifies an object. The object separately contains its fields.
+                A variable whose type is a class does not contain the whole
+                object. It contains a{" "}
+                <strong style={{ color: "var(--text-primary)" }}>
+                  reference
+                </strong>{" "}
+                that identifies an object. The object separately contains its
+                fields.
               </p>
               <CodeBlock>{`Student first = new Student("Maya", 19);`}</CodeBlock>
               <p>
-                This creates one Student object with name = &quot;Maya&quot; and age = 19.
-                The variable <code>first</code> stores a reference to that object.
+                This creates one Student object with name = &quot;Maya&quot; and
+                age = 19. The variable <code>first</code> stores a reference to
+                that object.
               </p>
               <CodeBlock>{`class Student {
     String name;
@@ -175,57 +222,109 @@ export default function StaticMaterialsStub({
     }
 }`}</CodeBlock>
               <p>
-                The constructor receives the values inside <code>new Student(...)</code> and stores them in the new object&apos;s fields.
+                The constructor receives the values inside{" "}
+                <code>new Student(...)</code> and stores them in the new
+                object&apos;s fields.
               </p>
             </Section>
 
-            <Section title="3. Carry the State Forward in a Trace Table">
+            <Section title="3) Carry the State Forward in a Trace Table">
               <p>
                 After each step, record what every variable would read at that
                 moment. Change only the affected entries and carry all unchanged
-                values into the next row. Write “not yet created” until a variable
-                has been declared.
+                values into the next row. Write “not yet created” until a
+                variable has been declared.
               </p>
               <WorkedTraceTable />
               <p>
-                Row 4 changes both <code>second</code> and <code>saved</code> because
-                they share object 2. Row 5 changes only <code>second</code> because
-                reassignment redirects one variable.
+                Row 4 changes both <code>second</code> and <code>saved</code>{" "}
+                because they share object 2. Row 5 changes only{" "}
+                <code>second</code> because reassignment redirects one variable.
               </p>
             </Section>
           </div>
 
-          {/* Right Column: Section 2 & Section 4 */}
-          <div className="space-y-6">
-            <Section title="2. Follow Five Object-Reference Operations">
+          {/* Right Column: Section 2 & a vertically stretched Section 4 */}
+          <div className="flex flex-col gap-6">
+            <Section title="2) Follow Five Object-Reference Operations">
               <p>
-                This example uses different names and values from the test, but it
-                practices the same Java rules.
+                This example uses different names and values from the test, but
+                it practices the same Java rules.
               </p>
               <CodeBlock>{`Student first = new Student("Maya", 19);  // Step 1
 Student second = new Student("Leo", 21); // Step 2
 Student saved = second;                   // Step 3
 second.name = "Noah";                    // Step 4
 second = first;                           // Step 5`}</CodeBlock>
-              <ol className="list-decimal pl-5 space-y-2">
-                <li><strong style={{ color: "var(--text-primary)" }}>Step 1 creates object 1.</strong> <code>first</code> refers to the Student containing Maya / 19.</li>
-                <li><strong style={{ color: "var(--text-primary)" }}>Step 2 creates object 2.</strong> <code>second</code> refers to a separate Student containing Leo / 21.</li>
-                <li><strong style={{ color: "var(--text-primary)" }}>Step 3 copies a reference.</strong> <code>saved = second</code> does not create or copy an object. Both variables now refer to object 2.</li>
-                <li><strong style={{ color: "var(--text-primary)" }}>Step 4 changes a field.</strong> The name inside object 2 becomes Noah. Both <code>second.name</code> and <code>saved.name</code> therefore read Noah.</li>
-                <li><strong style={{ color: "var(--text-primary)" }}>Step 5 reassigns one variable.</strong> <code>second</code> is redirected to object 1. <code>saved</code> still refers to object 2.</li>
+              <ol className="space-y-2.5">
+                <li className="flex gap-2 items-start">
+                  <span className="font-extrabold text-[14px] shrink-0" style={{ color: "var(--text-primary)" }}>1)</span>
+                  <div>
+                    <strong style={{ color: "var(--text-primary)" }}>
+                      Step 1 creates object 1.
+                    </strong>{" "}
+                    <code>first</code> refers to the Student containing Maya / 19.
+                  </div>
+                </li>
+                <li className="flex gap-2 items-start">
+                  <span className="font-extrabold text-[14px] shrink-0" style={{ color: "var(--text-primary)" }}>2)</span>
+                  <div>
+                    <strong style={{ color: "var(--text-primary)" }}>
+                      Step 2 creates object 2.
+                    </strong>{" "}
+                    <code>second</code> refers to a separate Student containing
+                    Leo / 21.
+                  </div>
+                </li>
+                <li className="flex gap-2 items-start">
+                  <span className="font-extrabold text-[14px] shrink-0" style={{ color: "var(--text-primary)" }}>3)</span>
+                  <div>
+                    <strong style={{ color: "var(--text-primary)" }}>
+                      Step 3 copies a reference.
+                    </strong>{" "}
+                    <code>saved = second</code> does not create or copy an object.
+                    Both variables now refer to object 2.
+                  </div>
+                </li>
+                <li className="flex gap-2 items-start">
+                  <span className="font-extrabold text-[14px] shrink-0" style={{ color: "var(--text-primary)" }}>4)</span>
+                  <div>
+                    <strong style={{ color: "var(--text-primary)" }}>
+                      Step 4 changes a field.
+                    </strong>{" "}
+                    The name inside object 2 becomes Noah. Both{" "}
+                    <code>second.name</code> and <code>saved.name</code> therefore
+                    read Noah.
+                  </div>
+                </li>
+                <li className="flex gap-2 items-start">
+                  <span className="font-extrabold text-[14px] shrink-0" style={{ color: "var(--text-primary)" }}>5)</span>
+                  <div>
+                    <strong style={{ color: "var(--text-primary)" }}>
+                      Step 5 reassigns one variable.
+                    </strong>{" "}
+                    <code>second</code> is redirected to object 1.{" "}
+                    <code>saved</code> still refers to object 2.
+                  </div>
+                </li>
               </ol>
             </Section>
 
-            <Section title="4. Determine the Final Printed Output">
+            <Section
+              title="4) Determine the Final Printed Output"
+              className="lg:flex-1 lg:flex lg:flex-col lg:p-6 lg:[&>h2]:mb-4 lg:[&>h2]:text-[19px]"
+              contentClassName="lg:flex lg:flex-1 lg:flex-col lg:justify-between lg:space-y-0 lg:text-[14px] lg:leading-7 lg:[&_pre]:my-4 lg:[&_pre]:px-6 lg:[&_pre]:py-5 lg:[&_pre]:text-[13.5px]"
+            >
               <p>
                 Evaluate output using the references that exist after the final
-                step. First identify the object a variable refers to, and then read
-                the requested fields from that object.
+                step. First identify the object a variable refers to, and then
+                read the requested fields from that object.
               </p>
               <CodeBlock>{`System.out.println(second.name + ", " + second.age);
 System.out.println(saved.name + ", " + saved.age);`}</CodeBlock>
               <p>
-                After step 5, <code>second</code> refers to object 1 and <code>saved</code> still refers to object 2. The output is:
+                After step 5, <code>second</code> refers to object 1 and{" "}
+                <code>saved</code> still refers to object 2. The output is:
               </p>
               <CodeBlock>{`Maya, 19
 Noah, 21`}</CodeBlock>
@@ -233,17 +332,58 @@ Noah, 21`}</CodeBlock>
           </div>
         </div>
 
-        {/* Section 5: Full Width Summary */}
-        <Section title="5. Rules to Use on Any Similar Program">
-          <ul className="list-disc pl-5 space-y-2">
-            <li>Every <code>new</code> expression creates a separate object.</li>
-            <li>A class-type assignment such as <code>saved = second</code> copies a reference, not all the object&apos;s fields.</li>
-            <li>If two variables refer to the same object, a field change through either variable is visible through both.</li>
-            <li>Reassigning a variable changes only that variable&apos;s reference. It does not redirect other variables.</li>
-            <li>An object does not disappear merely because one variable stops referring to it.</li>
-            <li>For each trace-table row, carry forward values that did not change.</li>
-            <li>For output, use the variable-to-object relationships after the final step.</li>
-          </ul>
+        {/* Section 5 returns to a full-width row below the balanced columns. */}
+        <Section title="5) Rules to Use on Any Similar Program">
+          <ol className="space-y-2.5">
+            <li className="flex gap-2 items-start">
+              <span className="font-extrabold text-[14px] shrink-0" style={{ color: "var(--text-primary)" }}>1)</span>
+              <div>
+                Every <code>new</code> expression creates a separate object.
+              </div>
+            </li>
+            <li className="flex gap-2 items-start">
+              <span className="font-extrabold text-[14px] shrink-0" style={{ color: "var(--text-primary)" }}>2)</span>
+              <div>
+                A class-type assignment such as <code>saved = second</code> copies
+                a reference, not all the object&apos;s fields.
+              </div>
+            </li>
+            <li className="flex gap-2 items-start">
+              <span className="font-extrabold text-[14px] shrink-0" style={{ color: "var(--text-primary)" }}>3)</span>
+              <div>
+                If two variables refer to the same object, a field change through
+                either variable is visible through both.
+              </div>
+            </li>
+            <li className="flex gap-2 items-start">
+              <span className="font-extrabold text-[14px] shrink-0" style={{ color: "var(--text-primary)" }}>4)</span>
+              <div>
+                Reassigning a variable changes only that variable&apos;s
+                reference. It does not redirect other variables.
+              </div>
+            </li>
+            <li className="flex gap-2 items-start">
+              <span className="font-extrabold text-[14px] shrink-0" style={{ color: "var(--text-primary)" }}>5)</span>
+              <div>
+                An object does not disappear merely because one variable stops
+                referring to it.
+              </div>
+            </li>
+            <li className="flex gap-2 items-start">
+              <span className="font-extrabold text-[14px] shrink-0" style={{ color: "var(--text-primary)" }}>6)</span>
+              <div>
+                For each trace-table row, carry forward values that did not
+                change.
+              </div>
+            </li>
+            <li className="flex gap-2 items-start">
+              <span className="font-extrabold text-[14px] shrink-0" style={{ color: "var(--text-primary)" }}>7)</span>
+              <div>
+                For output, use the variable-to-object relationships after the
+                final step.
+              </div>
+            </li>
+          </ol>
           <p
             className="rounded-lg border p-3 font-semibold mt-3"
             style={{
@@ -256,7 +396,7 @@ Noah, 21`}</CodeBlock>
             change an object&apos;s field, or redirect one variable?”
           </p>
         </Section>
-        
+
         {/* Learning Summary Card */}
         <section
           className="rounded-xl p-5 border shadow-sm"
@@ -265,55 +405,78 @@ Noah, 21`}</CodeBlock>
             borderColor: "var(--border)",
           }}
         >
-          <div className="flex items-center gap-2.5 mb-3 border-b pb-2.5" style={{ borderColor: "var(--border)" }}>
-            <CheckCircle2 size={20} className="text-emerald-500 flex-shrink-0" aria-hidden="true" />
+          <div
+            className="flex items-center gap-2.5 mb-3 border-b pb-2.5"
+            style={{ borderColor: "var(--border)" }}
+          >
+            <CheckCircle2
+              size={20}
+              className="text-emerald-500 flex-shrink-0"
+              aria-hidden="true"
+            />
             <h2 className="text-[16px] font-bold text-[var(--text-primary)]">
               Summary: Ready for the Post-Test
             </h2>
           </div>
 
           <p className="text-[13px] mb-3.5 text-[var(--text-primary)]">
-            Before continuing to the post-test, keep these 4 core Java object-reference takeaways in mind:
+            Before continuing to the post-test, keep these 4 core Java
+            object-reference takeaways in mind:
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 text-[12.5px]">
-            <div className="rounded-lg p-3 border bg-[var(--bg-panel-2)]" style={{ borderColor: "var(--border)" }}>
-              <div className="font-bold mb-1 text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block flex-shrink-0" />
-                1. Reference vs. Object
+            <div
+              className="rounded-lg p-3 border bg-[var(--bg-panel-2)]"
+              style={{ borderColor: "var(--border)" }}
+            >
+              <div className="font-bold mb-1 text-emerald-600 dark:text-emerald-400">
+                1) Reference vs. Object
               </div>
-              <p style={{ color: "var(--text-primary)" }}>
-                Class variables store memory addresses (references), not full objects. Multiple variables can refer to the same object.
+              <p className="font-bold" style={{ color: "var(--text-primary)" }}>
+                Class variables store memory addresses (references), not full
+                objects. Multiple variables can refer to the same object.
               </p>
             </div>
 
-            <div className="rounded-lg p-3 border bg-[var(--bg-panel-2)]" style={{ borderColor: "var(--border)" }}>
-              <div className="font-bold mb-1 text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block flex-shrink-0" />
-                2. Assignment Copies References
+            <div
+              className="rounded-lg p-3 border bg-[var(--bg-panel-2)]"
+              style={{ borderColor: "var(--border)" }}
+            >
+              <div className="font-bold mb-1 text-emerald-600 dark:text-emerald-400">
+                2) Assignment Copies References
               </div>
-              <p style={{ color: "var(--text-primary)" }}>
-                Writing <code>b = a</code> copies the reference address from <code>a</code> into <code>b</code> without creating a new object.
+              <p className="font-bold" style={{ color: "var(--text-primary)" }}>
+                Writing <code>b = a</code> copies the reference address from{" "}
+                <code>a</code> into <code>b</code> without creating a new
+                object.
               </p>
             </div>
 
-            <div className="rounded-lg p-3 border bg-[var(--bg-panel-2)]" style={{ borderColor: "var(--border)" }}>
-              <div className="font-bold mb-1 text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block flex-shrink-0" />
-                3. Shared Field Modifications
+            <div
+              className="rounded-lg p-3 border bg-[var(--bg-panel-2)]"
+              style={{ borderColor: "var(--border)" }}
+            >
+              <div className="font-bold mb-1 text-emerald-600 dark:text-emerald-400">
+                3) Shared Field Modifications
               </div>
-              <p style={{ color: "var(--text-primary)" }}>
-                Modifying <code>b.name = &quot;...&quot;</code> changes data inside the shared object, immediately visible through all variables pointing to it.
+              <p className="font-bold" style={{ color: "var(--text-primary)" }}>
+                Modifying <code>b.name = &quot;...&quot;</code> changes data
+                inside the shared object, immediately visible through all
+                variables pointing to it.
               </p>
             </div>
 
-            <div className="rounded-lg p-3 border bg-[var(--bg-panel-2)]" style={{ borderColor: "var(--border)" }}>
-              <div className="font-bold mb-1 text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block flex-shrink-0" />
-                4. Reassignment Only Redirects One Variable
+            <div
+              className="rounded-lg p-3 border bg-[var(--bg-panel-2)]"
+              style={{ borderColor: "var(--border)" }}
+            >
+              <div className="font-bold mb-1 text-emerald-600 dark:text-emerald-400">
+                4) Reassignment Only Redirects One Variable
               </div>
-              <p style={{ color: "var(--text-primary)" }}>
-                Reassigning <code>b = c</code> changes where <code>b</code> points. It does not alter other variables or erase existing objects.
+              <p className="font-bold" style={{ color: "var(--text-primary)" }}>
+                Reassigning <code>b = c</code> changes where <code>b</code>{" "}
+                points. It does not alter other variables or erase existing
+                objects.
               </p>
             </div>
           </div>
@@ -327,8 +490,12 @@ Noah, 21`}</CodeBlock>
             {onBackToPretest}
             <div>
               <h2 className="text-[15px] font-bold">Reading complete</h2>
-              <p className="mt-1 text-[13px]" style={{ color: "var(--text-primary)" }}>
-                You reviewed every object-reference concept used in the trace exercise.
+              <p
+                className="mt-1 text-[13px]"
+                style={{ color: "var(--text-primary)" }}
+              >
+                You reviewed every object-reference concept used in the trace
+                exercise.
               </p>
             </div>
           </div>
@@ -341,7 +508,11 @@ Noah, 21`}</CodeBlock>
               stroke="currentColor"
               strokeWidth={2.5}
             >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"
+              />
             </svg>
           </button>
         </div>

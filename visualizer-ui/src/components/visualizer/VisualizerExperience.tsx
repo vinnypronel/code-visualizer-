@@ -1782,10 +1782,6 @@ export default function VisualizerExperience({
   const [leftW, setLeftW]   = useState(540); // px
 
   const [presetId, setPresetId]       = useState<string>(LESSON_PRESET_ID);
-
-  useEffect(() => {
-    setSelectedLessonId(presetId);
-  }, [presetId, setSelectedLessonId]);
   const [currentStep, setCurrentStep] = useState<number>(0);
   const [lessonPhase, setLessonPhase] = useState<LessonPhase>("intro");
   const [isTourOpen, setIsTourOpen]   = useState(false);
@@ -1908,12 +1904,13 @@ export default function VisualizerExperience({
     setIsEditing(false);
     setRunState({ status: "idle" });
     setPresetId(id);
+    setSelectedLessonId(id);
     setCurrentStep(0);
     setLessonPhase(options?.inPlace ? "ready" : "intro");
     if (options?.inPlace) onExampleAttempt?.(id);
     /* A newly loaded guided example starts at its first required card. */
     setIsWalkthroughActive(Boolean(options?.inPlace && hasGuidedWalkthrough(id)));
-  }, [abortPendingRun, onExampleAttempt]);
+  }, [abortPendingRun, onExampleAttempt, setSelectedLessonId]);
 
   const handleStartEdit = useCallback(() => {
     abortPendingRun();
@@ -2082,6 +2079,7 @@ export default function VisualizerExperience({
         onPresetChange={handlePresetChange}
         backButton={introBackButton}
         onBegin={() => {
+          setSelectedLessonId(activePreset.id);
           onExampleAttempt?.(activePreset.id);
           setLessonPhase("ready");
           setTourInitialStep(0);

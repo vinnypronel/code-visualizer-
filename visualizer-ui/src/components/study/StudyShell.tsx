@@ -101,15 +101,17 @@ export default function StudyShell({
                 }}
               >
                 <span>
-                  {isStatic
-                    ? "Java Object-Reference Reading: Static Learning"
-                    : session.selectedLessonId === "arraylist"
+                  {!session.selectedLessonId
+                    ? "Kean University"
+                    : isStatic
+                      ? "Java Object-Reference Reading: Static Learning"
+                      : session.selectedLessonId === "arraylist"
                       ? "Array List: Contiguous Storage & Resizing"
                       : session.selectedLessonId === "stack"
                         ? "Stack: LIFO Stack Push Operations"
                         : session.selectedLessonId === "livetrace"
                           ? "Live Trace: multiply(5, 10)"
-                          : session.selectedLessonId === "linkedlist" || !session.selectedLessonId
+                          : session.selectedLessonId === "linkedlist"
                             ? "Linked List: Insertion & Linking"
                             : "Custom Java Code"}
                 </span>
