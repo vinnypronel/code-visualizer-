@@ -33,12 +33,23 @@ export function BackButtonWithTooltip({
   onClick,
   tooltipText = "Your responses will be saved automatically if you go back.",
   showTooltip = true,
+  position = "left",
 }: {
   label: string;
   onClick: () => void;
   tooltipText?: string;
   showTooltip?: boolean;
+  position?: "top" | "bottom" | "right" | "left";
 }) {
+  const posClasses =
+    position === "right"
+      ? "left-full top-1/2 -translate-y-1/2 ml-2.5"
+      : position === "left"
+        ? "right-full top-1/2 -translate-y-1/2 mr-2.5"
+        : position === "top"
+          ? "bottom-[calc(100%+8px)] left-0 group-hover:translate-y-[-2px]"
+          : "top-[calc(100%+8px)] left-0 group-hover:translate-y-[2px]";
+
   return (
     <div className="group relative inline-flex items-center">
       <button
@@ -56,7 +67,7 @@ export function BackButtonWithTooltip({
       {showTooltip && (
         <span
           role="tooltip"
-          className="pointer-events-none absolute top-[calc(100%+8px)] left-0 z-50 whitespace-nowrap rounded-md bg-slate-900 px-2.5 py-1 text-[11px] font-medium text-white opacity-0 shadow-lg border border-slate-700 transition-all duration-150 group-hover:opacity-100 group-hover:translate-y-[2px]"
+          className={`pointer-events-none absolute z-50 whitespace-nowrap rounded-md bg-slate-900 px-2.5 py-1 text-[11px] font-medium text-white opacity-0 shadow-lg border border-slate-700 transition-all duration-150 group-hover:opacity-100 ${posClasses}`}
         >
           {tooltipText}
         </span>
