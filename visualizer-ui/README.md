@@ -72,6 +72,8 @@ Add:
 SUPABASE_URL=https://your-project-ref.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 NEXT_PUBLIC_MSFORMS_URL=https://forms.office.com/your-form-link
+NEXT_PUBLIC_TURNSTILE_SITE_KEY=your-public-site-key
+TURNSTILE_SECRET_KEY=your-server-only-secret-key
 ```
 
 Important:

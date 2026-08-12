@@ -1,7 +1,8 @@
 # Pilot database runbook
 
-The application is ready to collect pilot data only after migration
-`supabase/migrations/0003_study_integrity.sql` is applied to the hosted
+The application is ready to collect pilot data only after migrations
+`supabase/migrations/0003_study_integrity.sql` and
+`supabase/migrations/0004_event_abuse_limits.sql` are applied to the hosted
 Supabase project.
 
 ## One-time schema upgrade
@@ -67,7 +68,13 @@ participant opened the external form.
 
 - `npm run db:check` passes.
 - Production has `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`,
-  `NEXT_PUBLIC_MSFORMS_URL`, and all three `ADMIN_*` variables.
+  `NEXT_PUBLIC_MSFORMS_URL`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY`,
+  `TURNSTILE_SECRET_KEY`, and all three `ADMIN_*` variables.
+- The Turnstile widget is restricted to the production hostname and completing
+  it allows one participant assignment.
+- Vercel Firewall has a rate-limit rule for `POST /api/session/assign`. Choose
+  a limit above the expected number of students behind one university NAT IP;
+  monitor it before switching the action from log/challenge to block.
 - The Forms URL opens and the form requires participant ID.
 - The production page has no Dev Jump controls.
 - The researcher can sign in to `/admin` and export CSV.

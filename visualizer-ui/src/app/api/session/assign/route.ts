@@ -12,7 +12,8 @@
 import { CONSENT_VERSION, RAND_LEARNING_TOOL } from "@/lib/studyConfig";
 import { callRpc } from "@/lib/supabaseServer";
 import type { AssignResponse } from "@/lib/studyTypes";
-import { randomUUID } from "node:crypto";
+import { acceptsJsonBody, isSameOriginMutation, noStoreHeaders } from "@/lib/requestSecurity";
+import { verifyAssignmentChallenge } from "@/lib/turnstile";
 
 // Never cache; every call must mint a fresh ID at request time.
 export const dynamic = "force-dynamic";
@@ -21,10 +22,18 @@ const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0
 const ASSIGN_ATTEMPTS = 3;
 
 export async function POST(request: Request) {
+  if (!isSameOriginMutation(request)) {
+    return Response.json({ error: "Request not allowed." }, { status: 403, headers: noStoreHeaders() });
+  }
+  if (!acceptsJsonBody(request, 4_096)) {
+    return Response.json({ error: "Invalid request." }, { status: 400, headers: noStoreHeaders() });
+  }
+
   try {
     let body: {
       assignment_request_id?: string;
       session_token?: string;
+      turnstile_token?: string;
     } = {};
     try {
       const parsed: unknown = await request.json();
@@ -32,16 +41,28 @@ export async function POST(request: Request) {
         body = parsed as typeof body;
       }
     } catch {
-      // Older cached clients sent an empty body. They still receive a secure,
-      // unique assignment instead of being rejected with status 400.
+      return Response.json({ error: "Invalid request." }, { status: 400, headers: noStoreHeaders() });
     }
 
-    const assignmentRequestId = UUID_PATTERN.test(body.assignment_request_id ?? "")
-      ? body.assignment_request_id as string
-      : randomUUID();
-    const sessionToken = UUID_PATTERN.test(body.session_token ?? "")
-      ? body.session_token as string
-      : randomUUID();
+    if (
+      !UUID_PATTERN.test(body.assignment_request_id ?? "") ||
+      !UUID_PATTERN.test(body.session_token ?? "")
+    ) {
+      return Response.json({ error: "Invalid assignment request." }, { status: 400, headers: noStoreHeaders() });
+    }
+    const assignmentRequestId = body.assignment_request_id as string;
+    const sessionToken = body.session_token as string;
+    const challengePassed = await verifyAssignmentChallenge(
+      request,
+      body.turnstile_token ?? "",
+      assignmentRequestId,
+    );
+    if (!challengePassed) {
+      return Response.json(
+        { error: "Session verification failed. Please try again." },
+        { status: 403, headers: noStoreHeaders() },
+      );
+    }
 
     let rows: AssignResponse[] | null = null;
     let lastError: unknown = null;
@@ -68,10 +89,13 @@ export async function POST(request: Request) {
       throw new Error("assign_participant returned no row");
     }
     return Response.json(row satisfies AssignResponse, {
-      headers: { "Cache-Control": "no-store, max-age=0" },
+      headers: noStoreHeaders(),
     });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "assignment failed";
-    return Response.json({ error: message }, { status: 500 });
+    console.error("Participant assignment failed", err);
+    return Response.json(
+      { error: "We could not start the study session. Please try again." },
+      { status: 503, headers: noStoreHeaders() },
+    );
   }
 }

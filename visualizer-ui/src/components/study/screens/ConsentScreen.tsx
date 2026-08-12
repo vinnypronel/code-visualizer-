@@ -1,17 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import StudyShell from "@/components/study/StudyShell";
 import { useStudy } from "@/components/study/StudyProvider";
 import { ConsentBody, CONSENT_META } from "@/content/consent";
+import AssignmentChallenge from "@/components/study/AssignmentChallenge";
 
 export default function ConsentScreen() {
   const { acceptConsent, declineConsent, isAssigning, assignError } = useStudy();
   const [choice, setChoice] = useState<"agree" | "disagree" | null>(null);
+  const [challengeToken, setChallengeToken] = useState<string | null>(null);
+  const challengeRequired = Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY);
+  const handleChallenge = useCallback((token: string | null) => setChallengeToken(token), []);
 
   const onContinue = () => {
     if (choice === "agree") {
-      void acceptConsent();
+      void acceptConsent(challengeToken ?? undefined);
     } else if (choice === "disagree") {
       declineConsent();
     }
@@ -99,6 +103,7 @@ export default function ConsentScreen() {
 
             {/* Continue Button Joined Right Next to Options */}
             <div className="flex flex-col items-end gap-2 flex-shrink-0 self-end pb-0.5 ml-2">
+              {choice === "agree" && <AssignmentChallenge onToken={handleChallenge} />}
               {assignError && (
                 <span className="text-[12px]" style={{ color: "var(--danger)" }}>
                   {assignError}
@@ -106,10 +111,10 @@ export default function ConsentScreen() {
               )}
               <button
                 className="btn-primary text-xs py-2.5 px-6 shadow-lg"
-                disabled={choice === null || isAssigning}
+                disabled={choice === null || isAssigning || (choice === "agree" && challengeRequired && !challengeToken)}
                 style={{
-                  opacity: choice === null || isAssigning ? 0.5 : 1,
-                  cursor: choice === null || isAssigning ? "not-allowed" : "pointer",
+                  opacity: choice === null || isAssigning || (choice === "agree" && challengeRequired && !challengeToken) ? 0.5 : 1,
+                  cursor: choice === null || isAssigning || (choice === "agree" && challengeRequired && !challengeToken) ? "not-allowed" : "pointer",
                 }}
                 onClick={onContinue}
               >

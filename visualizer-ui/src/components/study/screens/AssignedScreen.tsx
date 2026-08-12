@@ -16,12 +16,8 @@ function TypewriterText({
   delay?: number;
 }) {
   const [displayedText, setDisplayedText] = useState("");
-  const [isTyping, setIsTyping] = useState(true);
 
   useEffect(() => {
-    setDisplayedText("");
-    setIsTyping(true);
-
     let timeoutId: NodeJS.Timeout;
     let index = 0;
 
@@ -33,8 +29,6 @@ function TypewriterText({
         // Human typing cadence: slight pause at periods/commas
         const pause = char === "." || char === "," ? 70 : Math.floor(Math.random() * 8);
         timeoutId = setTimeout(typeNextChar, speed + pause);
-      } else {
-        setIsTyping(false);
       }
     };
 
@@ -56,7 +50,7 @@ function TypewriterText({
 
 /* Shows the freshly minted participant ID centered on screen with typewriter text effect. */
 export default function AssignedScreen() {
-  const { session, isAssigning, assignError, goTo, acceptConsent, returnToConsent } = useStudy();
+  const { session, isAssigning, assignError, goTo, returnToConsent } = useStudy();
   const isLoading = isAssigning || !session.participantId;
 
   return (
@@ -168,7 +162,7 @@ export default function AssignedScreen() {
               <button
                 type="button"
                 className="btn-primary mt-4"
-                onClick={() => void acceptConsent()}
+                onClick={() => goTo("consent")}
                 disabled={isAssigning}
                 style={{ opacity: isAssigning ? 0.6 : 1 }}
               >

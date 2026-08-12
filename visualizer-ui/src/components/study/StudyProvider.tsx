@@ -62,7 +62,7 @@ interface StudyContextValue {
   /* Last-resort recovery: save the unsent queue to a JSON file. */
   downloadUnsavedResponses: () => void;
   /* Consent accepted: mint the participant ID on the server, then advance. */
-  acceptConsent: () => Promise<void>;
+  acceptConsent: (turnstileToken?: string) => Promise<void>;
   /* Consent declined: terminal, no ID minted, nothing logged. */
   declineConsent: () => void;
   /* Move the machine to a specific phase. */
@@ -112,6 +112,7 @@ export function StudyProvider({ children }: { children: React.ReactNode }) {
   const [isAssigning, setIsAssigning] = useState(false);
   const [outbox, setOutbox] = useState<OutboxItem[]>(readOutbox);
   const [isFlushing, setIsFlushing] = useState(false);
+  const assignmentChallengeRef = useRef<string | null>(null);
 
   const sessionRef = useLatestRef(session);
   const outboxRef = useLatestRef(outbox);
@@ -124,7 +125,8 @@ export function StudyProvider({ children }: { children: React.ReactNode }) {
     setSession((s) => ({ ...s, phase: "declined" }));
   }, []);
 
-  const acceptConsent = useCallback(async () => {
+  const acceptConsent = useCallback(async (turnstileToken?: string) => {
+    if (turnstileToken) assignmentChallengeRef.current = turnstileToken;
     const assignmentRequestId = sessionRef.current.assignmentRequestId ?? makeUuid();
     const sessionToken = sessionRef.current.sessionToken ?? makeUuid();
     setIsAssigning(true);
@@ -143,6 +145,7 @@ export function StudyProvider({ children }: { children: React.ReactNode }) {
         body: JSON.stringify({
           assignment_request_id: assignmentRequestId,
           session_token: sessionToken,
+          turnstile_token: assignmentChallengeRef.current,
         }),
       });
       if (!res.ok) {
