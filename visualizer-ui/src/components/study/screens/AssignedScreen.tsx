@@ -69,6 +69,7 @@ export default function AssignedScreen() {
           <BackButtonWithTooltip
             label="Back to Home"
             onClick={returnToConsent}
+            position="left"
             tooltipText="Going back will reset your assigned Participant ID."
           />
           <button

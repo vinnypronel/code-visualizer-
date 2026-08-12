@@ -43,12 +43,12 @@ export function BackButtonWithTooltip({
 }) {
   const posClasses =
     position === "right"
-      ? "left-full top-1/2 -translate-y-1/2 ml-2.5"
+      ? "left-full top-1/2 -translate-y-1/2 ml-2"
       : position === "left"
-        ? "right-full top-1/2 -translate-y-1/2 mr-2.5"
-        : position === "top"
-          ? "bottom-[calc(100%+8px)] left-0 group-hover:translate-y-[-2px]"
-          : "top-[calc(100%+8px)] left-0 group-hover:translate-y-[2px]";
+        ? "right-full top-1/2 -translate-y-1/2 mr-2"
+        : position === "bottom"
+          ? "top-[calc(100%+6px)] left-0"
+          : "bottom-[calc(100%+6px)] left-0";
 
   return (
     <div className="group relative inline-flex items-center">
@@ -67,7 +67,7 @@ export function BackButtonWithTooltip({
       {showTooltip && (
         <span
           role="tooltip"
-          className={`pointer-events-none absolute z-50 whitespace-nowrap rounded-md bg-slate-900 px-2.5 py-1 text-[11px] font-medium text-white opacity-0 shadow-lg border border-slate-700 transition-all duration-150 group-hover:opacity-100 ${posClasses}`}
+          className={`pointer-events-none absolute z-50 max-w-[160px] w-max whitespace-normal leading-tight rounded-md bg-slate-900 px-2.5 py-1.5 text-[11px] font-medium text-white opacity-0 shadow-lg border border-slate-700 transition-all duration-150 group-hover:opacity-100 ${posClasses}`}
         >
           {tooltipText}
         </span>
@@ -152,12 +152,14 @@ export default function TimedTestScreen({
             <BackButtonWithTooltip
               label="Back to Home"
               onClick={returnToConsent}
+              position="left"
               tooltipText="Going back will reset your assigned Participant ID and answers."
             />
           ) : (
             <BackButtonWithTooltip
               label="Back to Learning"
               onClick={() => goTo("learning")}
+              position="left"
               tooltipText="Going back will return you to the learning activity."
             />
           )}
