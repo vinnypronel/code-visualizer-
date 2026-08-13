@@ -349,10 +349,10 @@ export default function CodeEditorPanel({
                 </span>
               )}
               <button id="onboarding-restart-button" onClick={onReset} className="icon-button" title="Back to lesson selection" aria-label="Back to lesson selection">
-                <RotateCcw size={15} />
+                <ChevronLeft size={16} />
               </button>
               <button id="onboarding-step-back" onClick={onStepBack} disabled={!canGoBack} className="icon-button" title="Previous step" aria-label="Previous step">
-                <ChevronLeft size={16} />
+                <RotateCcw size={15} />
               </button>
               <div className={isRunThisLine ? "run-line-button-slot" : undefined}>
                 <button
