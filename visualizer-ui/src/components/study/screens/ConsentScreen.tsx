@@ -27,7 +27,13 @@ export default function ConsentScreen() {
       heading={CONSENT_META.title}
       subheading="Please read the following before deciding whether to take part."
     >
-      <div className="flex flex-col lg:flex-row items-start gap-5 w-full max-w-[1360px]">
+      {/*
+        Side by side needs ~1270px: shell padding 96 + consent box 560 +
+        question column 440 + button 135 + gaps. Below that the Continue button
+        was pushed off-screen and clipped, so the two blocks stack until the
+        room genuinely exists.
+      */}
+      <div className="flex flex-col min-[1300px]:flex-row items-start gap-5 w-full max-w-[1360px]">
         {/* Scrollable Consent Form Text Box */}
         <div
           className="w-full lg:w-[560px] max-w-[560px] rounded-xl overflow-hidden shadow-sm flex-shrink-0"

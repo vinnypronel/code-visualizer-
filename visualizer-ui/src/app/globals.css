@@ -1580,3 +1580,38 @@ button:disabled, [role="button"][aria-disabled="true"] {
 .guide-drag-handle.is-dragging {
   cursor: grabbing !important;
 }
+
+/*
+ * Large-monitor upscaling.
+ *
+ * The approved study layout is built from fixed px sizes, so on a wide monitor
+ * it kept its physical size and left dead margins instead of filling the
+ * screen. Scaling the shell preserves every proportion, position and spacing
+ * exactly as designed and simply renders it larger.
+ *
+ * Height is divided by the same factor so the scaled shell still measures one
+ * viewport tall and no vertical scrollbar appears. The divisor has to be a
+ * literal: calc() rejects division by a var(), which silently drops the rule.
+ *
+ * The 1536px laptop stays at 1, matching the reference desktop design.
+ */
+.study-shell {
+  zoom: 1;
+  height: 100dvh;
+}
+
+@media (min-width: 1600px) {
+  .study-shell { zoom: 1.12; height: calc(100dvh / 1.12); }
+}
+
+@media (min-width: 1800px) {
+  .study-shell { zoom: 1.25; height: calc(100dvh / 1.25); }
+}
+
+@media (min-width: 2200px) {
+  .study-shell { zoom: 1.4; height: calc(100dvh / 1.4); }
+}
+
+@media (min-width: 2800px) {
+  .study-shell { zoom: 1.6; height: calc(100dvh / 1.6); }
+}

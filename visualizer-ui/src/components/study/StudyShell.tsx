@@ -61,7 +61,7 @@ export default function StudyShell({
 
   return (
     <div
-      className="flex flex-col h-full w-full"
+      className="study-shell flex flex-col w-full"
       style={{ background: "var(--bg-base)", color: "var(--text-primary)" }}
     >
       {/* Header: study name + phase stepper + timer slot */}
@@ -69,7 +69,7 @@ export default function StudyShell({
         className="relative flex-shrink-0 border-b select-none"
         style={{ borderColor: "var(--border)", background: "var(--bg-header)" }}
       >
-        <div className="w-full px-4 sm:px-6 py-1.5 flex items-center justify-between gap-4 min-h-[46px]">
+        <div className="relative w-full px-4 sm:px-6 py-1.5 flex items-center justify-between gap-4 min-h-[46px]">
           {/* Left: Kean Logo + Title + Version Badge */}
           <div
             onClick={returnToConsent}
@@ -120,7 +120,13 @@ export default function StudyShell({
           </div>
 
           {/* Center: Stage Tracker */}
-          <ol className="hidden md:flex items-center gap-1.5 flex-1 max-w-2xl mx-auto px-2">
+          {/*
+            From xl up there is room to pin the tracker to the true header
+            centre, so it stays centred no matter how wide the logo block on
+            the left or the timer block on the right happen to be. Below xl the
+            side blocks would collide with it, so it stays in normal flow.
+          */}
+          <ol className="hidden lg:flex items-center gap-1.5 flex-1 max-w-2xl mx-auto px-2 lg:absolute lg:left-1/2 lg:-translate-x-1/2 lg:mx-0 lg:w-[520px] lg:flex-none">
             {STAGES.map((stage, i) => {
               const state =
                 i < stageIndex ? "done" : i === stageIndex ? "active" : "todo";
@@ -198,7 +204,7 @@ export default function StudyShell({
         <main className="flex-1 min-h-0 overflow-hidden">{children}</main>
       ) : (
         <main className={`flex-1 min-h-0 ${noScroll ? "overflow-hidden flex flex-col items-center justify-center" : "overflow-y-auto panel-scroll"}`}>
-          <div className={`w-full max-w-[1440px] ${noScroll ? "px-4 sm:px-6 py-2 flex-1 flex flex-col justify-center items-center mx-auto" : "pl-20 sm:pl-44 pr-6 sm:pr-12 py-5 sm:py-6"}`}>
+          <div className={`w-full max-w-[1440px] ${noScroll ? "px-4 sm:px-6 py-2 flex-1 flex flex-col justify-center items-center mx-auto" : "mx-auto px-6 lg:px-12 py-5 sm:py-6"}`}>
             {heading && <h1 className="text-xl font-bold mb-1">{heading}</h1>}
             {subheading && (
               <p
