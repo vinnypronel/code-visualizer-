@@ -11,11 +11,12 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Download, LogOut, RefreshCw, X } from "lucide-react";
+import { ArrowLeft, Check, Download, LogOut, Minus, RefreshCw, X } from "lucide-react";
+import { POSTTEST, PRETEST, type GridCell, type TestDef } from "@/data/tests";
 import {
   conditionLabel,
   endedByCounts,
-  exampleCounts,
+  EXAMPLE_LABELS,
   funnelCounts,
   itemAccuracy,
   mean,
@@ -30,14 +31,13 @@ import type { Condition } from "@/lib/studyTypes";
 import {
   Card,
   FunnelChart,
-  GroupedBarChart,
   HBarChart,
   ItemAccuracyGrid,
   Legend,
+  PhaseTimePlot,
   SERIES,
-  SlopeChart,
-  type SlopePoint,
 } from "./charts";
+import { GooglePairedScoreChart, type PairedScorePoint } from "./GooglePairedScoreChart";
 
 type Filter = "all" | Condition;
 
@@ -67,33 +67,60 @@ export default function AdminDashboard({
   );
 
   const summaries = useMemo(() => CONDITIONS.map((c) => summarizeCondition(all, c)), [all]);
-  const funnel = useMemo(() => funnelCounts(views), [views]);
-  const examples = useMemo(
-    () => exampleCounts(all.filter((v) => v.condition === "ai")),
-    [all],
-  );
-  const preItems = useMemo(() => itemAccuracy(views, "pretest"), [views]);
-  const postItems = useMemo(() => itemAccuracy(views, "posttest"), [views]);
+  const funnels = useMemo(() => CONDITIONS.map((condition) => ({
+    condition,
+    stages: funnelCounts(all.filter((view) => view.condition === condition)),
+  })), [all]);
+  const pairedViews = useMemo(() => views.filter((view) => view.gain != null), [views]);
+  const preItems = useMemo(() => itemAccuracy(pairedViews, "pretest"), [pairedViews]);
+  const postItems = useMemo(() => itemAccuracy(pairedViews, "posttest"), [pairedViews]);
 
-  const completed = views.filter((v) => v.completed).length;
-  const questionnaireOpened = views.filter((v) => v.questionnaireOpened).length;
   const scored = views.filter((v) => v.gain != null);
   const overallGain = mean(scored.map((v) => v.gain as number));
-  const medianTotal = median(
-    views.map((v) => v.totalMinutes).filter((n): n is number => n != null),
+  const medianStudyMinutes = median(
+    views.map((v) => v.studyMinutes).filter((n): n is number => n != null),
   );
 
-  const slopePoints: SlopePoint[] = views
+  const pairedScorePoints: PairedScorePoint[] = views
     .filter((v) => v.pretest?.percent != null && v.posttest?.percent != null)
     .map((v) => ({
       id: v.participantId,
+      condition: v.condition,
       pre: v.pretest!.percent!,
       post: v.posttest!.percent!,
-      color: SERIES[v.condition],
     }));
 
   const preEnded = endedByCounts(views, "pretest");
   const postEnded = endedByCounts(views, "posttest");
+  const aiSummary = summaries.find((summary) => summary.condition === "ai")!;
+  const staticSummary = summaries.find((summary) => summary.condition === "static")!;
+  const comparisonPairs = aiSummary.scoredPairs + staticSummary.scoredPairs;
+  const baselineDifference = aiSummary.pretestMean == null || staticSummary.pretestMean == null
+    ? null
+    : Math.round(Math.abs(aiSummary.pretestMean - staticSummary.pretestMean) * 10) / 10;
+
+  const timeGroups = CONDITIONS.map((condition) => {
+    const group = all.filter((view) => view.condition === condition);
+    const summary = summaries.find((candidate) => candidate.condition === condition)!;
+    return {
+      key: condition,
+      label: conditionLabel(condition),
+      color: SERIES[condition],
+      phases: [
+        { label: "Pre-test", values: group.map((v) => v.pretestMinutes).filter((n): n is number => n != null), median: summary.pretestMedian },
+        { label: "Learning", values: group.map((v) => v.learningMinutes).filter((n): n is number => n != null), median: summary.learningMedian },
+        { label: "Post-test", values: group.map((v) => v.posttestMinutes).filter((n): n is number => n != null), median: summary.posttestMedian },
+      ],
+    };
+  });
+
+  const aiParticipants = all.filter((view) => view.condition === "ai");
+  const lessonEngagement = Object.entries(EXAMPLE_LABELS).map(([id, label]) => ({
+    id,
+    label,
+    opened: aiParticipants.filter((view) => view.examplesTried.includes(id)).length,
+    completed: aiParticipants.filter((view) => view.learningCompleted && view.measuredLessonId === id).length,
+  }));
 
   function handleExport() {
     const blob = new Blob([toCsv(views)], { type: "text/csv;charset=utf-8" });
@@ -113,12 +140,26 @@ export default function AdminDashboard({
 
   const itemRows = preItems.map((p, i) => {
     const post = postItems[i];
+    const breakdown = (item: typeof p | undefined) => item && item.n > 0 ? {
+      correct: item.correct,
+      incorrect: item.answered - item.correct,
+      unanswered: item.n - item.answered,
+      answered: item.answered,
+      n: item.n,
+      percent: Math.round((item.correct / item.n) * 100),
+    } : null;
     return {
       label: p.label,
-      pre: p.n > 0 ? Math.round((p.correct / p.n) * 100) : null,
-      post: post && post.n > 0 ? Math.round((post.correct / post.n) * 100) : null,
+      pre: breakdown(p),
+      post: breakdown(post),
     };
   });
+
+  const comparisonScope = (
+    <span className="rounded-full px-2 py-1 text-[10px] font-semibold" style={{ background: "#eef2f7", color: "var(--text-secondary)" }}>
+      Always compares both conditions
+    </span>
+  );
 
   const filterButton = (value: Filter, label: string, count: number) => {
     const active = filter === value;
@@ -218,19 +259,9 @@ export default function AdminDashboard({
           <dl className="flex min-w-0 flex-1 flex-wrap items-center justify-start gap-x-6 gap-y-2 xl:justify-end">
             {[
               { label: "Participants", value: String(views.length), detail: `${all.length} total` },
-              {
-                label: "Form opened",
-                value: String(questionnaireOpened),
-                detail: views.length > 0 ? `${Math.round((questionnaireOpened / views.length) * 100)}%` : "no rows",
-              },
-              {
-                label: "Submitted",
-                value: String(completed),
-                detail: views.length > 0 ? `${Math.round((completed / views.length) * 100)}%` : "no rows",
-              },
               { label: "Scored pairs", value: String(scored.length), detail: "pre + post" },
-              { label: "Mean gain", value: pct(overallGain), detail: "percentage points" },
-              { label: "Session", value: medianTotal == null ? "-" : `${medianTotal}m`, detail: "median" },
+              { label: "Mean gain", value: pct(overallGain, " pp"), detail: "paired participants" },
+              { label: "Study duration", value: medianStudyMinutes == null ? "-" : `${medianStudyMinutes}m`, detail: "consent to post-test · median" },
             ].map((metric) => (
               <div key={metric.label} className="flex items-baseline gap-2 whitespace-nowrap">
                 <dt className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
@@ -247,109 +278,126 @@ export default function AdminDashboard({
           </dl>
         </div>
 
-        <div className="mb-5 grid gap-4 lg:grid-cols-2">
-          <Card
-            title="Pre-test and post-test accuracy by condition"
-            subtitle="Mean percent correct across the 14 graded Q1 items"
-            actions={
-              <Legend
-                items={[
-                  { label: "AI visualizer", color: SERIES.ai },
-                  { label: "Static materials", color: SERIES.static },
-                ]}
-              />
-            }
-          >
-            <GroupedBarChart
-              categories={["Pre-test", "Post-test", "Gain"]}
-              unit="%"
-              yMax={100}
-              series={summaries.map((s) => ({
-                key: s.condition,
-                label: s.label,
-                color: SERIES[s.condition],
-                values: [s.pretestMean, s.posttestMean, s.gainMean],
-              }))}
-            />
-            <p className="mt-3 text-xs" style={{ color: "var(--text-muted)" }}>
-              {summaries
-                .map((s) => `${s.label}: n=${s.scoredPairs} scored, SD gain ${s.gainSd ?? "-"}`)
-                .join(" · ")}
-              . With a pilot-sized n, read these as directional, not significant.
+        <Card
+          title="Pilot score results"
+          subtitle="A compact descriptive check for a very small pilot sample"
+          actions={comparisonScope}
+          className="mb-5"
+        >
+          <div className="grid gap-3 lg:grid-cols-[1fr_1fr_1.1fr]">
+            {summaries.map((summary) => (
+              <section key={summary.condition} className="rounded-xl border p-4" style={{ borderColor: "#dbe4ef", background: "#f8fafc" }}>
+                <h3 className="flex items-center gap-2 text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
+                  <span className="h-2.5 w-2.5 rounded-sm" style={{ background: SERIES[summary.condition] }} />
+                  {summary.label}
+                </h3>
+                <p className="mt-4 flex items-center gap-2 text-2xl font-bold tabular-nums" style={{ color: "var(--text-primary)" }}>
+                  <span>{pct(summary.pretestMean)}</span>
+                  <span className="text-base font-normal" style={{ color: "var(--text-muted)" }}>→</span>
+                  <span>{pct(summary.posttestMean)}</span>
+                </p>
+                <p className="mt-1 text-xs" style={{ color: "var(--text-secondary)" }}>Average pre-test → average post-test</p>
+                <div className="mt-4 flex items-center justify-between border-t pt-3 text-xs" style={{ borderColor: "#dbe4ef" }}>
+                  <span style={{ color: "var(--text-secondary)" }}>Average change</span>
+                  <strong className="tabular-nums" style={{ color: "var(--text-primary)" }}>{pct(summary.gainMean, " pp")}</strong>
+                </div>
+                <p className="mt-1 text-[11px]" style={{ color: "var(--text-muted)" }}>{summary.scoredPairs} paired participant{summary.scoredPairs === 1 ? "" : "s"}</p>
+              </section>
+            ))}
+
+            <section className="rounded-xl border p-4" style={{ borderColor: "#f0cf7a", background: "#fff8e6" }}>
+              <h3 className="text-sm font-semibold" style={{ color: "#6b4b00" }}>How to use this pilot result</h3>
+              <p className="mt-3 text-xs leading-relaxed" style={{ color: "#6b4b00" }}>
+                The conditions started <strong>{baselineDifference == null ? "—" : `${baselineDifference} percentage points`}</strong> apart on average.
+                With only {comparisonPairs} paired participants, review each person&apos;s record below and use these numbers to check the study workflow and data collection—not to decide which condition performs better.
+              </p>
+            </section>
+          </div>
+        </Card>
+
+        <Card
+          title="Individual pilot results"
+          subtitle="Every paired participant's exact pre-test score, post-test score, and change"
+          actions={<span className="text-[10px]" style={{ color: "var(--text-muted)" }}>Responds to the condition filter</span>}
+          className="mb-5"
+        >
+          <GooglePairedScoreChart points={pairedScorePoints} />
+        </Card>
+
+        <Card title="Completion funnel by condition" subtitle="Stage-to-stage and overall retention; the largest loss is highlighted" actions={comparisonScope} className="mb-5">
+          <div className="grid gap-6 xl:grid-cols-2">
+            {funnels.map(({ condition, stages }) => (
+              <section key={condition} className="rounded-lg border p-3" style={{ borderColor: "#dbe4ef" }}>
+                <h3 className="mb-3 flex items-center gap-2 text-xs font-semibold" style={{ color: "var(--text-primary)" }}>
+                  <span className="h-2.5 w-2.5 rounded-sm" style={{ background: SERIES[condition] }} />
+                  {conditionLabel(condition)} · n={stages[0]?.count ?? 0}
+                </h3>
+                <FunnelChart stages={stages} color={SERIES[condition]} />
+              </section>
+            ))}
+          </div>
+        </Card>
+
+        <Card title="Time on each phase" subtitle="Participant-level durations with median and sample size" actions={comparisonScope} className="mb-5">
+          <PhaseTimePlot groups={timeGroups} />
+          {aiSummary.posttestMedian != null && staticSummary.posttestMedian != null && Math.max(aiSummary.posttestMedian, staticSummary.posttestMedian) >= Math.max(1, Math.min(aiSummary.posttestMedian, staticSummary.posttestMedian) * 2) && (
+            <p className="mt-4 rounded-lg px-3 py-2 text-xs" style={{ background: "#fff8e6", color: "#6b4b00" }}>
+              <strong>Timing check:</strong> the same post-test has a {aiSummary.posttestMedian}m AI median and {staticSummary.posttestMedian}m static median. Review the participant dots and timing records for idle time, timeouts, or very small phase samples before interpreting this difference.
             </p>
-          </Card>
+          )}
+        </Card>
 
-          <Card
-            title="Individual score trajectories"
-            subtitle="One line per participant, pre-test to post-test"
-            actions={
-              <Legend
-                items={[
-                  { label: "AI visualizer", color: SERIES.ai },
-                  { label: "Static materials", color: SERIES.static },
-                ]}
-              />
-            }
-          >
-            <SlopeChart points={slopePoints} />
-          </Card>
-        </div>
+        <Card
+          title="Per-item paired accuracy"
+          subtitle={`Correct, incorrect, and unanswered responses among participants with both tests · ${filter === "all" ? "all conditions" : conditionLabel(filter)} · paired n=${pairedViews.length}`}
+          actions={<span className="text-[10px]" style={{ color: "var(--text-muted)" }}>Responds to the condition filter</span>}
+          className="mb-5"
+        >
+          <div className="overflow-x-auto"><ItemAccuracyGrid rows={itemRows} /></div>
+        </Card>
 
         <div className="mb-5 grid gap-4 lg:grid-cols-2">
-          <Card title="Completion funnel" subtitle="Participants reaching each stage, with drop-off">
-            <FunnelChart stages={funnel.map((f) => ({ stage: f.stage, count: f.count }))} />
-          </Card>
-
-          <Card title="Time on each phase" subtitle="Median minutes, by condition">
-            <GroupedBarChart
-              categories={["Pre-test", "Learning", "Post-test"]}
-              unit="m"
-              series={summaries.map((s) => ({
-                key: s.condition,
-                label: s.label,
-                color: SERIES[s.condition],
-                values: [s.pretestMedian, s.learningMedian, s.posttestMedian],
-              }))}
-            />
-          </Card>
-        </div>
-
-        <div className="mb-5 grid gap-4 lg:grid-cols-3">
-          <Card title="Per-item accuracy" subtitle="Share correct on each graded blank" className="lg:col-span-1">
-            <ItemAccuracyGrid rows={itemRows} />
-          </Card>
 
           <Card title="How each timed test ended" subtitle="Submitted manually vs cut off by the 10 minute timer">
             <HBarChart
               labelWidth={132}
               data={[
-                { label: "Pre-test, manual", value: preEnded.manual, color: SERIES.ai },
-                { label: "Pre-test, timer", value: preEnded.timer, color: SERIES.static },
-                { label: "Post-test, manual", value: postEnded.manual, color: SERIES.ai },
-                { label: "Post-test, timer", value: postEnded.timer, color: SERIES.static },
+                { label: "Pre-test, manual", value: preEnded.manual, color: "#64748b" },
+                { label: "Pre-test, timer", value: preEnded.timer, color: "#a16207" },
+                { label: "Post-test, manual", value: postEnded.manual, color: "#64748b" },
+                { label: "Post-test, timer", value: postEnded.timer, color: "#a16207" },
               ]}
             />
             <div className="mt-4">
               <Legend
                 items={[
-                  { label: "Manual submit", color: SERIES.ai },
-                  { label: "Timer expiry", color: SERIES.static },
+                  { label: "Manual submit", color: "#64748b" },
+                  { label: "Timer expiry", color: "#a16207" },
                 ]}
               />
             </div>
           </Card>
 
-          <Card title="Examples opened" subtitle="AI-condition participants who opened each built-in lesson">
-            <HBarChart
-              labelWidth={92}
-              data={examples.map((e) => ({ label: e.label, value: e.count }))}
-              max={all.filter((v) => v.condition === "ai").length}
-              emptyMessage="No AI-condition participants yet."
-            />
-            <p className="mt-4 text-xs" style={{ color: "var(--text-muted)" }}>
-              Lesson reached its terminal state for{" "}
-              {all.filter((v) => v.condition === "ai" && !v.lessonIncomplete).length} of{" "}
-              {all.filter((v) => v.condition === "ai").length} AI participants.
+          <Card title="Lesson engagement (AI only)" subtitle="Participants who opened each lesson and who completed it">
+            <div className="flex flex-col gap-3">
+              {lessonEngagement.map((lesson) => (
+                <div key={lesson.id} className="grid grid-cols-[90px_1fr_54px] items-center gap-3 text-xs">
+                  <span style={{ color: "var(--text-secondary)" }}>{lesson.label}</span>
+                  <div className="flex flex-col gap-1">
+                    <span className="relative h-2.5 overflow-hidden rounded" style={{ background: "#e2e8f0" }}>
+                      <span className="absolute inset-y-0 left-0 rounded" style={{ width: `${aiParticipants.length > 0 ? (lesson.opened / aiParticipants.length) * 100 : 0}%`, background: SERIES.ai }} />
+                    </span>
+                    <span className="relative h-2.5 overflow-hidden rounded" style={{ background: "#e2e8f0" }}>
+                      <span className="absolute inset-y-0 left-0 rounded" style={{ width: `${aiParticipants.length > 0 ? (lesson.completed / aiParticipants.length) * 100 : 0}%`, background: "#16815f" }} />
+                    </span>
+                  </div>
+                  <span className="text-right tabular-nums" style={{ color: "var(--text-primary)" }}>{lesson.opened} / {lesson.completed}</span>
+                </div>
+              ))}
+            </div>
+            <div className="mt-4"><Legend items={[{ label: "Opened", color: SERIES.ai }, { label: "Completed", color: "#16815f" }]} /></div>
+            <p className="mt-4 text-xs leading-relaxed" style={{ color: "var(--text-muted)" }}>
+              Counts are opened / completed out of {aiParticipants.length} AI participants. The current data does not record assigned-versus-optional identity, step counts, guide hide/show actions, or guide resets; those cannot yet be reported accurately.
             </p>
           </Card>
         </div>
@@ -458,34 +506,12 @@ export default function AdminDashboard({
   );
 }
 
-/* Side panel showing every submitted answer next to the expected value. */
+/* Side panel showing each response in the same structure as the original test. */
 function ResponseInspector({ view, onClose }: { view: ParticipantView; onClose: () => void }) {
-  const router = useRouter();
-  const [markingSubmitted, setMarkingSubmitted] = useState(false);
-  const [submitError, setSubmitError] = useState<string | null>(null);
-  const sections: { title: string; score: typeof view.pretest }[] = [
-    { title: "Pre-test", score: view.pretest },
-    { title: "Post-test", score: view.posttest },
+  const sections: { title: string; score: typeof view.pretest; test: TestDef }[] = [
+    { title: "Pre-test", score: view.pretest, test: PRETEST },
+    { title: "Post-test", score: view.posttest, test: POSTTEST },
   ];
-
-  async function markQuestionnaireSubmitted() {
-    setMarkingSubmitted(true);
-    setSubmitError(null);
-    try {
-      const response = await fetch("/api/admin/questionnaire-complete", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ participant_id: view.participantId }),
-      });
-      if (!response.ok) throw new Error("Could not mark the questionnaire as submitted.");
-      onClose();
-      router.refresh();
-    } catch (error) {
-      setSubmitError(error instanceof Error ? error.message : "Update failed.");
-    } finally {
-      setMarkingSubmitted(false);
-    }
-  }
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
@@ -497,7 +523,7 @@ function ResponseInspector({ view, onClose }: { view: ParticipantView; onClose: 
         style={{ background: "#0f172a55" }}
       />
       <aside
-        className="relative flex h-full w-full max-w-md flex-col overflow-y-auto border-l p-6"
+        className="relative flex h-full w-full max-w-3xl flex-col overflow-y-auto border-l p-5 sm:p-6"
         style={{ background: "var(--bg-panel)", borderColor: "#e2e8f0" }}
       >
         <div className="mb-4 flex items-start justify-between gap-3">
@@ -521,46 +547,7 @@ function ResponseInspector({ view, onClose }: { view: ParticipantView; onClose: 
         </div>
 
         {sections.map((section) => (
-          <div key={section.title} className="mb-6">
-            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
-              {section.title}
-              {section.score && (
-                <span style={{ color: "var(--text-secondary)" }}>
-                  {" "}
-                  {section.score.correct}/{section.score.total} correct
-                </span>
-              )}
-            </h3>
-            {!section.score ? (
-              <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-                Not submitted.
-              </p>
-            ) : (
-              <ul className="flex flex-col gap-1">
-                {section.score.items.map((item) => (
-                  <li
-                    key={item.key}
-                    className="flex items-start justify-between gap-3 rounded px-2 py-1.5"
-                    style={{ background: item.correct ? "#eef7f3" : "#fdeceb" }}
-                  >
-                    <span className="font-mono text-[11px]" style={{ color: "var(--text-secondary)" }}>
-                      {item.key.replace("q1.", "")}
-                    </span>
-                    <span className="text-right text-[11px]">
-                      <span className="block" style={{ color: "var(--text-primary)" }}>
-                        {item.given.trim() === "" ? "(blank)" : item.given}
-                      </span>
-                      {!item.correct && (
-                        <span className="block" style={{ color: "var(--text-muted)" }}>
-                          expected {item.expected}
-                        </span>
-                      )}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
+          <TestResponseReview key={section.title} {...section} />
         ))}
 
         <dl className="grid grid-cols-2 gap-y-2 text-xs">
@@ -568,7 +555,7 @@ function ResponseInspector({ view, onClose }: { view: ParticipantView; onClose: 
             ["Pre-test minutes", view.pretestMinutes],
             ["Learning minutes", view.learningMinutes],
             ["Post-test minutes", view.posttestMinutes],
-            ["Total minutes", view.totalMinutes],
+            ["Study duration", view.studyMinutes],
           ].map(([label, value]) => (
             <div key={String(label)}>
               <dt style={{ color: "var(--text-muted)" }}>{label}</dt>
@@ -591,24 +578,142 @@ function ResponseInspector({ view, onClose }: { view: ParticipantView; onClose: 
           </div>
         </dl>
 
-        <div className="mt-5 border-t pt-4" style={{ borderColor: "#e2e8f0" }}>
-          <p className="mb-2 text-xs" style={{ color: "var(--text-secondary)" }}>
-            Questionnaire: {view.questionnaireSubmitted ? "submitted" : view.questionnaireOpened ? "opened, submission not yet confirmed" : "not opened"}
-          </p>
-          {!view.questionnaireSubmitted && (
-            <button
-              type="button"
-              onClick={markQuestionnaireSubmitted}
-              disabled={markingSubmitted}
-              className="rounded-md px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-60"
-              style={{ background: "var(--action)" }}
-            >
-              {markingSubmitted ? "Saving…" : "Mark questionnaire submitted"}
-            </button>
-          )}
-          {submitError && <p className="mt-2 text-xs" style={{ color: "var(--danger)" }}>{submitError}</p>}
-        </div>
       </aside>
+    </div>
+  );
+}
+
+type Score = NonNullable<ParticipantView["pretest"]>;
+type ScoredItem = Score["items"][number];
+
+function TestResponseReview({
+  title,
+  score,
+  test,
+}: {
+  title: string;
+  score: ParticipantView["pretest"];
+  test: TestDef;
+}) {
+  const question = test.questions[0];
+  const responseByKey = new Map(score?.items.map((item) => [item.key, item]));
+
+  return (
+    <section className="mb-6 overflow-hidden rounded-xl border" style={{ borderColor: "#dbe4ef" }}>
+      <header className="flex items-center justify-between gap-3 border-b px-4 py-3" style={{ background: "#f8fafc", borderColor: "#dbe4ef" }}>
+        <div>
+          <h3 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>{title}</h3>
+          {score && (
+            <p className="mt-0.5 text-xs" style={{ color: "var(--text-secondary)" }}>
+              {score.correct} of {score.total} answers correct · {score.answered} answered
+            </p>
+          )}
+        </div>
+        {score && (
+          <span className="rounded-full px-2.5 py-1 text-xs font-semibold tabular-nums" style={{ background: "#e8f1fb", color: "#175f9f" }}>
+            {score.percent}%
+          </span>
+        )}
+      </header>
+
+      {!score ? (
+        <p className="px-4 py-4 text-sm" style={{ color: "var(--text-muted)" }}>Not submitted.</p>
+      ) : (
+        <div className="p-4">
+          <h4 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>{question.title}</h4>
+          {question.prompt && <p className="mt-1 text-xs" style={{ color: "var(--text-secondary)" }}>{question.prompt}</p>}
+
+          {question.fields.map((field, index) => {
+            if (field.kind === "code") {
+              return (
+                <div key={`code-${index}`} className="mt-3">
+                  {field.caption ? (
+                    <p className="mb-2 text-xs font-semibold" style={{ color: "var(--text-primary)" }}>{field.caption}</p>
+                  ) : null}
+                  <details className="rounded-lg border" style={{ borderColor: "#dbe4ef", background: "#f8fafc" }}>
+                    <summary className="cursor-pointer px-3 py-2 text-xs font-medium" style={{ color: "var(--text-secondary)" }}>
+                      {field.caption ? "View the code used for this question" : "View the Java program shown to the participant"}
+                    </summary>
+                    <pre className="overflow-x-auto border-t px-3 py-3 text-[11px] leading-relaxed" style={{ borderColor: "#dbe4ef", color: "var(--text-primary)", background: "#0f172a" }}>
+                      <code style={{ color: "#f8fafc" }}>{field.code}</code>
+                    </pre>
+                  </details>
+                </div>
+              );
+            }
+
+            if (field.kind === "grid") {
+              return (
+                <div key={`grid-${index}`} className="mt-4">
+                  {field.caption && <p className="mb-2 text-xs font-semibold" style={{ color: "var(--text-primary)" }}>{field.caption}</p>}
+                  <div className="overflow-x-auto rounded-lg border" style={{ borderColor: "#dbe4ef" }}>
+                    <table className="w-full min-w-[620px] table-fixed text-xs">
+                      <thead style={{ background: "#f8fafc" }}>
+                        <tr>
+                          {field.columns.map((column, columnIndex) => (
+                            <th key={column} className={`border-b px-2 py-2 text-left font-semibold ${columnIndex === 0 ? "w-20" : ""}`} style={{ borderColor: "#dbe4ef", color: "var(--text-secondary)" }}>
+                              {column}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {field.rows.map((row, rowIndex) => (
+                          <tr key={`row-${rowIndex}`}>
+                            {row.map((cell, cellIndex) => (
+                              <td key={`cell-${cellIndex}`} className="border-b px-2 py-2 align-top last:border-r-0" style={{ borderColor: "#edf2f7" }}>
+                                {renderResponseCell(cell, responseByKey)}
+                              </td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              );
+            }
+
+            const item = responseByKey.get(field.key);
+            return (
+              <div key={field.key} className="mt-3">
+                <p className="mb-1.5 text-xs font-semibold" style={{ color: "var(--text-primary)" }}>{field.label}</p>
+                {item && <ResponseAnswer item={item} />}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function renderResponseCell(cell: GridCell, responseByKey: Map<string, ScoredItem>) {
+  if (cell.t === "ro") {
+    return <span className="font-medium" style={{ color: "var(--text-secondary)" }}>{cell.text}</span>;
+  }
+  const item = responseByKey.get(cell.key);
+  return item ? <ResponseAnswer item={item} compact /> : <span style={{ color: "var(--text-muted)" }}>No response data</span>;
+}
+
+function ResponseAnswer({ item, compact = false }: { item: ScoredItem; compact?: boolean }) {
+  const blank = item.given.trim() === "";
+  const background = item.correct ? "#eef7f3" : blank ? "#fff8e6" : "#fdeceb";
+  const border = item.correct ? "#b8dfcf" : blank ? "#f3d58b" : "#f2c5c2";
+  const statusColor = item.correct ? "#087a55" : blank ? "#8a5a00" : "#b42318";
+
+  return (
+    <div className={`rounded-md border ${compact ? "p-2" : "px-3 py-2.5"}`} style={{ background, borderColor: border }}>
+      <div className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide" style={{ color: statusColor }}>
+        {item.correct ? <Check size={12} /> : blank ? <Minus size={12} /> : <X size={12} />}
+        {item.correct ? "Correct" : blank ? "Unanswered" : "Incorrect"}
+      </div>
+      <p className="mt-1 break-words text-xs" style={{ color: "var(--text-primary)" }}>
+        <span className="font-medium">Participant:</span> {blank ? "No answer" : item.given}
+      </p>
+      <p className="mt-0.5 break-words text-[11px]" style={{ color: "var(--text-secondary)" }}>
+        <span className="font-medium">Correct answer:</span> {item.expected}
+      </p>
     </div>
   );
 }

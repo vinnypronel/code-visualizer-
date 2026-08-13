@@ -75,9 +75,9 @@ export default function StudyShell({
         className="relative flex-shrink-0 border-b select-none"
         style={{ borderColor: "var(--border)", background: "var(--bg-header)" }}
       >
-        <div className="relative w-full px-4 sm:px-6 py-1.5 flex items-center justify-between gap-4 min-h-[46px]">
+        <div className="relative w-full px-4 sm:px-6 py-1.5 flex items-center justify-between gap-4 min-h-[46px] 2xl:grid 2xl:grid-cols-[minmax(0,1fr)_520px_minmax(0,1fr)] 2xl:gap-6">
           {/* Left: branding plus an optional phase-specific action. */}
-          <div className="flex items-center gap-3 flex-shrink-0">
+          <div className="flex min-w-0 items-center gap-3 flex-shrink-0 2xl:justify-self-start">
             <div
               onClick={returnToConsent}
               role="button"
@@ -139,12 +139,12 @@ export default function StudyShell({
 
           {/* Center: Stage Tracker */}
           {/*
-            From 2xl up there is room to pin the tracker to the true header
-            centre, so it stays centred no matter how wide the logo block on
-            the left or the timer block on the right happen to be. Below 2xl the
-            side blocks would collide with it, so it stays in normal flow.
+            At 2xl the header becomes a three-column grid. The tracker owns the
+            middle 520px while branding and participant details each get an
+            independent side column, so none of them can paint over another.
+            Below 2xl the ID is hidden and the tracker remains in normal flow.
           */}
-          <ol className="hidden lg:flex items-center gap-1.5 flex-1 min-w-0 max-w-2xl mx-auto px-2 2xl:absolute 2xl:left-1/2 2xl:-translate-x-1/2 2xl:mx-0 2xl:w-[520px] 2xl:flex-none">
+          <ol className="hidden lg:flex items-center gap-1.5 flex-1 min-w-0 max-w-2xl mx-auto px-2 2xl:w-full 2xl:max-w-none 2xl:mx-0 2xl:flex-none 2xl:col-start-2">
             {STAGES.map((stage, i) => {
               const state =
                 i < stageIndex ? "done" : i === stageIndex ? "active" : "todo";
@@ -205,7 +205,7 @@ export default function StudyShell({
           </ol>
 
           {/* Right: Participant ID + Timer + UR2PhD Logo */}
-          <div className="flex items-center gap-3 flex-shrink-0 ml-auto">
+          <div className="flex min-w-0 items-center justify-end gap-3 flex-shrink-0 ml-auto 2xl:ml-0 2xl:w-full 2xl:justify-self-end">
             {/*
               The ID is shown once on the assigned screen and again at the very
               end. Keeping it here in between means a participant who drops out
@@ -214,18 +214,14 @@ export default function StudyShell({
             */}
             {session.participantId && (
               <span
-                className={
-                  timer
-                    ? "hidden 2xl:inline 2xl:mr-7 font-mono text-[11px] font-semibold whitespace-nowrap"
-                    : "hidden 2xl:flex 2xl:absolute 2xl:left-[calc(50%+260px)] 2xl:right-[168px] 2xl:justify-center font-mono text-[11px] font-semibold whitespace-nowrap"
-                }
+                className="hidden 2xl:inline font-mono text-[11px] font-semibold whitespace-nowrap"
                 style={{ color: "var(--text-secondary)" }}
                 title="Your participant ID"
               >
                 ID {session.participantId}
               </span>
             )}
-            {timer && <div className="mr-2 xl:mr-4 2xl:mr-12">{timer}</div>}
+            {timer && <div className="min-w-0 mr-2 xl:mr-4 2xl:mr-2">{timer}</div>}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/ur2phd-logo.png"
@@ -291,7 +287,7 @@ export function TimerChip({
         fontVariantNumeric: "tabular-nums",
       }}
     >
-      <span className="uppercase text-[10px] font-semibold opacity-90" style={{ color: "var(--text-muted)" }}>{label}</span>
+      <span className="hidden min-[1800px]:inline uppercase text-[10px] font-semibold opacity-90" style={{ color: "var(--text-muted)" }}>{label}</span>
       <span className="font-bold text-xs ml-0.5" style={{ color: "var(--text-primary)" }}>{value}</span>
     </div>
   );

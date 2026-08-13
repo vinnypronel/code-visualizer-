@@ -144,11 +144,9 @@ export const FUNNEL_STAGES = [
   "Pre-test started",
   "Pre-test finished",
   "Learning started",
+  "Learning completed",
   "Post-test started",
   "Post-test finished",
-  "Questionnaire shown",
-  "Questionnaire opened",
-  "Questionnaire submitted",
 ] as const;
 
 export type FunnelStage = (typeof FUNNEL_STAGES)[number];
@@ -177,12 +175,12 @@ export interface ParticipantView {
   pretestMinutes: number | null;
   learningMinutes: number | null;
   posttestMinutes: number | null;
-  totalMinutes: number | null;
+  studyMinutes: number | null;
   examplesTried: string[];
   measuredLessonId: string | null;
-  questionnaireOpened: boolean;
-  questionnaireSubmitted: boolean;
-  /* Confirmed questionnaire submission after Forms results are synchronized. */
+  /* AI requires the guided lesson terminal state; static completes on continue. */
+  learningCompleted: boolean;
+  /* This dashboard considers the study complete when the post-test finishes. */
   completed: boolean;
   /* AI-condition participants who never reached the lesson's terminal state. */
   lessonIncomplete: boolean;
@@ -198,11 +196,9 @@ export function toParticipantView(row: SessionRow): ParticipantView {
     row.pretest_started_at,
     row.pretest_finished_at,
     row.learning_started_at,
+    row.condition === "ai" ? row.learning_completed_at : row.learning_continue_at,
     row.posttest_started_at,
     row.posttest_finished_at,
-    row.questionnaire_shown_at,
-    row.questionnaire_opened_at,
-    row.questionnaire_finished_at,
   ];
   let furthest = 0;
   reached.forEach((ts, i) => {
@@ -223,12 +219,11 @@ export function toParticipantView(row: SessionRow): ParticipantView {
     pretestMinutes: minutesFromSeconds(row.pretest_elapsed_seconds) ?? minutesBetween(row.pretest_started_at, row.pretest_finished_at),
     learningMinutes: minutesFromSeconds(row.learning_elapsed_seconds) ?? minutesBetween(row.learning_started_at, row.learning_continue_at),
     posttestMinutes: minutesFromSeconds(row.posttest_elapsed_seconds) ?? minutesBetween(row.posttest_started_at, row.posttest_finished_at),
-    totalMinutes: minutesBetween(row.consent_completed_at, row.questionnaire_opened_at ?? row.questionnaire_shown_at),
+    studyMinutes: minutesBetween(row.consent_completed_at, row.posttest_finished_at),
     examplesTried: row.examples_tried ?? [],
     measuredLessonId: row.measured_lesson_id,
-    questionnaireOpened: Boolean(row.questionnaire_opened_at),
-    questionnaireSubmitted: Boolean(row.questionnaire_finished_at),
-    completed: Boolean(row.questionnaire_finished_at),
+    learningCompleted: Boolean(row.condition === "ai" ? row.learning_completed_at : row.learning_continue_at),
+    completed: Boolean(row.posttest_finished_at),
     lessonIncomplete: row.condition === "ai" && !row.learning_completed_at,
     furthestStageIndex: furthest,
     furthestStage: FUNNEL_STAGES[furthest],
@@ -271,8 +266,11 @@ export interface ConditionSummary {
   gainSd: number | null;
   scoredPairs: number;
   learningMedian: number | null;
+  learningN: number;
   pretestMedian: number | null;
+  pretestTimeN: number;
   posttestMedian: number | null;
+  posttestTimeN: number;
 }
 
 const CONDITION_LABEL: Record<Condition, string> = {
@@ -289,9 +287,13 @@ export function summarizeCondition(
   condition: Condition,
 ): ConditionSummary {
   const group = views.filter((v) => v.condition === condition);
-  const pre = group.map((v) => v.pretest?.percent).filter((n): n is number => n != null);
-  const post = group.map((v) => v.posttest?.percent).filter((n): n is number => n != null);
-  const gains = group.map((v) => v.gain).filter((n): n is number => n != null);
+  const paired = group.filter((v) => v.gain != null && v.pretest?.percent != null && v.posttest?.percent != null);
+  const pre = paired.map((v) => v.pretest!.percent as number);
+  const post = paired.map((v) => v.posttest!.percent as number);
+  const gains = paired.map((v) => v.gain as number);
+  const learningTimes = group.map((v) => v.learningMinutes).filter((n): n is number => n != null);
+  const pretestTimes = group.map((v) => v.pretestMinutes).filter((n): n is number => n != null);
+  const posttestTimes = group.map((v) => v.posttestMinutes).filter((n): n is number => n != null);
   return {
     condition,
     label: CONDITION_LABEL[condition],
@@ -304,24 +306,31 @@ export function summarizeCondition(
     gainMean: mean(gains),
     gainSd: stdDev(gains),
     scoredPairs: gains.length,
-    learningMedian: median(
-      group.map((v) => v.learningMinutes).filter((n): n is number => n != null),
-    ),
-    pretestMedian: median(
-      group.map((v) => v.pretestMinutes).filter((n): n is number => n != null),
-    ),
-    posttestMedian: median(
-      group.map((v) => v.posttestMinutes).filter((n): n is number => n != null),
-    ),
+    learningMedian: median(learningTimes),
+    learningN: learningTimes.length,
+    pretestMedian: median(pretestTimes),
+    pretestTimeN: pretestTimes.length,
+    posttestMedian: median(posttestTimes),
+    posttestTimeN: posttestTimes.length,
   };
 }
 
-/* Count of participants who reached at least each funnel stage. */
+/*
+ * Count each stage from its actual event rather than assuming every later
+ * event proves an earlier one. This keeps incomplete AI lessons visible even
+ * when a participant somehow reaches the post-test.
+ */
 export function funnelCounts(views: ParticipantView[]): { stage: FunnelStage; count: number }[] {
-  return FUNNEL_STAGES.map((stage, i) => ({
-    stage,
-    count: views.filter((v) => v.furthestStageIndex >= i).length,
-  }));
+  const reached: Record<FunnelStage, (view: ParticipantView) => boolean> = {
+    Consented: (v) => Boolean(v.row.consent_completed_at),
+    "Pre-test started": (v) => Boolean(v.row.pretest_started_at),
+    "Pre-test finished": (v) => Boolean(v.row.pretest_finished_at),
+    "Learning started": (v) => Boolean(v.row.learning_started_at),
+    "Learning completed": (v) => v.learningCompleted,
+    "Post-test started": (v) => Boolean(v.row.posttest_started_at),
+    "Post-test finished": (v) => Boolean(v.row.posttest_finished_at),
+  };
+  return FUNNEL_STAGES.map((stage) => ({ stage, count: views.filter(reached[stage]).length }));
 }
 
 /*
@@ -337,20 +346,20 @@ export interface ItemAccuracy {
 }
 
 const ITEM_LABELS: Record<string, string> = {
-  "q1.table.step2.col_a": "Step 2 - col 1",
-  "q1.table.step2.col_b": "Step 2 - col 2",
-  "q1.table.step2.col_c": "Step 2 - col 3",
-  "q1.table.step3.col_a": "Step 3 - col 1",
-  "q1.table.step3.col_b": "Step 3 - col 2",
-  "q1.table.step3.col_c": "Step 3 - col 3",
-  "q1.table.step4.col_a": "Step 4 - col 1",
-  "q1.table.step4.col_b": "Step 4 - col 2",
-  "q1.table.step4.col_c": "Step 4 - col 3",
-  "q1.table.step5.col_a": "Step 5 - col 1",
-  "q1.table.step5.col_b": "Step 5 - col 2",
-  "q1.table.step5.col_c": "Step 5 - col 3",
-  "q1.output.line1": "Output line 1",
-  "q1.output.line2": "Output line 2",
+  "q1.table.step2.col_a": "After Step 2 · first variable (a/x)",
+  "q1.table.step2.col_b": "After Step 2 · second variable (b/y)",
+  "q1.table.step2.col_c": "After Step 2 · third variable (c/z)",
+  "q1.table.step3.col_a": "After Step 3 · first variable (a/x)",
+  "q1.table.step3.col_b": "After Step 3 · second variable (b/y)",
+  "q1.table.step3.col_c": "After Step 3 · third variable (c/z)",
+  "q1.table.step4.col_a": "After Step 4 · first variable (a/x)",
+  "q1.table.step4.col_b": "After Step 4 · second variable (b/y)",
+  "q1.table.step4.col_c": "After Step 4 · third variable (c/z)",
+  "q1.table.step5.col_a": "After Step 5 · first variable (a/x)",
+  "q1.table.step5.col_b": "After Step 5 · second variable (b/y)",
+  "q1.table.step5.col_c": "After Step 5 · third variable (c/z)",
+  "q1.output.line1": "Printed output · line 1",
+  "q1.output.line2": "Printed output · line 2",
 };
 
 export function itemAccuracy(
@@ -404,7 +413,7 @@ const CSV_COLUMNS: { header: string; get: (v: ParticipantView) => string | numbe
   { header: "participant_id", get: (v) => v.participantId },
   { header: "seq", get: (v) => v.seq },
   { header: "condition", get: (v) => v.condition },
-  { header: "completed", get: (v) => (v.completed ? "yes" : "no") },
+  { header: "study_completed", get: (v) => (v.completed ? "yes" : "no") },
   { header: "furthest_stage", get: (v) => v.furthestStage },
   { header: "pretest_correct", get: (v) => v.pretest?.correct ?? null },
   { header: "pretest_percent", get: (v) => v.pretest?.percent ?? null },
@@ -414,21 +423,16 @@ const CSV_COLUMNS: { header: string; get: (v: ParticipantView) => string | numbe
   { header: "pretest_minutes", get: (v) => v.pretestMinutes },
   { header: "learning_minutes", get: (v) => v.learningMinutes },
   { header: "posttest_minutes", get: (v) => v.posttestMinutes },
-  { header: "total_minutes", get: (v) => v.totalMinutes },
+  { header: "study_minutes", get: (v) => v.studyMinutes },
   { header: "pretest_ended_by", get: (v) => v.row.pretest_ended_by },
   { header: "posttest_ended_by", get: (v) => v.row.posttest_ended_by },
   { header: "lesson_completed", get: (v) => (v.row.learning_completed_at ? "yes" : "no") },
   { header: "examples_tried", get: (v) => v.examplesTried.join(" ") },
   { header: "measured_lesson_id", get: (v) => v.measuredLessonId },
-  { header: "questionnaire_opened", get: (v) => (v.questionnaireOpened ? "yes" : "no") },
-  { header: "questionnaire_submitted", get: (v) => (v.questionnaireSubmitted ? "yes" : "no") },
   { header: "consent_version", get: (v) => v.row.consent_version },
   { header: "pretest_responses_json", get: (v) => JSON.stringify(v.row.pretest_responses ?? {}) },
   { header: "posttest_responses_json", get: (v) => JSON.stringify(v.row.posttest_responses ?? {}) },
   { header: "consent_completed_at", get: (v) => v.row.consent_completed_at },
-  { header: "questionnaire_shown_at", get: (v) => v.row.questionnaire_shown_at },
-  { header: "questionnaire_opened_at", get: (v) => v.row.questionnaire_opened_at },
-  { header: "questionnaire_finished_at", get: (v) => v.row.questionnaire_finished_at },
 ];
 
 function csvCell(value: string | number | null): string {

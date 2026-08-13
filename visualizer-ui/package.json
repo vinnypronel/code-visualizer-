@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test:admin-metrics": "node scripts/check-admin-metrics.mjs",
     "db:check": "node scripts/check-study-database.mjs",
     "db:smoke": "node scripts/smoke-study-database.mjs"
   },

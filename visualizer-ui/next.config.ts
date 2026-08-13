@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 import path from "path";
 
 const nextConfig: NextConfig = {
+  distDir: process.env.NEXT_DIST_DIR || ".next",
   turbopack: {
     root: path.resolve(__dirname),
   },
@@ -9,8 +10,8 @@ const nextConfig: NextConfig = {
     /*
      * CSP, read before tightening.
      *
-     * Two third-party runtimes have hard requirements here, and removing
-     * either one silently breaks a study screen in production only, since dev
+     * Third-party runtimes have hard requirements here, and removing one can
+     * silently break a study screen in production only, since dev
      * runs a looser policy:
      *
      *   Monaco (the Java code panel) is loaded by @monaco-editor/react from

@@ -205,6 +205,109 @@ export interface GroupedSeries {
   values: (number | null)[];
 }
 
+/* A centered scale keeps negative and positive percentage-point gains honest. */
+export function GainChart({
+  data,
+}: {
+  data: { key: string; label: string; value: number | null; n: number; color: string }[];
+}) {
+  const values = data.map((d) => d.value).filter((value): value is number => value != null);
+  const domain = Math.max(10, Math.ceil(Math.max(...values.map(Math.abs), 0) / 5) * 5);
+
+  return (
+    <div>
+      <div className="mb-1 grid grid-cols-[110px_1fr_62px] gap-3 text-[10px] font-medium" style={{ color: AXIS_TEXT }}>
+        <span />
+        <span className="flex justify-between"><span>-{domain} pp</span><span>0</span><span>+{domain} pp</span></span>
+        <span className="text-right">Paired n</span>
+      </div>
+      <div className="flex flex-col gap-3">
+        {data.map((datum) => {
+          const value = datum.value ?? 0;
+          const width = Math.min(50, (Math.abs(value) / domain) * 50);
+          return (
+            <div key={datum.key} className="grid grid-cols-[110px_1fr_62px] items-center gap-3">
+              <span className="text-xs font-medium" style={{ color: "var(--text-secondary)" }}>{datum.label}</span>
+              <div className="relative h-8 rounded" style={{ background: "#f8fafc" }}>
+                <span className="absolute inset-y-0 left-1/2 w-px" style={{ background: "#64748b" }} />
+                {datum.value != null && (
+                  <span
+                    className="absolute top-1/2 h-5 -translate-y-1/2 rounded"
+                    style={{
+                      background: datum.color,
+                      left: value >= 0 ? "50%" : `${50 - width}%`,
+                      width: `${Math.max(width, 0.8)}%`,
+                    }}
+                    title={`${datum.label}: ${value > 0 ? "+" : ""}${value} percentage points`}
+                  />
+                )}
+              </div>
+              <span className="text-right text-xs font-semibold tabular-nums" style={{ color: "var(--text-primary)" }}>
+                {datum.value == null ? "-" : `${value > 0 ? "+" : ""}${value} pp`} · {datum.n}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+export interface PhaseTimeGroup {
+  key: string;
+  label: string;
+  color: string;
+  phases: { label: string; values: number[]; median: number | null }[];
+}
+
+/* Every recorded duration is visible; the vertical marker is the median. */
+export function PhaseTimePlot({ groups }: { groups: PhaseTimeGroup[] }) {
+  const allValues = groups.flatMap((group) => group.phases.flatMap((phase) => phase.values));
+  const domain = Math.max(1, Math.ceil(Math.max(...allValues, 0) * 2) / 2);
+
+  return (
+    <div>
+      <div className="mb-2 grid grid-cols-[145px_1fr_70px] gap-3 text-[10px]" style={{ color: AXIS_TEXT }}>
+        <span>Condition and phase</span>
+        <span className="flex justify-between"><span>0m</span><span>{domain / 2}m</span><span>{domain}m</span></span>
+        <span className="text-right">Median</span>
+      </div>
+      <div className="flex flex-col gap-2">
+        {groups.flatMap((group) => group.phases.map((phase) => (
+          <div key={`${group.key}-${phase.label}`} className="grid grid-cols-[145px_1fr_70px] items-center gap-3">
+            <span className="truncate text-xs" style={{ color: "var(--text-secondary)" }}>
+              <span className="mr-1.5 inline-block h-2 w-2 rounded-sm" style={{ background: group.color }} />
+              {group.label} · {phase.label} <span style={{ color: "var(--text-muted)" }}>(n={phase.values.length})</span>
+            </span>
+            <span className="relative h-7 overflow-hidden rounded" style={{ background: "#f8fafc" }}>
+              <span className="absolute inset-y-0 left-1/2 w-px" style={{ background: GRID }} />
+              {phase.median != null && (
+                <span className="absolute inset-y-0 w-0.5" style={{ left: `${Math.min(100, (phase.median / domain) * 100)}%`, background: "#0f172a" }} />
+              )}
+              {phase.values.map((value, index) => (
+                <span
+                  key={`${value}-${index}`}
+                  className="absolute h-2.5 w-2.5 -translate-x-1/2 rounded-full border border-white"
+                  style={{
+                    background: group.color,
+                    left: `${Math.min(100, (value / domain) * 100)}%`,
+                    top: `${3 + (index % 3) * 6}px`,
+                  }}
+                  title={`${group.label}, ${phase.label}: ${value} minutes`}
+                />
+              ))}
+            </span>
+            <span className="text-right text-xs font-semibold tabular-nums" style={{ color: "var(--text-primary)" }}>
+              {phase.median == null ? "-" : `${phase.median}m`}
+            </span>
+          </div>
+        )))}
+      </div>
+      <p className="mt-3 text-[11px]" style={{ color: "var(--text-muted)" }}>Dots are participants; the dark marker is the median.</p>
+    </div>
+  );
+}
+
 /*
  * Grouped columns, one group per category, one bar per series. Bars carry a 2px
  * surface gap between them and a 4px rounded top anchored to the baseline.
@@ -334,36 +437,35 @@ export function GroupedBarChart({
 
 export function FunnelChart({
   stages,
+  color = RAMP[4],
 }: {
   stages: { stage: string; count: number }[];
+  color?: string;
 }) {
   const total = stages[0]?.count ?? 0;
+  const drops = stages.map((stage, index) => index === 0 ? 0 : Math.max(0, stages[index - 1].count - stage.count));
+  const largestDropIndex = drops.indexOf(Math.max(...drops));
   return (
     <ol className="flex flex-col gap-2">
       {stages.map((s, i) => {
         const pct = total > 0 ? (s.count / total) * 100 : 0;
-        const dropped = i > 0 ? stages[i - 1].count - s.count : 0;
+        const largest = i === largestDropIndex && drops[i] > 0;
         return (
-          <li key={s.stage} className="flex items-center gap-2 sm:gap-3">
+          <li key={s.stage} className="rounded-md px-1.5 py-1" style={{ background: largest ? "#fff1f0" : "transparent" }}>
+            <div className="flex items-center gap-2">
             <span className="w-24 shrink-0 text-xs sm:w-36" style={{ color: "var(--text-secondary)" }}>
               {s.stage}
             </span>
             <span className="relative h-5 min-w-0 flex-1 overflow-hidden rounded" style={{ background: GRID }}>
               <span
                 className="absolute inset-y-0 left-0 rounded transition-[width] duration-500"
-                style={{ width: `${pct}%`, background: RAMP[Math.min(i, RAMP.length - 1)] }}
+                style={{ width: `${pct}%`, background: color, opacity: 1 - Math.min(i, 7) * 0.06 }}
               />
             </span>
-            <span className="w-16 shrink-0 text-right text-xs tabular-nums sm:w-24" style={{ color: "var(--text-primary)" }}>
-              {s.count}
-              <span style={{ color: "var(--text-muted)" }}>
-                {" "}
-                {Math.round(pct)}%
-              </span>
+            <span className="w-28 shrink-0 text-right text-xs tabular-nums sm:w-32" style={{ color: "var(--text-primary)" }}>
+              {s.count} · {Math.round(pct)}% overall
             </span>
-            <span className="w-8 shrink-0 text-right text-xs tabular-nums sm:w-16" style={{ color: dropped > 0 ? "var(--danger)" : "var(--text-muted)" }}>
-              {i === 0 ? "" : dropped > 0 ? `-${dropped}` : "0"}
-            </span>
+            </div>
           </li>
         );
       })}
@@ -392,7 +494,7 @@ export function SlopeChart({
   points: SlopePoint[];
   height?: number;
 }) {
-  const [hover, setHover] = useState<string | null>(null);
+  const [hover, setHover] = useState<SlopePoint | null>(null);
   if (points.length === 0) {
     return (
       <p className="text-sm" style={{ color: "var(--text-muted)" }}>
@@ -403,43 +505,60 @@ export function SlopeChart({
   const padTop = 14;
   const padBottom = 22;
   const plotH = height - padTop - padBottom;
-  const xLeft = 16;
-  const xRight = 84;
+  const xLeft = 8;
+  const xRight = 92;
   const y = (pct: number) => padTop + plotH - (pct / 100) * plotH;
+  const duplicateCounts = new Map<string, number>();
+  points.forEach((point) => {
+    const key = `${point.pre}-${point.post}`;
+    duplicateCounts.set(key, (duplicateCounts.get(key) ?? 0) + 1);
+  });
+  const duplicateIndexes = new Map<string, number>();
 
   return (
     <div>
-      <svg viewBox={`0 0 100 ${height}`} preserveAspectRatio="none" className="w-full" style={{ height }} role="img" aria-label="Pre-test to post-test score change per participant">
+      <div className="flex gap-2">
+        <div className="flex shrink-0 flex-col justify-between py-2 text-[10px] tabular-nums" style={{ height, color: AXIS_TEXT }}>
+          <span>100%</span><span>75%</span><span>50%</span><span>25%</span><span>0%</span>
+        </div>
+      <svg viewBox={`0 0 100 ${height}`} preserveAspectRatio="none" className="min-w-0 flex-1" style={{ height }} role="img" aria-label="Pre-test to post-test score change per participant">
         {[0, 25, 50, 75, 100].map((t) => (
           <line key={t} x1={0} x2={100} y1={y(t)} y2={y(t)} stroke={GRID} strokeWidth={0.4} />
         ))}
         {points.map((p) => {
-          const dim = hover != null && hover !== p.id;
+          const duplicateKey = `${p.pre}-${p.post}`;
+          const duplicateIndex = duplicateIndexes.get(duplicateKey) ?? 0;
+          duplicateIndexes.set(duplicateKey, duplicateIndex + 1);
+          const duplicateCount = duplicateCounts.get(duplicateKey) ?? 1;
+          const offset = (duplicateIndex - (duplicateCount - 1) / 2) * 3;
+          const dim = hover != null && hover.id !== p.id;
           return (
             <g
               key={p.id}
               opacity={dim ? 0.35 : 1}
-              onMouseEnter={() => setHover(p.id)}
+              onMouseEnter={() => setHover(p)}
               onMouseLeave={() => setHover(null)}
             >
+              <title>{`${p.id}: ${p.pre}% pre-test to ${p.post}% post-test (${p.post - p.pre > 0 ? "+" : ""}${p.post - p.pre} pp)`}</title>
               <line
                 x1={xLeft}
-                y1={y(p.pre)}
+                y1={y(p.pre) + offset}
                 x2={xRight}
-                y2={y(p.post)}
+                y2={y(p.post) + offset}
                 stroke={p.color}
                 strokeWidth={1.6}
                 vectorEffect="non-scaling-stroke"
               />
-              <circle cx={xLeft} cy={y(p.pre)} r={2.4} fill={p.color} stroke="var(--bg-panel)" strokeWidth={1} />
-              <circle cx={xRight} cy={y(p.post)} r={2.4} fill={p.color} stroke="var(--bg-panel)" strokeWidth={1} />
+              <circle cx={xLeft} cy={y(p.pre) + offset} r={2.4} fill={p.color} stroke="var(--bg-panel)" strokeWidth={1} />
+              <circle cx={xRight} cy={y(p.post) + offset} r={2.4} fill={p.color} stroke="var(--bg-panel)" strokeWidth={1} />
             </g>
           );
         })}
       </svg>
+      </div>
       <div className="flex justify-between px-1 text-xs" style={{ color: AXIS_TEXT }}>
         <span>Pre-test</span>
-        <span>{hover ? `${hover} highlighted` : "0 to 100% correct"}</span>
+        <span>{hover ? `${hover.id}: ${hover.pre}% → ${hover.post}% (${hover.post - hover.pre > 0 ? "+" : ""}${hover.post - hover.pre} pp)` : `${points.length} paired participant${points.length === 1 ? "" : "s"}`}</span>
         <span>Post-test</span>
       </div>
     </div>
@@ -451,15 +570,24 @@ export function SlopeChart({
 export function ItemAccuracyGrid({
   rows,
 }: {
-  rows: { label: string; pre: number | null; post: number | null }[];
+  rows: { label: string; pre: AccuracyBreakdown | null; post: AccuracyBreakdown | null }[];
 }) {
-  const cell = (pct: number | null) => {
-    if (pct == null) {
-      return { background: GRID, color: "var(--text-muted)", text: "-" };
-    }
-    const step = RAMP[Math.min(Math.floor((pct / 100) * RAMP.length), RAMP.length - 1)];
-    return { background: step, color: pct >= 55 ? "#ffffff" : "var(--text-primary)", text: `${pct}%` };
-  };
+  const cell = (value: AccuracyBreakdown | null) => value == null ? <span style={{ color: "var(--text-muted)" }}>-</span> : (
+    <div className="min-w-40 rounded-md border p-2" style={{ borderColor: "#dbe4ef", background: "#f8fafc" }}>
+      <div className="flex items-baseline justify-between gap-2">
+        <span className="font-semibold tabular-nums" style={{ color: "var(--text-primary)" }}>{value.percent}% correct</span>
+        <span className="text-[10px]" style={{ color: "var(--text-muted)" }}>{value.answered}/{value.n} answered</span>
+      </div>
+      <div className="mt-1 flex h-1.5 overflow-hidden rounded-full" style={{ background: GRID }}>
+        <span style={{ width: `${(value.correct / value.n) * 100}%`, background: "#16815f" }} />
+        <span style={{ width: `${(value.incorrect / value.n) * 100}%`, background: "#c2413b" }} />
+        <span style={{ width: `${(value.unanswered / value.n) * 100}%`, background: "#cbd5e1" }} />
+      </div>
+      <p className="mt-1 text-[10px] tabular-nums" style={{ color: "var(--text-secondary)" }}>
+        {value.correct} correct · {value.incorrect} incorrect · {value.unanswered} unanswered · n={value.n}
+      </p>
+    </div>
+  );
 
   return (
     <table className="w-full text-xs">
@@ -472,33 +600,26 @@ export function ItemAccuracyGrid({
       </thead>
       <tbody>
         {rows.map((r) => {
-          const pre = cell(r.pre);
-          const post = cell(r.post);
           return (
             <tr key={r.label}>
-              <td className="py-0.5 pr-2" style={{ color: "var(--text-secondary)" }}>
+              <td className="border-b py-2 pr-3 font-medium" style={{ color: "var(--text-secondary)", borderColor: "#edf2f7" }}>
                 {r.label}
               </td>
-              <td className="py-0.5 pl-2">
-                <span
-                  className="block rounded px-2 py-1 text-right tabular-nums"
-                  style={{ background: pre.background, color: pre.color }}
-                >
-                  {pre.text}
-                </span>
-              </td>
-              <td className="py-0.5 pl-2">
-                <span
-                  className="block rounded px-2 py-1 text-right tabular-nums"
-                  style={{ background: post.background, color: post.color }}
-                >
-                  {post.text}
-                </span>
-              </td>
+              <td className="border-b py-2 pl-2" style={{ borderColor: "#edf2f7" }}>{cell(r.pre)}</td>
+              <td className="border-b py-2 pl-2" style={{ borderColor: "#edf2f7" }}>{cell(r.post)}</td>
             </tr>
           );
         })}
       </tbody>
     </table>
   );
+}
+
+export interface AccuracyBreakdown {
+  correct: number;
+  incorrect: number;
+  unanswered: number;
+  answered: number;
+  n: number;
+  percent: number;
 }
