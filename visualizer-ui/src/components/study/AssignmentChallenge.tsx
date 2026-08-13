@@ -97,7 +97,10 @@ export default function AssignmentChallenge({
         onReady={renderWidget}
         onError={markUnavailable}
       />
-      <div className="relative w-[300px] h-[65px]">
+      <div
+        className="relative w-[300px] h-[65px]"
+        onContextMenu={(event) => event.preventDefault()}
+      >
         {widgetState === "loading" && (
           <div
             className="challenge-skeleton absolute inset-0 rounded-md"
@@ -105,6 +108,14 @@ export default function AssignmentChallenge({
           />
         )}
         <div ref={elementRef} aria-label="Human verification" />
+        {widgetState === "verified" && (
+          <div
+            className="absolute inset-0 z-10"
+            aria-hidden="true"
+            onContextMenu={(event) => event.preventDefault()}
+            title="Verification complete"
+          />
+        )}
         {widgetState === "error" && (
           <div
             className="absolute inset-0 rounded-md border border-red-300 bg-red-50 px-3 flex items-center"
