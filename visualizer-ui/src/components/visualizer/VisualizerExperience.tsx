@@ -510,6 +510,16 @@ class Node {
         spotlightStackVars: ["list"],
         spotlightHeapObjects: ["201"],
         spotlightHeapFields: ["201-0"],
+        /*
+         * The literal travels from the reference that was followed to reach the
+         * array, so the value is seen arriving in the slot rather than simply
+         * appearing there. This mirrors the wording of the explanation below.
+         */
+        dataMovement: {
+          from: "stack-list",
+          to: "heap-201-0",
+          value: "5"
+        },
         explanation: "We write 5 to the first slot: list[0] = 5. We follow the remote control list to find the array [Object 1], locate index 0, and write 5 inside it.",
         bananaDiagram: {
           type: "array-index",
@@ -544,6 +554,11 @@ class Node {
         spotlightStackVars: ["list"],
         spotlightHeapObjects: ["201"],
         spotlightHeapFields: ["201-1"],
+        dataMovement: {
+          from: "stack-list",
+          to: "heap-201-1",
+          value: "10"
+        },
         explanation: "We write 10 to the second slot: list[1] = 10. We follow the remote control list to find the array [Object 1], locate index 1, and write 10 inside it.",
         bananaDiagram: {
           type: "array-index",
