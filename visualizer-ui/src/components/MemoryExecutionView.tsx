@@ -75,6 +75,8 @@ interface DragSession {
   maxDx: number;
   minDy: number;
   maxDy: number;
+  /* Visual-to-local pixel ratio captured at press time, 1 when unzoomed. */
+  scale: number;
   moved: boolean;
 }
 
@@ -94,6 +96,24 @@ const STACK_TOP_INSET_PX = 8;
 // Elements that must keep their own pointer behaviour if any are added later.
 const DRAG_IGNORE_SELECTOR =
   'button, a, input, select, textarea, [role="button"]';
+
+/*
+ * The study shell scales itself up on large monitors with CSS zoom. Under
+ * zoom, getBoundingClientRect and pointer clientX/clientY report VISUAL
+ * pixels, while SVG coordinates and CSS transforms in this view are in
+ * unscaled local pixels. Every measured delta therefore has to be divided by
+ * this factor, or arrows, callouts and drags land progressively further off
+ * the further the monitor scales up.
+ *
+ * Comparing the visual width against the layout width yields the cumulative
+ * scale, and returns exactly 1 when no zoom is in effect.
+ */
+function visualScale(el: HTMLElement): number {
+  const visualWidth = el.getBoundingClientRect().width;
+  const layoutWidth = el.offsetWidth;
+  if (!layoutWidth || !visualWidth) return 1;
+  return visualWidth / layoutWidth;
+}
 
 function clamp(value: number, min: number, max: number): number {
   if (min > max) return min;
@@ -198,14 +218,15 @@ export default function MemoryExecutionView({
 
         const sRect = sourceEl.getBoundingClientRect();
         const tRect = targetEl.getBoundingClientRect();
+        const scale = visualScale(container);
 
         // Calculate start coordinate: center-right of source badge
-        const x1 = sRect.right - containerRect.left;
-        const y1 = sRect.top + sRect.height / 2 - containerRect.top;
+        const x1 = (sRect.right - containerRect.left) / scale;
+        const y1 = (sRect.top + sRect.height / 2 - containerRect.top) / scale;
 
         // Calculate end coordinate: center-left of target container card
-        const x2 = tRect.left - containerRect.left;
-        const y2 = tRect.top + tRect.height / 2 - containerRect.top;
+        const x2 = (tRect.left - containerRect.left) / scale;
+        const y2 = (tRect.top + tRect.height / 2 - containerRect.top) / scale;
 
         const dx = Math.abs(x2 - x1);
         const cp1x = x1 + Math.max(dx * 0.45, 40);
@@ -257,23 +278,26 @@ export default function MemoryExecutionView({
       if (!targetEl) return;
 
       const targetRect = targetEl.getBoundingClientRect();
+      const scale = visualScale(container);
+      const boundsWidth = container.offsetWidth;
+      const boundsHeight = container.offsetHeight;
       let left = callout.target.startsWith("stack-")
-        ? targetRect.left - containerRect.left - width - gap
-        : targetRect.right - containerRect.left + gap;
-      let top = targetRect.top - containerRect.top - 4;
+        ? (targetRect.left - containerRect.left) / scale - width - gap
+        : (targetRect.right - containerRect.left) / scale + gap;
+      let top = (targetRect.top - containerRect.top) / scale - 4;
 
       if (left < 12) {
-        left = targetRect.right - containerRect.left + gap;
+        left = (targetRect.right - containerRect.left) / scale + gap;
       }
 
-      if (left + width > containerRect.width - 12) {
-        left = targetRect.left - containerRect.left - width - gap;
+      if (left + width > boundsWidth - 12) {
+        left = (targetRect.left - containerRect.left) / scale - width - gap;
       }
 
-      left = Math.max(12, Math.min(containerRect.width - width - 12, left));
+      left = Math.max(12, Math.min(boundsWidth - width - 12, left));
       top = Math.max(
         64,
-        Math.min(containerRect.height - estimatedHeight - 12, top + index * 4),
+        Math.min(boundsHeight - estimatedHeight - 12, top + index * 4),
       );
 
       nextPositions.push({ callout, left, top });
@@ -323,6 +347,8 @@ export default function MemoryExecutionView({
       const elRect = el.getBoundingClientRect();
       const boundsRect = bounds.getBoundingClientRect();
       const base = boxOffsets[key] ?? { dx: 0, dy: 0 };
+      /* Travel limits are measured in visual px but applied as local px. */
+      const scale = visualScale(el);
 
       dragRef.current = {
         key,
@@ -336,12 +362,17 @@ export default function MemoryExecutionView({
         currentDy: base.dy,
         // Travel limits are derived once, from the gap between the box edges
         // and its zone edges at press time.
-        minDx: base.dx + (boundsRect.left + DRAG_EDGE_PADDING_PX - elRect.left),
+        minDx:
+          base.dx +
+          (boundsRect.left / scale + DRAG_EDGE_PADDING_PX - elRect.left / scale),
         maxDx:
-          base.dx + (boundsRect.right - DRAG_EDGE_PADDING_PX - elRect.right),
-        minDy: base.dy + (boundsRect.top + topInset - elRect.top),
+          base.dx +
+          (boundsRect.right / scale - DRAG_EDGE_PADDING_PX - elRect.right / scale),
+        minDy: base.dy + (boundsRect.top / scale + topInset - elRect.top / scale),
         maxDy:
-          base.dy + (boundsRect.bottom - DRAG_EDGE_PADDING_PX - elRect.bottom),
+          base.dy +
+          (boundsRect.bottom / scale - DRAG_EDGE_PADDING_PX - elRect.bottom / scale),
+        scale,
         moved: false,
       };
     },
@@ -353,8 +384,9 @@ export default function MemoryExecutionView({
       const drag = dragRef.current;
       if (!drag || drag.pointerId !== event.pointerId) return;
 
-      const rawDx = event.clientX - drag.startX;
-      const rawDy = event.clientY - drag.startY;
+      /* Pointer coordinates are visual px; the transform below is local px. */
+      const rawDx = (event.clientX - drag.startX) / drag.scale;
+      const rawDy = (event.clientY - drag.startY) / drag.scale;
 
       if (!drag.moved) {
         if (
@@ -482,10 +514,11 @@ export default function MemoryExecutionView({
         const tRect = toEl.getBoundingClientRect();
 
         // Calculate center points relative to the container
-        const x1 = fRect.left - containerRect.left + fRect.width / 2;
-        const y1 = fRect.top - containerRect.top + fRect.height / 2;
-        const x2 = tRect.left - containerRect.left + tRect.width / 2;
-        const y2 = tRect.top - containerRect.top + tRect.height / 2;
+        const scale = visualScale(container);
+        const x1 = (fRect.left - containerRect.left + fRect.width / 2) / scale;
+        const y1 = (fRect.top - containerRect.top + fRect.height / 2) / scale;
+        const x2 = (tRect.left - containerRect.left + tRect.width / 2) / scale;
+        const y2 = (tRect.top - containerRect.top + tRect.height / 2) / scale;
 
         setAnim({
           value: dataMovement.value,

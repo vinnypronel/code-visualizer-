@@ -1615,3 +1615,41 @@ button:disabled, [role="button"][aria-disabled="true"] {
 @media (min-width: 2800px) {
   .study-shell { zoom: 1.6; height: calc(100dvh / 1.6); }
 }
+
+/*
+ * Consent verification slot.
+ *
+ * Animating max-height lets the Continue button slide up smoothly instead of
+ * jumping the instant an option is picked. The cap is a little above the
+ * widget's real 65px so the box is never clipped; overflow stays hidden so the
+ * closed state is a true zero.
+ *
+ * A fixed height and the grid 0fr-to-1fr technique were both tried first. In
+ * this flex column a fixed height collapsed to zero, and an fr track resolves
+ * against an indefinite container height, so neither expanded.
+ *
+ * The skeleton fills the widget's exact 300x65 while Cloudflare's script
+ * loads, so the participant sees the box immediately and nothing shifts
+ * underneath them when the real widget paints.
+ */
+.challenge-slot {
+  transition: max-height 280ms cubic-bezier(0.16, 1, 0.3, 1),
+              opacity 200ms ease 60ms;
+}
+
+.challenge-skeleton {
+  background: linear-gradient(100deg, #eef2f6 30%, #f8fafc 50%, #eef2f6 70%);
+  background-size: 220% 100%;
+  animation: challenge-skeleton-sweep 1.25s ease-in-out infinite;
+  border: 1px solid #d9d9d9;
+}
+
+@keyframes challenge-skeleton-sweep {
+  from { background-position: 180% 0; }
+  to { background-position: -80% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .challenge-slot { transition: none; }
+  .challenge-skeleton { animation: none; }
+}

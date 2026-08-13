@@ -136,7 +136,21 @@ export default function ConsentScreen() {
                   </svg>
                 )}
               </button>
-              {choice === "agree" && <AssignmentChallenge onToken={handleChallenge} />}
+              {/*
+                The slot animates between 0 and the widget's exact 65px rather
+                than appearing instantly, so the Continue button slides up
+                smoothly instead of jumping the moment an option is picked.
+              */}
+              <div
+                className="challenge-slot overflow-hidden"
+                style={{
+                  maxHeight: choice === "agree" ? 96 : 0,
+                  opacity: choice === "agree" ? 1 : 0,
+                }}
+                aria-hidden={choice !== "agree"}
+              >
+                {choice === "agree" && <AssignmentChallenge onToken={handleChallenge} />}
+              </div>
             </div>
           </div>
         </div>

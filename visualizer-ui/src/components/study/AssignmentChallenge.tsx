@@ -1,7 +1,7 @@
 "use client";
 
 import Script from "next/script";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 declare global {
   interface Window {
@@ -20,6 +20,13 @@ export default function AssignmentChallenge({
   const elementRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<string | null>(null);
   const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+  /*
+   * Cloudflare's script can take a moment on a slow connection. Until its
+   * widget has actually painted, a skeleton holds the exact 300x65 the widget
+   * will occupy, so the participant sees something immediately and nothing
+   * shifts underneath them when it arrives.
+   */
+  const [widgetPainted, setWidgetPainted] = useState(false);
 
   const renderWidget = useCallback(() => {
     if (!siteKey || !elementRef.current || !window.turnstile || widgetIdRef.current) return;
@@ -32,6 +39,20 @@ export default function AssignmentChallenge({
       "error-callback": () => onToken(null),
     });
   }, [onToken, siteKey]);
+
+  /* render() returns before the iframe exists, so wait for the iframe itself. */
+  useEffect(() => {
+    if (widgetPainted) return;
+    const host = elementRef.current;
+    if (!host) return;
+    const check = () => {
+      if (host.querySelector("iframe")) setWidgetPainted(true);
+    };
+    check();
+    const observer = new MutationObserver(check);
+    observer.observe(host, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, [widgetPainted]);
 
   useEffect(() => () => {
     if (widgetIdRef.current && window.turnstile) {
@@ -51,7 +72,15 @@ export default function AssignmentChallenge({
         strategy="afterInteractive"
         onReady={renderWidget}
       />
-      <div ref={elementRef} aria-label="Human verification" />
+      <div className="relative w-[300px] h-[65px]">
+        {!widgetPainted && (
+          <div
+            className="challenge-skeleton absolute inset-0 rounded-md"
+            aria-hidden="true"
+          />
+        )}
+        <div ref={elementRef} aria-label="Human verification" />
+      </div>
     </>
   );
 }
