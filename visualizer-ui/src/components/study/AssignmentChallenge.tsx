@@ -14,51 +14,75 @@ declare global {
 
 export default function AssignmentChallenge({
   onToken,
+  onReadyChange,
 }: {
   onToken: (token: string | null) => void;
+  onReadyChange: (ready: boolean) => void;
 }) {
   const elementRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<string | null>(null);
   const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
   /*
-   * Cloudflare's script can take a moment on a slow connection. Until its
-   * widget has actually painted, a skeleton holds the exact 300x65 the widget
-   * will occupy, so the participant sees something immediately and nothing
-   * shifts underneath them when it arrives.
+   * Cloudflare's script can take a moment on a slow connection. The skeleton
+   * holds the exact 300x65 until render() confirms that Turnstile initialized,
+   * so the layout stays stable without depending on Cloudflare's private DOM.
    */
-  const [widgetPainted, setWidgetPainted] = useState(false);
+  const [widgetState, setWidgetState] = useState<"loading" | "ready" | "verified" | "error">("loading");
+
+  const markUnavailable = useCallback(() => {
+    setWidgetState("error");
+    onReadyChange(false);
+    onToken(null);
+  }, [onReadyChange, onToken]);
 
   const renderWidget = useCallback(() => {
     if (!siteKey || !elementRef.current || !window.turnstile || widgetIdRef.current) return;
-    widgetIdRef.current = window.turnstile.render(elementRef.current, {
-      sitekey: siteKey,
-      action: "study-assignment",
-      theme: "light",
-      callback: (token: string) => onToken(token),
-      "expired-callback": () => onToken(null),
-      "error-callback": () => onToken(null),
-    });
-  }, [onToken, siteKey]);
+    try {
+      widgetIdRef.current = window.turnstile.render(elementRef.current, {
+        sitekey: siteKey,
+        action: "study-assignment",
+        theme: "light",
+        size: "normal",
+        appearance: "always",
+        callback: (token: string) => {
+          setWidgetState("verified");
+          onToken(token);
+        },
+        "expired-callback": () => {
+          setWidgetState("ready");
+          onToken(null);
+        },
+        "timeout-callback": () => {
+          setWidgetState("ready");
+          onToken(null);
+        },
+        "unsupported-callback": markUnavailable,
+        "error-callback": markUnavailable,
+      });
 
-  /* render() returns before the iframe exists, so wait for the iframe itself. */
+      // A successful render() call is the reliable initialization signal.
+      // Looking for an iframe can fail when Turnstile changes its DOM internals.
+      setWidgetState((current) => current === "verified" ? current : "ready");
+      onReadyChange(true);
+    } catch {
+      markUnavailable();
+    }
+  }, [markUnavailable, onReadyChange, onToken, siteKey]);
+
+  /* Ad blockers can prevent the script from loading without firing onError. */
   useEffect(() => {
-    if (widgetPainted) return;
-    const host = elementRef.current;
-    if (!host) return;
-    const check = () => {
-      if (host.querySelector("iframe")) setWidgetPainted(true);
-    };
-    check();
-    const observer = new MutationObserver(check);
-    observer.observe(host, { childList: true, subtree: true });
-    return () => observer.disconnect();
-  }, [widgetPainted]);
+    if (!siteKey || widgetState !== "loading") return;
+    const timeout = window.setTimeout(markUnavailable, 12_000);
+    return () => window.clearTimeout(timeout);
+  }, [markUnavailable, siteKey, widgetState]);
 
   useEffect(() => () => {
     if (widgetIdRef.current && window.turnstile) {
       window.turnstile.remove(widgetIdRef.current);
     }
-  }, []);
+    onReadyChange(false);
+    onToken(null);
+  }, [onReadyChange, onToken]);
 
   if (!siteKey) {
     if (process.env.NODE_ENV !== "production") return null;
@@ -71,16 +95,32 @@ export default function AssignmentChallenge({
         src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"
         strategy="afterInteractive"
         onReady={renderWidget}
+        onError={markUnavailable}
       />
       <div className="relative w-[300px] h-[65px]">
-        {!widgetPainted && (
+        {widgetState === "loading" && (
           <div
             className="challenge-skeleton absolute inset-0 rounded-md"
             aria-hidden="true"
           />
         )}
         <div ref={elementRef} aria-label="Human verification" />
+        {widgetState === "error" && (
+          <div
+            className="absolute inset-0 rounded-md border border-red-300 bg-red-50 px-3 flex items-center"
+            role="alert"
+          >
+            <p className="text-[11px] font-semibold leading-snug text-red-700">
+              Verification could not load. Check your connection or browser extensions, then refresh the page.
+            </p>
+          </div>
+        )}
       </div>
+      {widgetState === "verified" && (
+        <p className="mt-1 text-[11px] font-semibold text-emerald-700" role="status">
+          Verification complete.
+        </p>
+      )}
     </>
   );
 }

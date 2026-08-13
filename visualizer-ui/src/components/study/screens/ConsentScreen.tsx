@@ -10,18 +10,22 @@ export default function ConsentScreen() {
   const { acceptConsent, declineConsent, isAssigning, assignError } = useStudy();
   const [choice, setChoice] = useState<"agree" | "disagree" | null>(null);
   const [challengeToken, setChallengeToken] = useState<string | null>(null);
-  const challengeRequired = Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY);
+  const [challengeReady, setChallengeReady] = useState(false);
+  const challengeRequired = process.env.NODE_ENV === "production" || Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY);
+  const challengePassed = !challengeRequired || (challengeReady && Boolean(challengeToken));
   const handleChallenge = useCallback((token: string | null) => setChallengeToken(token), []);
+  const handleChallengeReady = useCallback((ready: boolean) => setChallengeReady(ready), []);
 
   const continueBlockedReason =
     choice === null
       ? "Select an option above to continue."
-      : choice === "agree" && challengeRequired && !challengeToken
+      : choice === "agree" && !challengePassed
         ? "Complete the verification box to continue."
         : null;
 
   const onContinue = () => {
     if (choice === "agree") {
+      if (!challengePassed) return;
       void acceptConsent(challengeToken ?? undefined);
     } else if (choice === "disagree") {
       declineConsent();
@@ -35,15 +39,15 @@ export default function ConsentScreen() {
       subheading="Please read the following before deciding whether to take part."
     >
       {/*
-        Side by side needs ~1270px: shell padding 96 + consent box 560 +
-        question column 440 + button 135 + gaps. Below that the Continue button
-        was pushed off-screen and clipped, so the two blocks stack until the
-        room genuinely exists.
+        Keep the desktop arrangement on laptop-sized viewports, including when
+        browser zoom reduces the CSS viewport. Between 1100px and the full
+        desktop width, both columns flex smaller instead of stacking or
+        pushing the Continue button off-screen.
       */}
-      <div className="flex flex-col min-[1300px]:flex-row items-start gap-5 w-full max-w-[1360px]">
+      <div className="flex flex-col min-[1100px]:flex-row items-start gap-5 w-full max-w-[1360px]">
         {/* Scrollable Consent Form Text Box */}
         <div
-          className="w-full lg:w-[560px] max-w-[560px] rounded-xl overflow-hidden shadow-sm flex-shrink-0"
+          className="w-full min-[1100px]:w-[clamp(470px,42vw,560px)] max-w-[560px] rounded-xl overflow-hidden shadow-sm flex-shrink-0"
           style={{
             background: "#ffffff",
             border: "1.5px solid #64748b",
@@ -55,10 +59,10 @@ export default function ConsentScreen() {
         </div>
 
         {/* Agreement Question & Continue Group Moved Left Next to Consent Box */}
-        <div className="flex-initial w-auto min-w-[340px] max-w-[680px] flex flex-col justify-end self-stretch pb-1">
+        <div className="w-full min-[1100px]:w-auto min-[1100px]:min-w-0 min-[1100px]:flex-1 max-w-[680px] flex flex-col justify-end self-stretch pb-1">
           <div className="flex flex-col sm:flex-row items-start sm:items-end justify-start gap-4 w-full mt-auto">
-            {/* Agreement Question & Option Boxes (Untouched Sizing) */}
-            <fieldset className="space-y-2.5 w-full max-w-[440px] flex-shrink-0">
+            {/* Agreement Question & Option Boxes */}
+            <fieldset className="space-y-2.5 w-full max-w-[440px] min-w-0">
               <legend className="text-[14px] font-extrabold mb-2" style={{ color: "#0f172a" }}>
                 Do you agree to participate in this study?
               </legend>
@@ -105,7 +109,11 @@ export default function ConsentScreen() {
                       name="consent"
                       value={opt.key}
                       checked={isSelected}
-                      onChange={() => setChoice(opt.key)}
+                      onChange={() => {
+                        setChoice(opt.key);
+                        setChallengeToken(null);
+                        setChallengeReady(false);
+                      }}
                       className={`w-4 h-4 flex-shrink-0 ${isAgree ? "accent-emerald-600" : "accent-red-600"}`}
                     />
                     <span className="text-[12.5px] font-semibold leading-snug">{opt.label}</span>
@@ -133,10 +141,10 @@ export default function ConsentScreen() {
               )}
               <button
                 className="btn-primary text-xs py-2.5 px-6 shadow-lg"
-                disabled={choice === null || isAssigning || (choice === "agree" && challengeRequired && !challengeToken)}
+                disabled={choice === null || isAssigning || (choice === "agree" && !challengePassed)}
                 style={{
-                  opacity: choice === null || isAssigning || (choice === "agree" && challengeRequired && !challengeToken) ? 0.5 : 1,
-                  cursor: choice === null || isAssigning || (choice === "agree" && challengeRequired && !challengeToken) ? "not-allowed" : "pointer",
+                  opacity: choice === null || isAssigning || (choice === "agree" && !challengePassed) ? 0.5 : 1,
+                  cursor: choice === null || isAssigning || (choice === "agree" && !challengePassed) ? "not-allowed" : "pointer",
                 }}
                 onClick={onContinue}
               >
@@ -160,7 +168,12 @@ export default function ConsentScreen() {
                 widget never appeared and nobody could get past this screen.
                 The skeleton inside the component covers the loading gap.
               */}
-              {choice === "agree" && <AssignmentChallenge onToken={handleChallenge} />}
+              {choice === "agree" && (
+                <AssignmentChallenge
+                  onToken={handleChallenge}
+                  onReadyChange={handleChallengeReady}
+                />
+              )}
             </div>
           </div>
         </div>
