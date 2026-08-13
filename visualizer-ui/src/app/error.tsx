@@ -40,7 +40,7 @@ export default function StudyError({
       className="flex flex-1 items-center justify-center px-6 py-16"
       style={{ background: "var(--bg-base)", color: "var(--text-primary)" }}
     >
-      <div className="w-full max-w-md text-center flex flex-col items-center">
+      <div className="study-error-content w-full max-w-lg text-center flex flex-col items-center">
         <Image
           src="/icon-on-light.svg"
           alt="Code Visualizer"

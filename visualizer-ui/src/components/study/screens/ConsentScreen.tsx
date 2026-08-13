@@ -53,7 +53,14 @@ export default function ConsentScreen() {
             border: "1.5px solid #64748b",
           }}
         >
-          <div className="p-5 h-[590px] max-h-[74vh] overflow-y-auto panel-scroll">
+          <div
+            className="p-5 overflow-y-auto panel-scroll
+              h-[min(590px,calc(100dvh-165px))]
+              min-[1600px]:h-[min(590px,calc(100dvh/1.12-165px))]
+              min-[1800px]:h-[min(590px,calc(100dvh/1.25-165px))]
+              min-[2200px]:h-[min(590px,calc(100dvh/1.4-165px))]
+              min-[2800px]:h-[min(590px,calc(100dvh/1.6-165px))]"
+          >
             <ConsentBody />
           </div>
         </div>

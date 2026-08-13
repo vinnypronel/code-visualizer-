@@ -32,6 +32,8 @@ interface StudyShellProps {
   subheading?: string;
   /* Optional timer element shown in the header (right side). */
   timer?: ReactNode;
+  /* Optional action placed beside the study title on the left. */
+  headerLeftAction?: ReactNode;
   /* Main scrollable content. */
   children: ReactNode;
   /* Optional sticky footer (usually the primary Continue button). */
@@ -54,6 +56,7 @@ export default function StudyShell({
   heading,
   subheading,
   timer,
+  headerLeftAction,
   children,
   footer,
   fluid = false,
@@ -73,24 +76,25 @@ export default function StudyShell({
         style={{ borderColor: "var(--border)", background: "var(--bg-header)" }}
       >
         <div className="relative w-full px-4 sm:px-6 py-1.5 flex items-center justify-between gap-4 min-h-[46px]">
-          {/* Left: Kean Logo + Title + Version Badge */}
-          <div
-            onClick={returnToConsent}
-            role="button"
-            tabIndex={0}
-            title="Back to Home"
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") returnToConsent();
-            }}
-            className="flex items-center gap-2.5 flex-shrink-0 cursor-pointer group"
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/kean-logo.png"
-              alt="Kean University"
-              className="h-10 sm:h-12 w-auto object-contain flex-shrink-0 transition-transform group-hover:scale-105"
-            />
-            <div className="flex flex-col">
+          {/* Left: branding plus an optional phase-specific action. */}
+          <div className="flex items-center gap-3 flex-shrink-0">
+            <div
+              onClick={returnToConsent}
+              role="button"
+              tabIndex={0}
+              title="Back to Home"
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") returnToConsent();
+              }}
+              className="flex items-center gap-2.5 flex-shrink-0 cursor-pointer group"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/kean-logo.png"
+                alt="Kean University"
+                className="h-10 sm:h-12 w-auto object-contain flex-shrink-0 transition-transform group-hover:scale-105"
+              />
+              <div className="flex flex-col">
               <span
                 className="text-xs sm:text-sm font-mono uppercase tracking-wider font-extrabold whitespace-nowrap hidden lg:inline group-hover:text-[var(--accent)] transition-colors"
                 style={{ color: "var(--text-primary)" }}
@@ -124,17 +128,23 @@ export default function StudyShell({
                             : "Custom Java Code"}
                 </span>
               </span>
+              </div>
             </div>
+            {headerLeftAction && (
+              <div className="ml-3 flex-shrink-0 2xl:absolute 2xl:left-[calc(25%+10px)] 2xl:ml-0 2xl:-translate-x-1/2">
+                {headerLeftAction}
+              </div>
+            )}
           </div>
 
           {/* Center: Stage Tracker */}
           {/*
-            From xl up there is room to pin the tracker to the true header
+            From 2xl up there is room to pin the tracker to the true header
             centre, so it stays centred no matter how wide the logo block on
-            the left or the timer block on the right happen to be. Below xl the
+            the left or the timer block on the right happen to be. Below 2xl the
             side blocks would collide with it, so it stays in normal flow.
           */}
-          <ol className="hidden lg:flex items-center gap-1.5 flex-1 max-w-2xl mx-auto px-2 lg:absolute lg:left-1/2 lg:-translate-x-1/2 lg:mx-0 lg:w-[520px] lg:flex-none">
+          <ol className="hidden lg:flex items-center gap-1.5 flex-1 min-w-0 max-w-2xl mx-auto px-2 2xl:absolute 2xl:left-1/2 2xl:-translate-x-1/2 2xl:mx-0 2xl:w-[520px] 2xl:flex-none">
             {STAGES.map((stage, i) => {
               const state =
                 i < stageIndex ? "done" : i === stageIndex ? "active" : "todo";
@@ -204,14 +214,14 @@ export default function StudyShell({
             */}
             {session.participantId && (
               <span
-                className="hidden md:inline font-mono text-[11px] font-semibold whitespace-nowrap"
+                className="hidden 2xl:inline 2xl:mr-7 font-mono text-[11px] font-semibold whitespace-nowrap"
                 style={{ color: "var(--text-secondary)" }}
                 title="Your participant ID"
               >
                 ID {session.participantId}
               </span>
             )}
-            {timer && <div className="mr-6 sm:mr-12">{timer}</div>}
+            {timer && <div className="mr-2 xl:mr-4 2xl:mr-12">{timer}</div>}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/ur2phd-logo.png"

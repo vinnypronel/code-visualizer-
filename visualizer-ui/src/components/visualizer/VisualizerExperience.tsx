@@ -3,7 +3,8 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import dynamic from "next/dynamic";
 import Image from "next/image";
-import { Check, ChevronDown, ChevronRight, Compass } from "lucide-react";
+import { Check, ChevronDown, Compass } from "lucide-react";
+import { motion, useReducedMotion } from "framer-motion";
 import AiExplanationPanel from "@/components/AiExplanationPanel";
 import OnboardingTour from "@/components/OnboardingTour";
 import InteractiveWalkthrough from "@/components/InteractiveWalkthrough";
@@ -1419,6 +1420,33 @@ interface LessonSummaryContent {
   visualGuide: Array<{ label: string; explanation: string }>;
 }
 
+const SUMMARY_JAVA_KEYWORDS = new Set([
+  "boolean", "char", "class", "double", "false", "float", "int", "long",
+  "new", "null", "return", "short", "static", "this", "true", "void",
+]);
+
+/* Lightweight Java highlighting for the small summary snippets. Loading a
+ * second Monaco editor here would be much heavier than the few tokens need.
+ * These colors mirror the editor's dark Java theme. */
+function SummaryJavaCode({ code }: { code: string }) {
+  const tokens = code.split(/(\s+|"(?:\\.|[^"\\])*"|\b\d+\b|[A-Za-z_$][\w$]*|.)/g);
+
+  return (
+    <code>
+      {tokens.map((token, index) => {
+        if (!token) return null;
+        let color = "#d4d4d4";
+        if (SUMMARY_JAVA_KEYWORDS.has(token)) color = "#569cd6";
+        else if (/^[A-Z][\w$]*$/.test(token)) color = "#4ec9b0";
+        else if (/^\d+$/.test(token)) color = "#b5cea8";
+        else if (token.startsWith('"')) color = "#ce9178";
+
+        return <span key={`${index}-${token}`} style={{ color }}>{token}</span>;
+      })}
+    </code>
+  );
+}
+
 const LESSON_SUMMARIES: Record<string, LessonSummaryContent> = {
   linkedlist: {
     overview: "This program creates two separate Node objects, connects them into a chain, and reads a value from the first Node. The variables point to the objects; they do not contain the objects themselves.",
@@ -1534,6 +1562,7 @@ function LessonCustomDropdown({
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -1567,11 +1596,15 @@ function LessonCustomDropdown({
       </button>
 
       {isOpen && (
-        <div
+        <motion.div
           className="absolute left-0 right-0 top-full z-50 border border-t-0 rounded-b-lg overflow-hidden shadow-xl"
+          initial={reduceMotion ? false : { opacity: 0, y: -7, scaleY: 0.94, clipPath: "inset(0 0 100% 0)" }}
+          animate={{ opacity: 1, y: 0, scaleY: 1, clipPath: "inset(0 0 0% 0)" }}
+          transition={{ duration: reduceMotion ? 0 : 0.28, ease: [0.22, 1, 0.36, 1] }}
           style={{
             background: "var(--bg-panel)",
             borderColor: "#0284c7",
+            transformOrigin: "top center",
           }}
           role="listbox"
         >
@@ -1598,7 +1631,7 @@ function LessonCustomDropdown({
               </button>
             );
           })}
-        </div>
+        </motion.div>
       )}
     </div>
   );
@@ -1704,7 +1737,7 @@ function LessonComplete({
                     <li key={`${item.code}-${index}`}>
                       <span className="lesson-summary-step-number">{index + 1}</span>
                       <div>
-                        <code>{item.code}</code>
+                        <SummaryJavaCode code={item.code} />
                         <p>{item.explanation}</p>
                       </div>
                     </li>
@@ -1783,6 +1816,86 @@ interface VisualizerExperienceProps {
   introBackButton?: React.ReactNode;
 }
 
+interface PendingCodeTransfer {
+  text: string;
+  sourceX: number;
+  sourceY: number;
+  targetSelectors: string[];
+  settleDelayMs: number;
+}
+
+interface CodeTransferFlight extends PendingCodeTransfer {
+  id: string;
+  targetSelector: string;
+  targetX: number;
+  targetY: number;
+  delay: number;
+  duration: number;
+}
+
+function CodeTransferChip({
+  flight,
+  onFinish,
+}: {
+  flight: CodeTransferFlight;
+  onFinish: (flight: CodeTransferFlight) => void;
+}) {
+  const chipRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const chip = chipRef.current;
+    if (!chip) return;
+    const animation = chip.animate(
+      [
+        { left: `${flight.sourceX}px`, top: `${flight.sourceY}px`, opacity: 0, transform: "translate(-50%, -50%) scale(0.88)" },
+        { left: `${flight.sourceX}px`, top: `${flight.sourceY}px`, opacity: 1, transform: "translate(-50%, -50%) scale(1)", offset: 0.1 },
+        { left: `${flight.targetX}px`, top: `${flight.targetY}px`, opacity: 1, transform: "translate(-50%, -50%) scale(1)", offset: 0.64 },
+        { left: `${flight.targetX}px`, top: `${flight.targetY}px`, opacity: 1, transform: "translate(-50%, -50%) scale(0.96)", offset: 0.93 },
+        { left: `${flight.targetX}px`, top: `${flight.targetY}px`, opacity: 0, transform: "translate(-50%, -50%) scale(0.72)" },
+      ],
+      {
+        duration: flight.duration,
+        delay: flight.delay,
+        easing: "cubic-bezier(0.22, 1, 0.36, 1)",
+        fill: "both",
+      },
+    );
+    animation.onfinish = () => onFinish(flight);
+    return () => animation.cancel();
+  }, [flight, onFinish]);
+
+  return (
+    <div
+      ref={chipRef}
+      aria-hidden="true"
+      style={{
+        position: "absolute",
+        left: flight.sourceX,
+        top: flight.sourceY,
+        zIndex: 80,
+        maxWidth: "min(300px, 38vw)",
+        overflow: "hidden",
+        padding: "6px 10px",
+        border: "1px solid #10b981",
+        borderRadius: 7,
+        color: "#e2e8f0",
+        background: "#07101f",
+        boxShadow: "0 8px 22px rgba(16, 185, 129, 0.28)",
+        fontFamily: "var(--font-geist-mono), monospace",
+        pointerEvents: "none",
+        whiteSpace: "nowrap",
+      }}
+    >
+      <span style={{ display: "block", marginBottom: 2, color: "#6ee7b7", fontSize: 7, fontWeight: 800, letterSpacing: "0.08em", lineHeight: 1, textTransform: "uppercase" }}>
+        Java runs
+      </span>
+      <code style={{ display: "block", overflow: "hidden", fontSize: 11, fontWeight: 650, textOverflow: "ellipsis" }}>
+        {flight.text}
+      </code>
+    </div>
+  );
+}
+
 import { useStudy } from "@/components/study/StudyProvider";
 
 export default function VisualizerExperience({
@@ -1816,6 +1929,8 @@ export default function VisualizerExperience({
   const [isEditing, setIsEditing] = useState(false);
   const [draftCode, setDraftCode] = useState<string>("");
   const [runState, setRunState] = useState<RunState>({ status: "idle" });
+  const [codeTransferFlights, setCodeTransferFlights] = useState<CodeTransferFlight[]>([]);
+  const pendingCodeTransferRef = useRef<PendingCodeTransfer | null>(null);
   const runAbortRef = useRef<AbortController | null>(null);
 
   const activePreset = customPreset ?? SIMULATION_PRESETS[presetId] ?? SIMULATION_PRESETS[LESSON_PRESET_ID];
@@ -1864,6 +1979,8 @@ export default function VisualizerExperience({
     setIsWalkthroughActive(false);
     setIsEditing(false);
     setRunState({ status: "idle" });
+    pendingCodeTransferRef.current = null;
+    setCodeTransferFlights([]);
     /*
      * Replaying a traced program keeps that program. Discarding it here would
      * silently throw away code the user just wrote, which is the one thing a
@@ -1890,6 +2007,68 @@ export default function VisualizerExperience({
 
   const handlePrimary = useCallback(() => {
     if (lessonPhase === "ready") {
+      const nextStepIndex = Math.min(totalSteps - 1, currentStep + 1);
+      const nextStep = activePreset.steps[nextStepIndex] ?? currentStepData;
+      const previousVariableNames = new Set(
+        currentStepData.stack.flatMap((frame) => frame.variables.map((variable) => variable.name)),
+      );
+      const nextVariableNames = nextStep.stack.flatMap((frame) => frame.variables.map((variable) => variable.name));
+      const newVariableNames = nextVariableNames.filter((name) => !previousVariableNames.has(name));
+      const previousObjectIds = new Set(Object.keys(currentStepData.heap));
+      const newObjectIds = Object.keys(nextStep.heap).filter((id) => !previousObjectIds.has(id));
+      const previousCalculations = new Set(
+        currentStepData.stack.flatMap((frame) => frame.calculation
+          ? [`${frame.methodName}:${frame.calculation.expression}:${frame.calculation.result}`]
+          : []),
+      );
+      const hasNewCalculation = nextStep.stack.some((frame) => frame.calculation && !previousCalculations.has(
+        `${frame.methodName}:${frame.calculation.expression}:${frame.calculation.result}`,
+      ));
+      const hasNewStdout = Boolean(nextStep.stdout && nextStep.stdout !== currentStepData.stdout);
+
+      const targets = [
+        ...newVariableNames.map((name) => `[data-ref-source="stack-${name}"]`),
+        ...(hasNewCalculation ? ['[data-code-transfer-target="calculation"]'] : []),
+        ...newObjectIds.map((id) => `[data-ref-target="heap-${id}"]`),
+        ...(nextStep.spotlightStackVars ?? [])
+          .filter((name) => !newVariableNames.includes(name))
+          .map((name) => `[data-ref-source="stack-${name}"]`),
+        ...(nextStep.spotlightHeapFields ?? []).map((field) => `[data-ref-source="heap-${field}"]`),
+        ...(nextStep.spotlightHeapObjects ?? [])
+          .filter((id) => !newObjectIds.includes(id))
+          .map((id) => `[data-ref-target="heap-${id}"]`),
+        ...(nextStep.dataMovement ? [`[data-ref-source="${nextStep.dataMovement.to}"]`] : []),
+        ...(hasNewStdout ? ['[data-code-transfer-target="stdout"]'] : []),
+      ].filter((selector, index, selectors) => selectors.indexOf(selector) === index);
+
+      const workspace = containerRef.current;
+      const highlightedLines = workspace
+        ? Array.from(workspace.querySelectorAll<HTMLElement>(".exec-highlight-line"))
+        : [];
+      const sourceElement = highlightedLines.find((element) => {
+        const rect = element.getBoundingClientRect();
+        return rect.width > 0 && rect.height > 0;
+      });
+      const sourceRect = sourceElement?.getBoundingClientRect();
+      const codePanelRect = workspace?.querySelector<HTMLElement>(".visualizer-code-panel")?.getBoundingClientRect();
+      const executedLine = activePreset.code
+        .split("\n")[Math.max(0, (nextStep.lineHighlight ?? 1) - 1)]
+        ?.trim() ?? "Run highlighted line";
+
+      pendingCodeTransferRef.current = {
+        text: executedLine,
+        sourceX: sourceRect ? sourceRect.left + sourceRect.width / 2 : (codePanelRect?.left ?? 0) + (codePanelRect?.width ?? 0) / 2,
+        sourceY: sourceRect ? sourceRect.top + sourceRect.height / 2 : (codePanelRect?.top ?? 0) + 120,
+        /* If this trace frame has no item-level diff, land in Variables—not
+         * the center of the whole workbench, which visually reads as the empty
+         * Objects area on a fresh program. */
+        targetSelectors: targets.length > 0 ? targets.slice(0, 3) : ["#onboarding-stack-zone"],
+        /* A returning method frame must finish popping before we measure the
+         * destination. Otherwise the remaining frame is still lower in the
+         * stack and the transfer lands at its old position. */
+        settleDelayMs: nextStep.stack.length < currentStepData.stack.length ? 760 : 0,
+      };
+
       setCurrentStep(prev => Math.min(totalSteps - 1, prev + 1));
       setLessonPhase("result");
       return;
@@ -1905,7 +2084,74 @@ export default function VisualizerExperience({
         setLessonPhase("ready");
       }
     }
-  }, [currentStep, lessonPhase, onLessonComplete, presetId, totalSteps]);
+  }, [activePreset, currentStep, currentStepData, lessonPhase, onLessonComplete, presetId, totalSteps]);
+
+  useEffect(() => {
+    if (lessonPhase !== "result" || !pendingCodeTransferRef.current) return;
+    const pending = pendingCodeTransferRef.current;
+    pendingCodeTransferRef.current = null;
+
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    let frame = 0;
+    const timer = window.setTimeout(() => {
+      frame = window.requestAnimationFrame(() => {
+        const workspace = containerRef.current;
+        if (!workspace) return;
+        const workspaceRect = workspace.getBoundingClientRect();
+        /* StudyShell uses CSS zoom on larger displays. getBoundingClientRect()
+         * returns zoomed viewport pixels, while absolutely positioned children
+         * use the workspace's unzoomed CSS coordinate system. Convert between
+         * them or a valid Variables target overshoots into the Objects area. */
+        const workspaceScale = workspace.offsetWidth > 0
+          ? workspaceRect.width / workspace.offsetWidth
+          : 1;
+        const flights = pending.targetSelectors.flatMap((selector, index) => {
+          const target = workspace.querySelector<HTMLElement>(selector);
+          if (!target) return [];
+          const targetRect = target.getBoundingClientRect();
+          const sourceX = (pending.sourceX - workspaceRect.left) / workspaceScale;
+          const sourceY = (pending.sourceY - workspaceRect.top) / workspaceScale;
+          const targetX = (targetRect.left - workspaceRect.left + targetRect.width / 2) / workspaceScale;
+          const targetY = (targetRect.top - workspaceRect.top + targetRect.height / 2) / workspaceScale;
+          const travelDistance = Math.hypot(targetX - sourceX, targetY - sourceY);
+          return [{
+            ...pending,
+            id: `${currentStep}-${index}-${Date.now()}`,
+            targetSelector: selector,
+            sourceX,
+            sourceY,
+            targetX,
+            targetY,
+            /* Wide desktop layouts need more travel time. Each additional
+             * destination starts after the previous landing is readable. */
+            delay: index * 900,
+            duration: Math.min(3000, Math.max(2200, 1600 + travelDistance * 1.15)),
+          }];
+        });
+        setCodeTransferFlights(flights);
+      });
+    }, pending.settleDelayMs);
+
+    return () => {
+      window.clearTimeout(timer);
+      window.cancelAnimationFrame(frame);
+    };
+  }, [currentStep, lessonPhase]);
+
+  const finishCodeTransfer = useCallback((flight: CodeTransferFlight) => {
+    setCodeTransferFlights((flights) => flights.filter((candidate) => candidate.id !== flight.id));
+    const target = containerRef.current?.querySelector<HTMLElement>(flight.targetSelector);
+    if (!target) return;
+    target.animate(
+      [
+        { boxShadow: "0 0 0 0 rgba(16, 185, 129, 0.5)" },
+        { boxShadow: "0 0 0 7px rgba(16, 185, 129, 0.18)", offset: 0.55 },
+        { boxShadow: "0 0 0 0 rgba(16, 185, 129, 0)" },
+      ],
+      { duration: 650, easing: "ease-out" },
+    );
+  }, []);
 
   /*
    * Loading an example. `inPlace` is what the post-lesson switcher uses: the
@@ -2074,11 +2320,6 @@ export default function VisualizerExperience({
     onLessonPhaseChange?.(lessonPhase);
   }, [lessonPhase, onLessonPhaseChange]);
 
-  const activeLineNumber = focusStepData.lineHighlight ?? 1;
-  const activeLineText = activePreset.code
-    .split("\n")[Math.max(0, activeLineNumber - 1)]
-    ?.trim() ?? "";
-
   /* Traced code has no scripted narration, so its own step explanation and a
    * neutral diagram stand in for the authored lesson copy. */
   const stepDiagram = focusStepData.bananaDiagram ?? CUSTOM_CODE_DIAGRAM;
@@ -2137,6 +2378,13 @@ export default function VisualizerExperience({
       <LessonProgress presetId={presetId} current={lessonStep} total={totalLessonSteps} phase={lessonPhase} />
       {/* Main Workspace Layout */}
       <div ref={containerRef} className="visualizer-main flex flex-1 min-h-0 overflow-hidden relative">
+        {codeTransferFlights.map((flight) => (
+          <CodeTransferChip
+            key={flight.id}
+            flight={flight}
+            onFinish={finishCodeTransfer}
+          />
+        ))}
         
         {/* Left Panel: Monaco Code Editor */}
         <div

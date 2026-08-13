@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { ArrowRight, Pencil, Play } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { ArrowRight, Check, ChevronDown, Pencil, Play } from "lucide-react";
+import { motion, useReducedMotion } from "framer-motion";
 
 /*
  * Post-lesson options shown after every required line has run.
@@ -32,6 +33,88 @@ const cardStyle: React.CSSProperties = {
   background: "var(--bg-panel)",
   textAlign: "left",
 };
+
+function PostLessonExampleDropdown({
+  examples,
+  value,
+  onChange,
+}: {
+  examples: PostLessonExample[];
+  value: string;
+  onChange: (id: string) => void;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const reduceMotion = useReducedMotion();
+  const selected = examples.find((example) => example.id === value) ?? examples[0];
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const closeOnOutsideClick = (event: MouseEvent) => {
+      if (!containerRef.current?.contains(event.target as Node)) setIsOpen(false);
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setIsOpen(false);
+    };
+    document.addEventListener("mousedown", closeOnOutsideClick);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("mousedown", closeOnOutsideClick);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [isOpen]);
+
+  return (
+    <div className="relative w-full" ref={containerRef}>
+      <button
+        type="button"
+        className={`post-lesson-example-select-button ${isOpen ? "is-open" : ""}`}
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
+        onClick={() => setIsOpen((open) => !open)}
+      >
+        <span className="truncate">{selected?.name ?? "Choose an example"}</span>
+        <ChevronDown
+          size={15}
+          className={`flex-shrink-0 transition-transform duration-200 ${isOpen ? "rotate-180 text-[#0284c7]" : "text-slate-500"}`}
+          aria-hidden="true"
+        />
+      </button>
+
+      {isOpen && (
+        <motion.div
+          className="post-lesson-example-menu"
+          role="listbox"
+          aria-label="Choose another example to load"
+          initial={reduceMotion ? false : { opacity: 0, y: -7, scaleY: 0.94, clipPath: "inset(0 0 100% 0)" }}
+          animate={{ opacity: 1, y: 0, scaleY: 1, clipPath: "inset(0 0 0% 0)" }}
+          transition={{ duration: reduceMotion ? 0 : 0.28, ease: [0.22, 1, 0.36, 1] }}
+          style={{ transformOrigin: "top center" }}
+        >
+          {examples.map((example) => {
+            const isSelected = example.id === value;
+            return (
+              <button
+                key={example.id}
+                type="button"
+                role="option"
+                aria-selected={isSelected}
+                className={`post-lesson-example-option ${isSelected ? "is-selected" : ""}`}
+                onClick={() => {
+                  onChange(example.id);
+                  setIsOpen(false);
+                }}
+              >
+                <span>{example.name}</span>
+                {isSelected && <Check size={14} aria-hidden="true" />}
+              </button>
+            );
+          })}
+        </motion.div>
+      )}
+    </div>
+  );
+}
 
 export default function PostLessonPanel({
   examples,
@@ -65,28 +148,28 @@ export default function PostLessonPanel({
         </h2>
       )}
 
-      <div style={cardStyle}>
+      <div
+        style={{
+          ...cardStyle,
+          gap: 8,
+          padding: "13px 18px",
+        }}
+      >
         <h3 style={{ color: "var(--text-primary)", fontSize: 13.5, fontWeight: 700 }}>
           Try a different example
         </h3>
-        <p style={{ color: "var(--text-secondary)", fontSize: 12.5, lineHeight: 1.6 }}>
+        <p style={{ color: "var(--text-secondary)", fontSize: 12.5, lineHeight: 1.5 }}>
           Pick another program and step through it the same way. It opens right here, at step 1.
         </p>
         <div className="post-lesson-example-row">
-          <label className="lesson-example-select" style={{ margin: 0 }}>
+          <div className="lesson-example-select" style={{ margin: 0 }}>
             <span>Example</span>
-            <select
+            <PostLessonExampleDropdown
+              examples={otherExamples}
               value={choice}
-              onChange={(event) => setChoice(event.target.value)}
-              aria-label="Choose another example to load"
-            >
-              {otherExamples.map((example) => (
-                <option key={example.id} value={example.id}>
-                  {example.name}
-                </option>
-              ))}
-            </select>
-          </label>
+              onChange={setChoice}
+            />
+          </div>
           <button
             type="button"
             className="btn-primary post-lesson-load-button"

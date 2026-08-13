@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
+import type { OnMount } from "@monaco-editor/react";
+import type { editor, Position } from "monaco-editor";
 import {
   Code2,
   ChevronLeft,
@@ -18,6 +20,9 @@ import {
 } from "lucide-react";
 
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), { ssr: false });
+type MonacoEditorInstance = Parameters<OnMount>[0];
+type MonacoApi = Parameters<OnMount>[1];
+type DecorationCollection = ReturnType<MonacoEditorInstance["createDecorationsCollection"]>;
 
 /*
  * State of a "Run my code" attempt.
@@ -80,9 +85,9 @@ export default function CodeEditorPanel({
 }: CodeEditorPanelProps) {
   const [copied, setCopied] = useState(false);
   const [editorReady, setEditorReady] = useState(false);
-  const editorRef = useRef<any>(null);
-  const monacoRef = useRef<any>(null);
-  const decorationsRef = useRef<any>(null);
+  const editorRef = useRef<MonacoEditorInstance | null>(null);
+  const monacoRef = useRef<MonacoApi | null>(null);
+  const decorationsRef = useRef<DecorationCollection | null>(null);
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(code);
@@ -90,14 +95,14 @@ export default function CodeEditorPanel({
     setTimeout(() => setCopied(false), 1500);
   };
 
-  const handleEditorMount = (editor: any, monaco: any) => {
+  const handleEditorMount: OnMount = (editor, monaco) => {
     editorRef.current = editor;
     monacoRef.current = monaco;
     setEditorReady(true);
 
     // Register Monaco Hover Provider for beginner-friendly CS terminology
     monaco.languages.registerHoverProvider("java", {
-      provideHover: (model: any, position: any) => {
+      provideHover: (model: editor.ITextModel, position: Position) => {
         const word = model.getWordAtPosition(position);
         if (!word) return null;
 

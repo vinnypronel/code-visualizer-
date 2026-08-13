@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { Layers, HardDrive } from "lucide-react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import {
   StackFrame,
   HeapObject,
@@ -156,6 +157,7 @@ export default function MemoryExecutionView({
   activeBlock,
 }: MemoryExecutionViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const reduceMotion = useReducedMotion();
   const [svgPaths, setSvgPaths] = useState<
     Array<{ id: string; signature: string; d: string; color: string }>
   >([]);
@@ -758,14 +760,28 @@ export default function MemoryExecutionView({
           )}
 
           <div className="space-y-4">
-            {stack.map((frame, idx) => {
+            <AnimatePresence initial={false} mode="popLayout">
+              {stack.map((frame, idx) => {
               const frameKey = stackFrameKeys[idx];
               const frameOffset = boxOffsets[frameKey] ?? { dx: 0, dy: 0 };
 
               return (
-                <div
-                  key={idx}
+                <motion.div
+                  key={frameKey}
+                  layout="position"
                   className="rounded-lg border overflow-hidden shadow-sm"
+                  initial={reduceMotion ? false : { opacity: 0, y: 18, scale: 0.96 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={reduceMotion ? { opacity: 0 } : {
+                    opacity: 0,
+                    y: -42,
+                    scale: 0.86,
+                    rotate: -1.5,
+                  }}
+                  transition={reduceMotion ? { duration: 0.01 } : {
+                    duration: 0.62,
+                    ease: [0.22, 1, 0.36, 1],
+                  }}
                   onPointerDown={(event) =>
                     handleBoxPointerDown(event, frameKey, STACK_TOP_INSET_PX)
                   }
@@ -890,6 +906,7 @@ export default function MemoryExecutionView({
 
                     {frame.calculation && (
                       <div
+                        data-code-transfer-target="calculation"
                         className="spotlight-active-green mt-2 rounded-md border-2 px-3 py-2.5"
                         style={{
                           background: "rgba(16, 185, 129, 0.1)",
@@ -928,13 +945,15 @@ export default function MemoryExecutionView({
                       </div>
                     )}
                   </div>
-                </div>
+                </motion.div>
               );
-            })}
+              })}
+            </AnimatePresence>
           </div>
 
           {stdout && (
             <div
+              data-code-transfer-target="stdout"
               className="mt-4 pt-3 border-t flex-shrink-0"
               style={{ borderColor: "var(--border)" }}
             >

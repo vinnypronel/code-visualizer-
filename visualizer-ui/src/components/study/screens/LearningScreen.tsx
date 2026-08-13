@@ -97,9 +97,9 @@ export default function LearningScreen() {
       stageIndex={2}
       heading="Learning"
       fluid
+      headerLeftAction={showTopBarBack ? backToPretest : undefined}
       timer={
-        <div className="flex items-center gap-3">
-          {showTopBarBack && backToPretest}
+        <div className="flex items-center">
           <TimerChip
             label={pastRecommended ? "Time elapsed after recommended" : "Recommended time left"}
             value={formatMMSS(pastRecommended ? elapsed - LEARNING_RECOMMENDED_SECONDS : remaining)}

@@ -260,6 +260,30 @@ export default function InteractiveWalkthrough({
         const isLiveTraceStepTwelve = presetId === "livetrace" && currentIndex === 11;
         const isLiveTraceStepFourteen = presetId === "livetrace" && currentIndex === 13;
 
+        /* Linked List result cards sit at the bottom-left of the workbench,
+         * directly beneath the Stack cards. This keeps the variables visible
+         * while placing their explanation beside the area it describes. */
+        if (presetId === "linkedlist") {
+          const isNodesConnectedResult = activeStepData.expectedLessonStep === 3;
+          setPlacement({
+            top: Math.max(
+              margin,
+              window.innerHeight - cardHeight - 10,
+            ),
+            left: Math.max(
+              margin,
+              Math.min(
+                window.innerWidth - cardWidth - margin,
+                isNodesConnectedResult
+                  ? live.left - cardWidth - 8
+                  : live.left + 10,
+              ),
+            ),
+            side: "center",
+          });
+          return;
+        }
+
         if (isLiveTraceStepFourteen) {
           const editorEl = document.querySelector("#onboarding-code-content");
           const codeRect = editorEl?.getBoundingClientRect();
@@ -685,6 +709,36 @@ export default function InteractiveWalkthrough({
           <p className="text-[11.5px] leading-relaxed mb-3" style={{ color: "var(--text-secondary)" }}>
             {activeStepData.explanationText}
           </p>
+
+          {isObserve && activeStepData.animationBreakdown && (
+            <div
+              className="mb-2 rounded-md border px-2 py-1.5"
+              style={{ background: "#f0f9ff", borderColor: "#bae6fd" }}
+            >
+              <div className="mb-1 text-[9px] font-mono font-extrabold uppercase tracking-wider" style={{ color: "#0369a1" }}>
+                Why {activeStepData.animationBreakdown.count} animations?
+              </div>
+              <ol className={`grid gap-1.5 ${
+                activeStepData.animationBreakdown.count === 1
+                  ? "grid-cols-1"
+                  : activeStepData.animationBreakdown.count === 2
+                    ? "grid-cols-2"
+                    : "grid-cols-3"
+              }`}>
+                {activeStepData.animationBreakdown.items.map((item, index) => (
+                  <li key={item} className="flex items-start gap-1 text-[8.5px] leading-tight" style={{ color: "var(--text-secondary)" }}>
+                    <span
+                      className="flex h-3.5 w-3.5 flex-shrink-0 items-center justify-center rounded-full text-[8px] font-bold"
+                      style={{ color: "#0369a1", background: "#e0f2fe", border: "1px solid #7dd3fc" }}
+                    >
+                      {index + 1}
+                    </span>
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          )}
 
           {/*
             Back sits beside the action rather than in the footer so both ways
