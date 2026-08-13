@@ -13,6 +13,13 @@ export default function ConsentScreen() {
   const challengeRequired = Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY);
   const handleChallenge = useCallback((token: string | null) => setChallengeToken(token), []);
 
+  const continueBlockedReason =
+    choice === null
+      ? "Select an option above to continue."
+      : choice === "agree" && challengeRequired && !challengeToken
+        ? "Complete the verification box to continue."
+        : null;
+
   const onContinue = () => {
     if (choice === "agree") {
       void acceptConsent(challengeToken ?? undefined);
@@ -109,6 +116,16 @@ export default function ConsentScreen() {
 
             {/* Continue Button Joined Right Next to Options */}
             <div className="flex flex-col items-start gap-2 flex-shrink-0 self-end pb-0.5 ml-2">
+              {/*
+                A greyed-out Continue with no explanation left participants
+                stuck, especially since the verification box only appears once
+                "Yes" is chosen. This says what is still outstanding.
+              */}
+              {continueBlockedReason && (
+                <span className="text-[12px]" style={{ color: "var(--text-secondary)" }}>
+                  {continueBlockedReason}
+                </span>
+              )}
               {assignError && (
                 <span className="text-[12px]" style={{ color: "var(--danger)" }}>
                   {assignError}

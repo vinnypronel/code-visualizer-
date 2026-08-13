@@ -10,12 +10,15 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import StudyShell, { TimerChip } from "@/components/study/StudyShell";
 import { useStudy } from "@/components/study/StudyProvider";
-import { formatMMSS, useCountdown } from "@/components/study/useTimers";
+import { formatMMSS, useCountUp } from "@/components/study/useTimers";
 import StaticMaterialsStub from "@/components/study/StaticMaterialsStub";
 import VisualizerExperience from "@/components/visualizer/VisualizerExperience";
 import type { LessonPhase } from "@/components/visualizer/VisualizerExperience";
 
 import { BackButtonWithTooltip } from "@/components/study/screens/TimedTestScreen";
+
+/* Advisory only. Nothing happens when it elapses. */
+const LEARNING_RECOMMENDED_SECONDS = 900;
 
 export default function LearningScreen() {
   const { session, logEvent, goTo } = useStudy();
@@ -34,9 +37,19 @@ export default function LearningScreen() {
     }
   }, []);
 
-  const countdownRemaining = useCountdown(900, visualizerStartMs ?? startAtMs);
-  const remaining = visualizerStartMs ? countdownRemaining : 900;
-  const urgent = remaining <= 60;
+  /*
+   * The recommended time is advisory here too. Nothing fires when it runs out,
+   * but the chip used to sit frozen at 0:00 under a "time left" label, which
+   * read like a deadline had passed. Past the recommendation it counts up
+   * instead, matching the timed tests.
+   */
+  const elapsed = useCountUp(visualizerStartMs ?? startAtMs);
+  const started = !!visualizerStartMs;
+  const pastRecommended = started && elapsed >= LEARNING_RECOMMENDED_SECONDS;
+  const remaining = started
+    ? Math.max(0, LEARNING_RECOMMENDED_SECONDS - elapsed)
+    : LEARNING_RECOMMENDED_SECONDS;
+  const urgent = !pastRecommended && remaining <= 60;
 
   // The lesson can be replayed, so completion is logged only the first time.
   const loggedCompletionRef = useRef(false);
@@ -88,8 +101,8 @@ export default function LearningScreen() {
         <div className="flex items-center gap-3">
           {showTopBarBack && backToPretest}
           <TimerChip
-            label="Recommended time left"
-            value={formatMMSS(remaining)}
+            label={pastRecommended ? "Time elapsed after recommended" : "Recommended time left"}
+            value={formatMMSS(pastRecommended ? elapsed - LEARNING_RECOMMENDED_SECONDS : remaining)}
             urgent={urgent}
           />
         </div>

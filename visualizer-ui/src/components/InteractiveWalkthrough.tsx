@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { useGuideScale } from "@/lib/guideScale";
 import { motion } from "framer-motion";
 import { CheckCircle2, Code2, ArrowRight, HelpCircle, ChevronLeft, GripHorizontal } from "lucide-react";
 import GuideSpotlight, {
@@ -140,6 +141,7 @@ export default function InteractiveWalkthrough({
   const visible = isActive && !!activeStepData;
   const stepKey = activeStepData ? `${currentIndex}-${activeStepData.expectedLessonStep}-${activeStepData.subPhase}` : null;
   const dragPos = dragPlacement?.stepKey === stepKey ? dragPlacement : null;
+  const guideScale = useGuideScale();
 
   const targetRect = useTargetRect(visible && activeStepData ? activeStepData.selector : null, visible);
   const spotlightEditor = !!(
@@ -185,9 +187,16 @@ export default function InteractiveWalkthrough({
     const reposition = () => {
       const isObserve = activeStepData?.subPhase === "observe";
       const defaultHeight = isObserve ? 235 : CARD_MAX_HEIGHT_FALLBACK;
-      const cardHeight = cardRef.current?.offsetHeight || defaultHeight;
       const desiredCardWidth = isObserve ? OBSERVE_CARD_WIDTH : CARD_WIDTH;
-      const cardWidth = cardRef.current?.offsetWidth || desiredCardWidth;
+      /*
+       * Measure with getBoundingClientRect, not offsetWidth/offsetHeight. The
+       * card is zoomed on large monitors, so the offset properties report the
+       * unscaled layout size and every placement below would underestimate the
+       * card by the zoom factor and let it run off the bottom of the screen.
+       */
+      const cardBox = cardRef.current?.getBoundingClientRect();
+      const cardHeight = cardBox?.height || defaultHeight * guideScale;
+      const cardWidth = cardBox?.width || desiredCardWidth * guideScale;
       const el = activeStepData ? document.querySelector(activeStepData.selector) : null;
       const live = el ? el.getBoundingClientRect() : null;
 
@@ -412,7 +421,7 @@ export default function InteractiveWalkthrough({
       observer?.disconnect();
       window.removeEventListener("resize", reposition);
     };
-  }, [visible, targetRect, activeStepData, currentIndex, steps?.length, presetId]);
+  }, [visible, targetRect, activeStepData, currentIndex, steps?.length, presetId, guideScale]);
 
   /*
    * The card auto-places itself out of the way of whatever it is describing,
@@ -425,15 +434,16 @@ export default function InteractiveWalkthrough({
   const [isDragging, setIsDragging] = useState(false);
 
   const clampToViewport = useCallback((top: number, left: number) => {
-    const card = cardRef.current;
-    const width = card?.offsetWidth ?? CARD_WIDTH;
-    const height = card?.offsetHeight ?? CARD_MAX_HEIGHT_FALLBACK;
+    /* Rect, not offset*, so the zoomed size is what gets clamped. */
+    const box = cardRef.current?.getBoundingClientRect();
+    const width = box?.width ?? CARD_WIDTH * guideScale;
+    const height = box?.height ?? CARD_MAX_HEIGHT_FALLBACK * guideScale;
     const margin = 8;
     return {
       top: Math.max(margin, Math.min(window.innerHeight - height - margin, top)),
       left: Math.max(margin, Math.min(window.innerWidth - width - margin, left)),
     };
-  }, []);
+  }, [guideScale]);
 
   const handleDragStart = useCallback(
     (event: React.PointerEvent<HTMLDivElement>) => {
@@ -569,10 +579,11 @@ export default function InteractiveWalkthrough({
           onPointerUp={handleDragEnd}
           onPointerCancel={handleDragEnd}
           style={{
-            top: dragPos?.top ?? placement?.top ?? 0,
-            left: dragPos?.left ?? placement?.left ?? 0,
-            width: `min(${isObserve ? OBSERVE_CARD_WIDTH : CARD_WIDTH}px, calc(100vw - 32px))`,
-            maxHeight: "calc(100vh - 32px)",
+            zoom: guideScale,
+            top: (dragPos?.top ?? placement?.top ?? 0) / guideScale,
+            left: (dragPos?.left ?? placement?.left ?? 0) / guideScale,
+            width: `min(${isObserve ? OBSERVE_CARD_WIDTH : CARD_WIDTH}px, calc((100vw / ${guideScale}) - 32px))`,
+            maxHeight: `calc((100vh / ${guideScale}) - 32px)`,
             overflowY: "auto",
             background: "var(--bg-panel)",
             borderColor: "var(--border)",

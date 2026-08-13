@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { useGuideScale } from "@/lib/guideScale";
 import { motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, GripHorizontal } from "lucide-react";
 import GuideSpotlight, {
@@ -67,6 +68,7 @@ export default function OnboardingTour({ isOpen, onClose, onStartWalkthrough, in
   const cardRef = useRef<HTMLDivElement>(null);
   const dragOriginRef = useRef<{ dx: number; dy: number } | null>(null);
   const reducedMotion = usePrefersReducedMotion();
+  const guideScale = useGuideScale();
   const step = STEPS[activeStep];
   const targetRect = useTargetRect(isOpen ? step.selector : null, isOpen);
   const devJumpRect = useTargetRect(isOpen ? "#dev-jump-panel" : null, isOpen);
@@ -75,8 +77,14 @@ export default function OnboardingTour({ isOpen, onClose, onStartWalkthrough, in
     if (!isOpen) return;
 
     const reposition = () => {
-      const cardHeight = cardRef.current?.offsetHeight ?? 230;
-      const cardWidth = cardRef.current?.offsetWidth ?? CARD_WIDTH;
+      /*
+       * Rect, not offset*: the card is zoomed on large monitors, so the offset
+       * properties report the unscaled size and placement would let the card
+       * run off the bottom of the screen.
+       */
+      const cardBox = cardRef.current?.getBoundingClientRect();
+      const cardHeight = cardBox?.height ?? 230 * guideScale;
+      const cardWidth = cardBox?.width ?? CARD_WIDTH * guideScale;
 
       /*
        * The highlighted-line card belongs beside the editor but should leave
@@ -170,18 +178,18 @@ export default function OnboardingTour({ isOpen, onClose, onStartWalkthrough, in
       observer?.disconnect();
       window.removeEventListener("resize", reposition);
     };
-  }, [activeStep, isOpen, step.placement, targetRect]);
+  }, [activeStep, guideScale, isOpen, step.placement, targetRect]);
 
   const clampToViewport = useCallback((top: number, left: number) => {
-    const card = cardRef.current;
-    const width = card?.offsetWidth ?? CARD_WIDTH;
-    const height = card?.offsetHeight ?? 230;
+    const box = cardRef.current?.getBoundingClientRect();
+    const width = box?.width ?? CARD_WIDTH * guideScale;
+    const height = box?.height ?? 230 * guideScale;
     const margin = 8;
     return {
       top: Math.max(margin, Math.min(window.innerHeight - height - margin, top)),
       left: Math.max(margin, Math.min(window.innerWidth - width - margin, left)),
     };
-  }, []);
+  }, [guideScale]);
 
   const handleDragStart = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
     const card = cardRef.current;
@@ -256,10 +264,12 @@ export default function OnboardingTour({ isOpen, onClose, onStartWalkthrough, in
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: placement ? 1 : 0, y: 0 }}
           transition={{ duration: reducedMotion ? 0 : 0.18 }}
-          className="fixed w-[min(360px,calc(100vw-32px))] rounded-lg border px-5 py-4 shadow-lg pointer-events-auto"
+          className="fixed rounded-lg border px-5 py-4 shadow-lg pointer-events-auto"
           style={{
-            top: dragPos?.top ?? placement?.top ?? 0,
-            left: dragPos?.left ?? placement?.left ?? 0,
+            zoom: guideScale,
+            width: `min(360px, calc((100vw / ${guideScale}) - 32px))`,
+            top: (dragPos?.top ?? placement?.top ?? 0) / guideScale,
+            left: (dragPos?.left ?? placement?.left ?? 0) / guideScale,
             background: "var(--bg-panel)",
             borderColor: "var(--border)",
             boxShadow: "0 16px 36px rgba(23, 32, 51, 0.18)",

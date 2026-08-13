@@ -37,7 +37,7 @@ export const TEST_INSTRUCTIONS: string[] = [
   "Please answer the questions on your own - do not search online or use AI tools.",
   "Trace through each program step by step and fill in the table as completely as you can.",
   "Complete every response field before continuing.",
-  "You have 10 minutes to complete this section.",
+  "10 minutes is the recommended time for this section. It is only a guide: nothing is submitted automatically and you will not be cut off if you go over.",
   "When every response is complete, click the button below to continue.",
 ];
 

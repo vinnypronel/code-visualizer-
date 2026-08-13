@@ -126,7 +126,7 @@ export default function HandoffScreen() {
                 ) : (
                   <Copy size={14} aria-hidden="true" />
                 )}
-                {copied ? "Copied" : "Copy ID"}
+                <span aria-live="polite">{copied ? "Copied" : "Copy ID"}</span>
               </button>
               <button
                 type="button"
@@ -236,7 +236,7 @@ export default function HandoffScreen() {
             ) : (
               <Copy size={14} aria-hidden="true" />
             )}
-            {copied ? "Copied" : "Copy ID"}
+            <span aria-live="polite">{copied ? "Copied" : "Copy ID"}</span>
           </button>
         </div>
 

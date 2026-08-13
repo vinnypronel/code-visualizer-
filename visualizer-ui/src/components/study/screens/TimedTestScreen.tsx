@@ -2,8 +2,8 @@
 
 /*
  * Reusable timed-test screen for both the pre-test and the post-test. The
- * wrapper behavior (countdown, early Continue, auto-submit on expiry, logging)
- * is IDENTICAL for both; only the test definition and labels differ. A single
+ * wrapper behavior (recommended-time chip, Continue, logging) is IDENTICAL
+ * for both; only the test definition and labels differ. A single
  * component guarantees that identical behavior.
  */
 
@@ -12,7 +12,7 @@ import { ChevronLeft } from "lucide-react";
 import StudyShell, { TimerChip } from "@/components/study/StudyShell";
 import TestRunner from "@/components/study/TestRunner";
 import { useStudy } from "@/components/study/StudyProvider";
-import { formatMMSS, useCountdown } from "@/components/study/useTimers";
+import { formatMMSS, useCountUp } from "@/components/study/useTimers";
 import type { TestDef } from "@/data/tests";
 import type { EndedBy, LogEvent, Phase } from "@/lib/studyTypes";
 
@@ -34,12 +34,19 @@ export function BackButtonWithTooltip({
   tooltipText = "Your responses will be saved automatically if you go back.",
   showTooltip = true,
   position = "left",
+  confirmText,
 }: {
   label: string;
   onClick: () => void;
   tooltipText?: string;
   showTooltip?: boolean;
   position?: "top" | "bottom" | "right" | "left";
+  /*
+   * Set on buttons that throw away the participant's work. The warning used to
+   * live only in a hover tooltip, so a click without hovering wiped the ID and
+   * every answer instantly, with no undo. Confirming makes that deliberate.
+   */
+  confirmText?: string;
 }) {
   const posClasses =
     position === "right"
@@ -54,7 +61,10 @@ export function BackButtonWithTooltip({
     <div className="group relative inline-flex items-center">
       <button
         type="button"
-        onClick={onClick}
+        onClick={() => {
+          if (confirmText && !window.confirm(confirmText)) return;
+          onClick();
+        }}
         className="study-back-button inline-flex items-center gap-1 px-3 py-1.5 rounded-md border border-[var(--border)] text-[12px] font-semibold text-slate-700 bg-white shadow-sm cursor-pointer"
       >
         <ChevronLeft
@@ -130,10 +140,19 @@ export default function TimedTestScreen({
     goTo(nextPhase);
   };
 
-  const remaining = useCountdown(durationSeconds, startAtMs, () =>
-    finish("timer"),
-  );
-  const urgent = remaining <= 60;
+  /*
+   * The recommended time is advisory and nothing happens when it runs out.
+   * Before it is reached the chip counts down, exactly as it always has. Once
+   * it is reached the chip flips to counting up, showing how far past the
+   * recommendation the participant is, and they carry on and submit whenever
+   * they choose. Nothing auto-submits: a participant mid-answer at 0:00 used
+   * to lose that answer.
+   */
+  const elapsed = useCountUp(startAtMs);
+  const pastRecommended = elapsed >= durationSeconds;
+  const remaining = Math.max(0, durationSeconds - elapsed);
+  /* Only the countdown turns urgent, so going over time never looks alarming. */
+  const urgent = !pastRecommended && remaining <= 60;
 
   return (
     <StudyShell
@@ -141,8 +160,8 @@ export default function TimedTestScreen({
       heading={heading}
       timer={
         <TimerChip
-          label="Recommended time left"
-          value={formatMMSS(remaining)}
+          label={pastRecommended ? "Time elapsed after recommended" : "Recommended time left"}
+          value={formatMMSS(pastRecommended ? elapsed - durationSeconds : remaining)}
           urgent={urgent}
         />
       }
@@ -154,14 +173,16 @@ export default function TimedTestScreen({
               onClick={returnToConsent}
               position="left"
               tooltipText="Going back will reset your assigned Participant ID and answers."
+              confirmText="This erases your answers and your participant ID, and it cannot be undone. Are you sure you want to start over?"
             />
           ) : (
-            <BackButtonWithTooltip
-              label="Back to Learning"
-              onClick={() => goTo("learning")}
-              position="left"
-              tooltipText="Going back will return you to the learning activity."
-            />
+            /*
+             * The post-test deliberately has no way back to the learning
+             * activity. Leaving mid-test to re-study inflated the post-test
+             * score, and only participants bold enough to try it benefited,
+             * which made the pre-test and post-test measure different things.
+             */
+            <span aria-hidden="true" />
           )}
 
           <span

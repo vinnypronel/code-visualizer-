@@ -294,19 +294,23 @@ button:disabled, [role="button"][aria-disabled="true"] {
   transform: translateY(-50%) translateX(0);
 }
 
-/* The post-lesson load button is already wide enough for its arrow. Keep its
-   width stable on hover, align the play icon to the left, and reveal only the
-   arrow so the control does not appear to grow without explanation. */
+/*
+ * Sized to its own content so it can sit beside the example dropdown. It used
+ * to pre-reserve the arrow's width (min-width 208px, padding-right 40px),
+ * which kept the hover width stable but left an obvious empty strip on the
+ * right at rest. It now grows on hover like every other primary button, which
+ * is what reveals the arrow.
+ */
 .post-lesson-load-button {
   justify-content: flex-start;
   gap: 7px;
-  min-width: 208px;
+  min-width: 0;
   padding-left: 16px;
-  padding-right: 40px;
+  padding-right: 16px;
 }
 
 .post-lesson-load-button:hover:not(:disabled) {
-  min-width: 208px;
+  min-width: 0;
   padding-right: 40px;
 }
 
@@ -714,12 +718,16 @@ button:disabled, [role="button"][aria-disabled="true"] {
   font-weight: 750;
 }
 
+/*
+ * Grouped tight at the top rather than stretched down the panel. flex:1 plus
+ * space-evenly pushed the four steps apart to fill the section height, which
+ * read as a panel of empty space with a few small rows floating in it.
+ */
 .lesson-summary-code-story {
-  flex: 1;
   display: flex;
   flex-direction: column;
-  justify-content: space-evenly;
-  gap: 8px;
+  justify-content: flex-start;
+  gap: 11px;
   list-style: none;
 }
 
@@ -754,21 +762,21 @@ button:disabled, [role="button"][aria-disabled="true"] {
 .lesson-summary-code-story code {
   display: block;
   overflow-x: auto;
-  padding: 7px 9px;
+  padding: 8px 10px;
   border: 1px solid #243246;
   border-radius: 6px;
   color: #e2e8f0;
   background: #07101f;
   font-family: var(--font-geist-mono), monospace;
-  font-size: 11px;
+  font-size: 12.5px;
   white-space: nowrap;
 }
 
 .lesson-summary-code-story p {
   margin: 0;
   color: var(--text-secondary);
-  font-size: 11.5px;
-  line-height: 1.35;
+  font-size: 13px;
+  line-height: 1.4;
 }
 
 .lesson-summary-visual {
@@ -1652,4 +1660,27 @@ button:disabled, [role="button"][aria-disabled="true"] {
 @media (prefers-reduced-motion: reduce) {
   .challenge-slot { transition: none; }
   .challenge-skeleton { animation: none; }
+}
+
+/*
+ * The example picker and its Load button share one line. The select carries a
+ * 310px min-width for the wider layouts it is also used in, so it is allowed
+ * to shrink here instead of pushing the button onto its own row.
+ */
+.post-lesson-example-row {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.post-lesson-example-row .lesson-example-select {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+}
+
+.post-lesson-example-row .lesson-example-select select {
+  min-width: 0;
+  width: 100%;
 }

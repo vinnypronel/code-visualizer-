@@ -65,6 +65,7 @@ export default function AssignedScreen() {
             onClick={returnToConsent}
             position="left"
             tooltipText="Going back will reset your assigned Participant ID."
+            confirmText="This erases your participant ID and you would start over from consent. Are you sure?"
           />
           <button
             className="btn-primary min-w-[180px] text-xs py-2.5 px-6"

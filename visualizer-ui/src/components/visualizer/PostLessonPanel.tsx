@@ -72,7 +72,7 @@ export default function PostLessonPanel({
         <p style={{ color: "var(--text-secondary)", fontSize: 12.5, lineHeight: 1.6 }}>
           Pick another program and step through it the same way. It opens right here, at step 1.
         </p>
-        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 10 }}>
+        <div className="post-lesson-example-row">
           <label className="lesson-example-select" style={{ margin: 0 }}>
             <span>Example</span>
             <select

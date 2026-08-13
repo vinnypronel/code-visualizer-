@@ -11,6 +11,9 @@
 import type { ReactNode } from "react";
 import { useStudy } from "@/components/study/StudyProvider";
 
+/* Index of "Learning" within STAGES below. */
+const LEARNING_STAGE_INDEX = 2;
+
 /* The five participant-facing stages, in order, for the progress indicator. */
 export const STAGES = [
   "Consent",
@@ -101,7 +104,12 @@ export default function StudyShell({
                 }}
               >
                 <span>
-                  {!session.selectedLessonId
+                  {/*
+                    The lesson name belongs to the Learning stage only. It used
+                    to persist into the post-test and the questionnaire, which
+                    made participants think they were still inside the lesson.
+                  */}
+                  {stageIndex !== LEARNING_STAGE_INDEX || !session.selectedLessonId
                     ? "Kean University"
                     : isStatic
                       ? "Java Object-Reference Reading: Static Learning"
@@ -186,8 +194,23 @@ export default function StudyShell({
             })}
           </ol>
 
-          {/* Right: Timer + UR2PhD Logo */}
+          {/* Right: Participant ID + Timer + UR2PhD Logo */}
           <div className="flex items-center gap-3 flex-shrink-0 ml-auto">
+            {/*
+              The ID is shown once on the assigned screen and again at the very
+              end. Keeping it here in between means a participant who drops out
+              partway can still quote it, which is what makes a withdrawal or a
+              support request matchable to their row.
+            */}
+            {session.participantId && (
+              <span
+                className="hidden md:inline font-mono text-[11px] font-semibold whitespace-nowrap"
+                style={{ color: "var(--text-secondary)" }}
+                title="Your participant ID"
+              >
+                ID {session.participantId}
+              </span>
+            )}
             {timer && <div className="mr-6 sm:mr-12">{timer}</div>}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
