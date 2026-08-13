@@ -208,7 +208,6 @@ export default function InteractiveWalkthrough({
     spotlightEditor,
   );
   const guideButtonRect = useTargetRect(visible ? "#onboarding-guide-button" : null, visible);
-  const editButtonRect = useTargetRect(visible ? "#onboarding-edit-button" : null, visible);
   const restartButtonRect = useTargetRect(visible ? "#onboarding-restart-button" : null, visible);
   const backButtonRect = useTargetRect(visible ? BACK_BUTTON_SELECTOR : null, visible);
   const explainMoreButtonRect = useTargetRect(visible ? "#onboarding-explain-more-button" : null, visible);
@@ -805,7 +804,6 @@ export default function InteractiveWalkthrough({
         focusTarget={spotlightEditor ? editorRect : null}
         additionalTargets={[
           guideButtonRect,
-          editButtonRect,
           restartButtonRect,
           backButtonRect,
           explainMoreButtonRect,

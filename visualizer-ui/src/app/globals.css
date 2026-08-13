@@ -308,7 +308,8 @@ button:disabled, [role="button"][aria-disabled="true"] {
 
 .run-line-button > span {
   position: absolute;
-  left: 16px;
+  left: 64px;
+  transform: translateX(-50%);
   white-space: nowrap;
 }
 

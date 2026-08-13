@@ -7,12 +7,12 @@ import type { editor, Position } from "monaco-editor";
 import {
   Code2,
   ChevronLeft,
-  ChevronRight,
+  ArrowRight,
   RotateCcw,
   Copy,
   Check,
   HelpCircle,
-  Pencil,
+  Eye,
   Play,
   X,
   AlertCircle,
@@ -50,17 +50,13 @@ interface CodeEditorPanelProps {
   onPrimary: () => void;
   onReset: () => void;
   onOpenGuide: () => void;
+  onShowGuide?: () => void;
+  guideHidden?: boolean;
   /* Guide button is hidden for examples the walkthrough has no narration for. */
   showGuideButton?: boolean;
-  /*
-   * Editing. All of this is off during the measured lesson: the parent only
-   * passes `canEdit` once the lesson is complete (or in development), and
-   * Monaco stays read-only unless `isEditing` is explicitly true.
-   */
-  canEdit?: boolean;
+  /* Monaco stays read-only unless `isEditing` is explicitly true. */
   isEditing?: boolean;
   runState?: RunState;
-  onStartEdit?: () => void;
   onCancelEdit?: () => void;
   onCodeChange?: (value: string) => void;
   onRunCode?: () => void;
@@ -79,8 +75,9 @@ export default function CodeEditorPanel({
   onPrimary,
   onReset,
   onOpenGuide,
+  onShowGuide,
+  guideHidden = false,
   showGuideButton = true,
-  canEdit = false,
   isEditing = false,
   runState = { status: "idle" },
   onCancelEdit,
@@ -330,24 +327,14 @@ export default function CodeEditorPanel({
                   <HelpCircle size={14} aria-hidden="true" /> Reset Guide
                 </button>
               )}
-              {canEdit && (
+              {showGuideButton && guideHidden && onShowGuide && (
                 <button
-                  id="onboarding-edit-button"
+                  id="onboarding-show-guide-button"
                   type="button"
                   className="lesson-guide-button"
-                  disabled
-                  title="Coming soon"
-                  aria-label="Edit the code (coming soon)"
-                  style={{
-                    color: "#7c8799",
-                    borderColor: "#cbd3df",
-                    background: "#e2e6ec",
-                    cursor: "not-allowed",
-                    boxShadow: "none",
-                    opacity: 0.72,
-                  }}
+                  onClick={onShowGuide}
                 >
-                  <Pencil size={14} aria-hidden="true" /> Edit the code
+                  <Eye size={14} aria-hidden="true" /> Show Guide
                 </button>
               )}
             </div>
@@ -375,7 +362,7 @@ export default function CodeEditorPanel({
                   aria-label={primaryAriaLabel}
                 >
                   <span>{primaryLabel}</span>
-                  <ChevronRight className="btn-arrow" size={16} aria-hidden="true" />
+                  <ArrowRight className="btn-arrow" size={16} aria-hidden="true" />
                 </button>
               </div>
             </div>

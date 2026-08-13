@@ -15,7 +15,6 @@ import {
   SHOW_PRESET_SELECTOR,
   TRACE_REQUEST_TIMEOUT_MS,
   hasGuidedWalkthrough,
-  showPostLessonTools,
 } from "@/lib/studyConfig";
 import type { RunState } from "@/components/CodeEditorPanel";
 import type { BananaDiagram, ActiveBlock, ExecutionStep, Preset } from "@/types/visualizer";
@@ -1925,7 +1924,7 @@ export default function VisualizerExperience({
    * participant leaves the completion screen to explore, and stay unreachable
    * before they get there.
    */
-  const [hasFinishedLesson, setHasFinishedLesson] = useState(false);
+  const [, setHasFinishedLesson] = useState(false);
   const [customPreset, setCustomPreset] = useState<Preset | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [draftCode, setDraftCode] = useState<string>("");
@@ -1977,7 +1976,6 @@ export default function VisualizerExperience({
 
   const isCustomCode = customPreset !== null;
   const guideAvailable = hasGuidedWalkthrough(presetId, isCustomCode);
-  const postLessonToolsAvailable = showPostLessonTools(lessonPhase, hasFinishedLesson);
 
   /* Cancel an in-flight trace request whenever we leave or replace the run. */
   const abortPendingRun = useCallback(() => {
@@ -2215,18 +2213,6 @@ export default function VisualizerExperience({
     setIsWalkthroughActive(Boolean(options?.inPlace && hasGuidedWalkthrough(id)));
   }, [abortPendingRun, onExampleAttempt, setSelectedLessonId]);
 
-  const handleStartEdit = useCallback(() => {
-    abortPendingRun();
-    setDraftCode(activePreset.code);
-    setIsEditing(true);
-    setRunState({ status: "idle" });
-    setIsWalkthroughActive(false);
-    setIsGuideHidden(false);
-    setIsTourOpen(false);
-    setCurrentStep(0);
-    setLessonPhase("ready");
-  }, [abortPendingRun, activePreset.code]);
-
   const handleCancelEdit = useCallback(() => {
     abortPendingRun();
     setIsEditing(false);
@@ -2439,7 +2425,11 @@ export default function VisualizerExperience({
             code={isEditing ? draftCode : activePreset.code}
             /* No line highlight while editing: the steps belong to the old
              * program until the new one has actually been traced. */
-            activeLine={isEditing ? null : focusStepData.lineHighlight}
+            activeLine={isEditing
+              ? null
+              : isGuideHidden && currentStep < totalSteps - 1
+                ? (hiddenRunLine ?? null)
+                : focusStepData.lineHighlight}
             activeLines={isEditing ? null : walkthroughHighlightedLines}
             primaryLabel={workspacePrimaryLabel}
             primaryAriaLabel={workspacePrimaryAriaLabel}
@@ -2455,11 +2445,15 @@ export default function VisualizerExperience({
               setTourInitialStep(0);
               setIsTourOpen(true);
             }}
+            onShowGuide={() => {
+              setIsGuideHidden(false);
+              setIsTourOpen(false);
+              setIsWalkthroughActive(guideAvailable);
+            }}
+            guideHidden={isGuideHidden}
             showGuideButton={guideAvailable}
-            canEdit={postLessonToolsAvailable}
             isEditing={isEditing}
             runState={runState}
-            onStartEdit={handleStartEdit}
             onCancelEdit={handleCancelEdit}
             onCodeChange={setDraftCode}
             onRunCode={handleRunCode}
