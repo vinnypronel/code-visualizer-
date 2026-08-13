@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import { useGuideScale } from "@/lib/guideScale";
 import { guideArrowDirection } from "@/lib/guideKeys";
 import { motion } from "framer-motion";
-import { CheckCircle2, Code2, ArrowRight, HelpCircle, ChevronLeft, GripHorizontal } from "lucide-react";
+import { CheckCircle2, Code2, ArrowRight, HelpCircle, ChevronLeft, EyeOff, GripHorizontal } from "lucide-react";
 import GuideSpotlight, {
   placeGuideCard,
   usePrefersReducedMotion,
@@ -37,6 +37,8 @@ export interface InteractiveWalkthroughProps {
    */
   onPrimaryAction?: () => void;
   primaryActionLabel?: string;
+  /** Hides the card and spotlight without changing the current lesson step. */
+  onHide?: () => void;
   /** Keeps the editor highlight synchronized with the guide's current card. */
   onHighlightedLinesChange?: (lines: number[] | null) => void;
 }
@@ -160,6 +162,7 @@ export default function InteractiveWalkthrough({
   onBackToOrientation,
   onPrimaryAction,
   primaryActionLabel,
+  onHide,
   onHighlightedLinesChange,
 }: InteractiveWalkthroughProps) {
   const cardRef = useRef<HTMLDivElement>(null);
@@ -846,15 +849,17 @@ export default function InteractiveWalkthrough({
             <span className="text-[11px] font-bold uppercase tracking-wider font-mono" style={{ color: "var(--accent)" }}>
               Step {guideStepNumber} of {totalGuideSteps} &middot; {activeStepData.phaseLabel ?? (isObserve ? "Look at what changed" : "Run the line")}
             </span>
-            <div
-              className={`guide-drag-handle flex-shrink-0 ${isDragging ? "is-dragging" : ""}`}
-              onPointerDown={handleDragStart}
-              title="Drag guide (click and hold to drag)"
-              aria-label="Drag lesson guide"
-              role="button"
-              style={{ cursor: isDragging ? "grabbing" : "grab" }}
-            >
-              <GripHorizontal size={16} aria-hidden="true" style={{ pointerEvents: "none" }} />
+            <div className="flex items-center gap-1.5 flex-shrink-0">
+              <div
+                className={`guide-drag-handle flex-shrink-0 ${isDragging ? "is-dragging" : ""}`}
+                onPointerDown={handleDragStart}
+                title="Drag guide (click and hold to drag)"
+                aria-label="Drag lesson guide"
+                role="button"
+                style={{ cursor: isDragging ? "grabbing" : "grab" }}
+              >
+                <GripHorizontal size={16} aria-hidden="true" style={{ pointerEvents: "none" }} />
+              </div>
             </div>
           </div>
 
@@ -998,6 +1003,19 @@ export default function InteractiveWalkthrough({
               <ArrowRight size={14} className="flex-shrink-0" aria-hidden="true" />
               <span>{guideActionLabel}</span>
             </button>
+
+            {onHide && (
+              <button
+                type="button"
+                onClick={onHide}
+                className="guide-hide-button guide-hide-footer-button"
+                title="Hide the guide and continue on your own"
+                aria-label="Hide lesson guide"
+              >
+                <EyeOff size={13} aria-hidden="true" />
+                <span>Hide Guide</span>
+              </button>
+            )}
 
           </div>
 

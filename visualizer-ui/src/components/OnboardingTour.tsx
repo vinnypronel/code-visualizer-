@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import { useGuideScale } from "@/lib/guideScale";
 import { guideArrowDirection } from "@/lib/guideKeys";
 import { motion } from "framer-motion";
-import { ChevronLeft, ChevronRight, GripHorizontal } from "lucide-react";
+import { ChevronLeft, ChevronRight, EyeOff, GripHorizontal } from "lucide-react";
 import GuideSpotlight, {
   placeGuideCard,
   usePrefersReducedMotion,
@@ -57,12 +57,13 @@ interface OnboardingTourProps {
   isOpen: boolean;
   onClose: () => void;
   onStartWalkthrough?: () => void;
+  onHideGuide?: () => void;
   initialStep?: number;
 }
 
 const CARD_WIDTH = 360;
 
-export default function OnboardingTour({ isOpen, onClose, onStartWalkthrough, initialStep = 0 }: OnboardingTourProps) {
+export default function OnboardingTour({ isOpen, onClose, onStartWalkthrough, onHideGuide, initialStep = 0 }: OnboardingTourProps) {
   const [activeStep, setActiveStep] = useState(() => Math.max(0, Math.min(STEPS.length - 1, initialStep)));
   const [placement, setPlacement] = useState<{ top: number; left: number; side: GuideSide } | null>(null);
   const [dragPos, setDragPos] = useState<{ top: number; left: number } | null>(null);
@@ -244,6 +245,11 @@ export default function OnboardingTour({ isOpen, onClose, onStartWalkthrough, in
     onStartWalkthrough?.();
   };
 
+  const hideGuide = () => {
+    onClose();
+    onHideGuide?.();
+  };
+
   const moveToStep = (nextStep: number) => {
     setDragPos(null);
     setActiveStep(Math.max(0, Math.min(STEPS.length - 1, nextStep)));
@@ -320,24 +326,34 @@ export default function OnboardingTour({ isOpen, onClose, onStartWalkthrough, in
                 </kbd>
               ))}
             </div>
-            <button
-              type="button"
-              autoFocus
-              onClick={() => setIntroDismissed(true)}
-              className="btn-primary self-end text-sm py-3 px-8"
-            >
-              <span>Got it, start the guide</span>
-              {/* btn-primary's hover animation is driven by this arrow child. */}
-              <svg
-                className="btn-arrow"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2.5}
+            <div className="flex items-center gap-2 self-end">
+              <button
+                type="button"
+                onClick={hideGuide}
+                className="guide-hide-button guide-hide-footer-button"
               >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-              </svg>
-            </button>
+                <EyeOff size={13} aria-hidden="true" />
+                <span>Hide Guide</span>
+              </button>
+              <button
+                type="button"
+                autoFocus
+                onClick={() => setIntroDismissed(true)}
+                className="btn-primary self-end text-sm py-3 px-8"
+              >
+                <span>Got it, start the guide</span>
+                {/* btn-primary's hover animation is driven by this arrow child. */}
+                <svg
+                  className="btn-arrow"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2.5}
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
       </div>,
@@ -385,6 +401,14 @@ export default function OnboardingTour({ isOpen, onClose, onStartWalkthrough, in
               Lesson guide - {activeStep + 1} of {STEPS.length}
             </p>
             <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={hideGuide}
+                className="guide-hide-button guide-hide-footer-button"
+              >
+                <EyeOff size={13} aria-hidden="true" />
+                <span>Hide Guide</span>
+              </button>
               {!isFirst && (
                 <button
                   type="button"

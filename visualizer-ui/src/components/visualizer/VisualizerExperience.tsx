@@ -1915,6 +1915,7 @@ export default function VisualizerExperience({
   const [isTourOpen, setIsTourOpen]   = useState(false);
   const [tourInitialStep, setTourInitialStep] = useState(0);
   const [isWalkthroughActive, setIsWalkthroughActive] = useState<boolean>(false);
+  const [isGuideHidden, setIsGuideHidden] = useState(false);
   const [walkthroughHighlightedLines, setWalkthroughHighlightedLines] = useState<number[] | null>(null);
   const [isExploreOpen, setIsExploreOpen] = useState(false);
 
@@ -1944,6 +1945,20 @@ export default function VisualizerExperience({
   const focusStepData = activePreset.steps[focusStepIndex] || currentStepData;
   const lessonStep = lessonPhase === "ready" ? currentStep + 1 : currentStep;
   const showResult = lessonPhase === "result";
+  const hiddenRunStepIndex = lessonPhase === "result"
+    ? Math.min(currentStep + 1, totalSteps - 1)
+    : focusStepIndex;
+  const hiddenRunLine = activePreset.steps[hiddenRunStepIndex]?.lineHighlight;
+  const workspacePrimaryLabel = isGuideHidden && currentStep < totalSteps - 1
+    ? `Run Line ${hiddenRunLine ?? hiddenRunStepIndex + 1}`
+    : showResult
+      ? (currentStep === totalSteps - 1 ? "View Lesson Summary" : "Continue")
+      : "Run This Line";
+  const workspacePrimaryAriaLabel = isGuideHidden && currentStep < totalSteps - 1
+    ? `Run highlighted line ${hiddenRunLine ?? hiddenRunStepIndex + 1}`
+    : showResult
+      ? (currentStep === totalSteps - 1 ? "View lesson summary" : "Continue to next step")
+      : "Run highlighted line";
   const previousStackVariableNames = new Set(
     previousStepData.stack.flatMap((frame) => frame.variables.map((variable) => variable.name)),
   );
@@ -1977,6 +1992,7 @@ export default function VisualizerExperience({
     setCurrentStep(0);
     setIsTourOpen(false);
     setIsWalkthroughActive(false);
+    setIsGuideHidden(false);
     setIsEditing(false);
     setRunState({ status: "idle" });
     pendingCodeTransferRef.current = null;
@@ -2005,8 +2021,7 @@ export default function VisualizerExperience({
     setLessonPhase("ready");
   }, [currentStep, lessonPhase]);
 
-  const handlePrimary = useCallback(() => {
-    if (lessonPhase === "ready") {
+  const runReadyLine = useCallback(() => {
       const nextStepIndex = Math.min(totalSteps - 1, currentStep + 1);
       const nextStep = activePreset.steps[nextStepIndex] ?? currentStepData;
       const previousVariableNames = new Set(
@@ -2076,6 +2091,11 @@ export default function VisualizerExperience({
 
       setCurrentStep(prev => Math.min(totalSteps - 1, prev + 1));
       setLessonPhase("result");
+  }, [activePreset, currentStep, currentStepData, totalSteps]);
+
+  const handlePrimary = useCallback(() => {
+    if (lessonPhase === "ready") {
+      runReadyLine();
       return;
     }
     if (lessonPhase === "result") {
@@ -2089,7 +2109,17 @@ export default function VisualizerExperience({
         setLessonPhase("ready");
       }
     }
-  }, [activePreset, currentStep, currentStepData, lessonPhase, onLessonComplete, presetId, totalSteps]);
+  }, [currentStep, lessonPhase, onLessonComplete, presetId, runReadyLine, totalSteps]);
+
+  /* With the guide hidden, the participant does not need an otherwise empty
+   * ready-state click between observing one result and running the next line. */
+  const handleWorkspacePrimary = useCallback(() => {
+    if (isGuideHidden && lessonPhase === "result" && currentStep < totalSteps - 1) {
+      runReadyLine();
+      return;
+    }
+    handlePrimary();
+  }, [currentStep, handlePrimary, isGuideHidden, lessonPhase, runReadyLine, totalSteps]);
 
   useEffect(() => {
     if (lessonPhase !== "result" || !pendingCodeTransferRef.current) return;
@@ -2179,6 +2209,7 @@ export default function VisualizerExperience({
     setSelectedLessonId(id);
     setCurrentStep(0);
     setLessonPhase(options?.inPlace ? "ready" : "intro");
+    setIsGuideHidden(false);
     if (options?.inPlace) onExampleAttempt?.(id);
     /* A newly loaded guided example starts at its first required card. */
     setIsWalkthroughActive(Boolean(options?.inPlace && hasGuidedWalkthrough(id)));
@@ -2190,6 +2221,7 @@ export default function VisualizerExperience({
     setIsEditing(true);
     setRunState({ status: "idle" });
     setIsWalkthroughActive(false);
+    setIsGuideHidden(false);
     setIsTourOpen(false);
     setCurrentStep(0);
     setLessonPhase("ready");
@@ -2297,6 +2329,7 @@ export default function VisualizerExperience({
       setRunState({ status: "idle" });
       /* No narration exists for code the user wrote, so the guide stays off. */
       setIsWalkthroughActive(false);
+      setIsGuideHidden(false);
       setCurrentStep(0);
       setLessonPhase("ready");
     } catch (error) {
@@ -2408,14 +2441,17 @@ export default function VisualizerExperience({
              * program until the new one has actually been traced. */
             activeLine={isEditing ? null : focusStepData.lineHighlight}
             activeLines={isEditing ? null : walkthroughHighlightedLines}
-            primaryLabel={showResult ? (currentStep === totalSteps - 1 ? "View Lesson Summary" : "Continue") : "Run This Line"}
-            primaryAriaLabel={showResult ? (currentStep === totalSteps - 1 ? "View lesson summary" : "Continue to next step") : "Run highlighted line"}
+            primaryLabel={workspacePrimaryLabel}
+            primaryAriaLabel={workspacePrimaryAriaLabel}
+            stepLabel={isGuideHidden ? `Step ${lessonStep} of ${totalLessonSteps}` : undefined}
+            emphasizeActiveLine={isGuideHidden}
             canGoBack={currentStep > 0}
             onStepBack={handleStepBack}
-            onPrimary={handlePrimary}
+            onPrimary={handleWorkspacePrimary}
             onReset={handleReset}
             onOpenGuide={() => {
               setIsWalkthroughActive(false);
+              setIsGuideHidden(false);
               setTourInitialStep(0);
               setIsTourOpen(true);
             }}
@@ -2473,7 +2509,14 @@ export default function VisualizerExperience({
           initialStep={tourInitialStep}
           onClose={() => setIsTourOpen(false)}
           /* The walkthrough only opens for examples it has narration for. */
-          onStartWalkthrough={() => setIsWalkthroughActive(guideAvailable)}
+          onStartWalkthrough={() => {
+            setIsGuideHidden(false);
+            setIsWalkthroughActive(guideAvailable);
+          }}
+          onHideGuide={() => {
+            setIsGuideHidden(true);
+            setIsWalkthroughActive(false);
+          }}
         />
       )}
 
@@ -2485,6 +2528,10 @@ export default function VisualizerExperience({
         presetId={presetId}
         isCustomCode={isCustomCode}
         onStepBack={handleStepBack}
+        onHide={() => {
+          setIsGuideHidden(true);
+          setIsWalkthroughActive(false);
+        }}
         onBackToOrientation={() => {
           setIsWalkthroughActive(false);
           setTourInitialStep(4);

@@ -43,6 +43,8 @@ interface CodeEditorPanelProps {
   activeLines?: number[] | null;
   primaryLabel: string;
   primaryAriaLabel: string;
+  stepLabel?: string;
+  emphasizeActiveLine?: boolean;
   canGoBack: boolean;
   onStepBack: () => void;
   onPrimary: () => void;
@@ -70,6 +72,8 @@ export default function CodeEditorPanel({
   activeLines,
   primaryLabel,
   primaryAriaLabel,
+  stepLabel,
+  emphasizeActiveLine = false,
   canGoBack,
   onStepBack,
   onPrimary,
@@ -83,7 +87,7 @@ export default function CodeEditorPanel({
   onCodeChange,
   onRunCode,
 }: CodeEditorPanelProps) {
-  const isRunThisLine = primaryLabel === "Run This Line";
+  const isRunThisLine = primaryLabel.startsWith("Run Line") || primaryLabel === "Run This Line";
   const [copied, setCopied] = useState(false);
   const [editorReady, setEditorReady] = useState(false);
   const editorRef = useRef<MonacoEditorInstance | null>(null);
@@ -173,7 +177,11 @@ export default function CodeEditorPanel({
   }, [activeLine, activeLines, code, editorReady]);
 
   return (
-    <div id="onboarding-editor-panel" className="flex flex-col h-full bg-slate-950" style={{ background: "#1e1e1e" }}>
+    <div
+      id="onboarding-editor-panel"
+      className={`flex flex-col h-full bg-slate-950 ${emphasizeActiveLine ? "manual-editor-line-focus" : ""}`}
+      style={{ background: "#1e1e1e" }}
+    >
       {/* Header Panel */}
       <div
         className="flex items-center justify-between px-4 py-3 border-b flex-shrink-0"
@@ -278,7 +286,7 @@ export default function CodeEditorPanel({
 
       <div
         id="onboarding-code-controls"
-        className="code-step-controls flex items-center justify-between gap-3 px-4 py-3 border-t flex-shrink-0"
+        className="code-step-controls flex items-center justify-between border-t flex-shrink-0"
         style={{ borderColor: "var(--border)", background: "var(--bg-panel-2)" }}
       >
         {isEditing ? (
@@ -316,7 +324,7 @@ export default function CodeEditorPanel({
           <>
             {/* The lesson progress rail above the workspace is the single step counter,
               * so this footer only carries the controls. */}
-            <div className="flex items-center gap-2">
+            <div className="code-step-controls-left flex items-center">
               {showGuideButton && (
                 <button id="onboarding-guide-button" type="button" className="lesson-guide-button" onClick={onOpenGuide}>
                   <HelpCircle size={14} aria-hidden="true" /> Reset Guide
@@ -344,7 +352,15 @@ export default function CodeEditorPanel({
               )}
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="code-step-controls-right flex items-center">
+              {stepLabel && (
+                <span
+                  className="lesson-toolbar-step"
+                  aria-label={stepLabel}
+                >
+                  {stepLabel}
+                </span>
+              )}
               <button id="onboarding-restart-button" onClick={onReset} className="icon-button" title="Back to lesson selection" aria-label="Back to lesson selection">
                 <RotateCcw size={15} />
               </button>
@@ -355,7 +371,7 @@ export default function CodeEditorPanel({
                 <button
                   id="onboarding-playback-controls"
                   onClick={onPrimary}
-                  className={`btn-primary min-w-[138px] justify-center ${isRunThisLine ? "run-line-button" : ""}`}
+                  className={`btn-primary code-toolbar-primary justify-center ${isRunThisLine ? "run-line-button" : ""}`}
                   aria-label={primaryAriaLabel}
                 >
                   <span>{primaryLabel}</span>
