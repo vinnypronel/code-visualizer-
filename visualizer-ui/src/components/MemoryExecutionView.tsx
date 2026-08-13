@@ -224,15 +224,36 @@ export default function MemoryExecutionView({
         const x1 = (sRect.right - containerRect.left) / scale;
         const y1 = (sRect.top + sRect.height / 2 - containerRect.top) / scale;
 
-        // Calculate end coordinate: center-left of target container card
-        const x2 = (tRect.left - containerRect.left) / scale;
-        const y2 = (tRect.top + tRect.height / 2 - containerRect.top) / scale;
+        /*
+         * Where the arrow lands depends on where the card sits. Coming into
+         * the left edge is right when the card is off to the side, but when it
+         * sits below the badge, entering from the left forced the curve to
+         * swing out and wrap around the card. In that case it drops into the
+         * middle of the card's top edge instead.
+         *
+         * "Below" means the vertical drop is larger than the sideways travel,
+         * so a card that is merely lower and far to the side still gets the
+         * side entry it reads better with.
+         */
+        const targetCenterX = tRect.left + tRect.width / 2;
+        const verticalDrop = tRect.top - sRect.bottom;
+        const sidewaysTravel = Math.abs(targetCenterX - sRect.right);
+        const enterFromTop = verticalDrop > 0 && verticalDrop > sidewaysTravel;
+
+        const x2 = enterFromTop
+          ? (targetCenterX - containerRect.left) / scale
+          : (tRect.left - containerRect.left) / scale;
+        const y2 = enterFromTop
+          ? (tRect.top - containerRect.top) / scale
+          : (tRect.top + tRect.height / 2 - containerRect.top) / scale;
 
         const dx = Math.abs(x2 - x1);
+        const dy = Math.abs(y2 - y1);
         const cp1x = x1 + Math.max(dx * 0.45, 40);
         const cp1y = y1;
-        const cp2x = x2 - Math.max(dx * 0.45, 40);
-        const cp2y = y2;
+        /* Approach straight down into the top edge, or in from the left. */
+        const cp2x = enterFromTop ? x2 : x2 - Math.max(dx * 0.45, 40);
+        const cp2y = enterFromTop ? y2 - Math.max(dy * 0.45, 40) : y2;
 
         const d = `M ${x1} ${y1} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${x2} ${y2}`;
 

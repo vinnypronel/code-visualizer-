@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useGuideScale } from "@/lib/guideScale";
+import { guideArrowDirection } from "@/lib/guideKeys";
 import { motion } from "framer-motion";
 import { CheckCircle2, Code2, ArrowRight, HelpCircle, ChevronLeft, GripHorizontal } from "lucide-react";
 import GuideSpotlight, {
@@ -528,6 +529,23 @@ export default function InteractiveWalkthrough({
     const button = document.querySelector<HTMLButtonElement>(BACK_BUTTON_SELECTOR);
     button?.click();
   }, [isOpeningSequence, onStepBack, openingGuideIndex]);
+
+  /*
+   * Left and right arrows drive the same two actions the card's buttons do, so
+   * a participant can step through the lesson without going back to the mouse.
+   */
+  useEffect(() => {
+    if (!visible) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      const direction = guideArrowDirection(event);
+      if (!direction) return;
+      event.preventDefault();
+      if (direction === "next") runGuideAction();
+      else runBackAction();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [visible, runGuideAction, runBackAction]);
 
   if (typeof document === "undefined" || !isActive || !activeStepData) return null;
 

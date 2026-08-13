@@ -726,15 +726,21 @@ button:disabled, [role="button"][aria-disabled="true"] {
 .lesson-summary-code-story {
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;
-  gap: 11px;
+  /*
+   * Fills the panel instead of clumping at the top. The right-hand panel is
+   * taller, so grouping these rows at the top left a block of dead space under
+   * the last step.
+   */
+  flex: 1;
+  justify-content: space-between;
+  gap: 12px;
   list-style: none;
 }
 
 .lesson-summary-code-story li {
   display: grid;
-  grid-template-columns: 24px minmax(0, 1fr);
-  gap: 9px;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 11px;
   align-items: center;
 }
 
@@ -746,8 +752,8 @@ button:disabled, [role="button"][aria-disabled="true"] {
 }
 
 .lesson-summary-step-number {
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -755,28 +761,28 @@ button:disabled, [role="button"][aria-disabled="true"] {
   border-radius: 50%;
   color: #047857;
   background: #e7f3ee;
-  font-size: 10.5px;
+  font-size: 12px;
   font-weight: 800;
 }
 
 .lesson-summary-code-story code {
   display: block;
   overflow-x: auto;
-  padding: 8px 10px;
+  padding: 10px 12px;
   border: 1px solid #243246;
   border-radius: 6px;
   color: #e2e8f0;
   background: #07101f;
   font-family: var(--font-geist-mono), monospace;
-  font-size: 12.5px;
+  font-size: 13.5px;
   white-space: nowrap;
 }
 
 .lesson-summary-code-story p {
   margin: 0;
   color: var(--text-secondary);
-  font-size: 13px;
-  line-height: 1.4;
+  font-size: 14px;
+  line-height: 1.45;
 }
 
 .lesson-summary-visual {
@@ -1625,26 +1631,16 @@ button:disabled, [role="button"][aria-disabled="true"] {
 }
 
 /*
- * Consent verification slot.
+ * Skeleton for the consent verification box.
  *
- * Animating max-height lets the Continue button slide up smoothly instead of
- * jumping the instant an option is picked. The cap is a little above the
- * widget's real 65px so the box is never clipped; overflow stays hidden so the
- * closed state is a true zero.
+ * Cloudflare's script can take a moment on a slow connection. The skeleton
+ * holds the widget's exact 300x65 until its iframe paints, so the participant
+ * sees the box immediately and nothing shifts underneath them when it arrives.
  *
- * A fixed height and the grid 0fr-to-1fr technique were both tried first. In
- * this flex column a fixed height collapsed to zero, and an fr track resolves
- * against an indefinite container height, so neither expanded.
- *
- * The skeleton fills the widget's exact 300x65 while Cloudflare's script
- * loads, so the participant sees the box immediately and nothing shifts
- * underneath them when the real widget paints.
+ * Do NOT wrap the widget in a collapsing or clipped container to animate this.
+ * Turnstile will not render into a zero-height element, which silently blocks
+ * every participant at consent.
  */
-.challenge-slot {
-  transition: max-height 280ms cubic-bezier(0.16, 1, 0.3, 1),
-              opacity 200ms ease 60ms;
-}
-
 .challenge-skeleton {
   background: linear-gradient(100deg, #eef2f6 30%, #f8fafc 50%, #eef2f6 70%);
   background-size: 220% 100%;
@@ -1658,29 +1654,5 @@ button:disabled, [role="button"][aria-disabled="true"] {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .challenge-slot { transition: none; }
   .challenge-skeleton { animation: none; }
-}
-
-/*
- * The example picker and its Load button share one line. The select carries a
- * 310px min-width for the wider layouts it is also used in, so it is allowed
- * to shrink here instead of pushing the button onto its own row.
- */
-.post-lesson-example-row {
-  display: flex;
-  flex-wrap: nowrap;
-  align-items: center;
-  gap: 10px;
-}
-
-.post-lesson-example-row .lesson-example-select {
-  flex: 1;
-  min-width: 0;
-  margin: 0;
-}
-
-.post-lesson-example-row .lesson-example-select select {
-  min-width: 0;
-  width: 100%;
 }

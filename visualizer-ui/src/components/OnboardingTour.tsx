@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useGuideScale } from "@/lib/guideScale";
+import { guideArrowDirection } from "@/lib/guideKeys";
 import { motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, GripHorizontal } from "lucide-react";
 import GuideSpotlight, {
@@ -65,6 +66,11 @@ export default function OnboardingTour({ isOpen, onClose, onStartWalkthrough, in
   const [activeStep, setActiveStep] = useState(() => Math.max(0, Math.min(STEPS.length - 1, initialStep)));
   const [placement, setPlacement] = useState<{ top: number; left: number; side: GuideSide } | null>(null);
   const [dragPos, setDragPos] = useState<{ top: number; left: number } | null>(null);
+  /*
+   * A single primer shown once, before the orientation steps, so nobody has to
+   * work out how to drive the guide while also reading it.
+   */
+  const [introDismissed, setIntroDismissed] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
   const dragOriginRef = useRef<{ dx: number; dy: number } | null>(null);
   const reducedMotion = usePrefersReducedMotion();
@@ -243,7 +249,80 @@ export default function OnboardingTour({ isOpen, onClose, onStartWalkthrough, in
     setActiveStep(Math.max(0, Math.min(STEPS.length - 1, nextStep)));
   };
 
+  /* Left and right arrows step the orientation guide. */
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      const direction = guideArrowDirection(event);
+      if (!direction) return;
+      event.preventDefault();
+      if (!introDismissed) {
+        if (direction === "next") setIntroDismissed(true);
+        return;
+      }
+      if (direction === "back") {
+        moveToStep(activeStep - 1);
+        return;
+      }
+      if (activeStep === STEPS.length - 1) finishTour();
+      else moveToStep(activeStep + 1);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  });
+
   if (!isOpen || typeof document === "undefined") return null;
+
+  if (!introDismissed) {
+    return createPortal(
+      <div className="fixed inset-0 z-[2147483000] flex items-center justify-center bg-slate-900/40 px-4">
+        <div
+          className="w-[min(420px,calc(100vw-32px))] rounded-lg border px-6 py-5 shadow-lg"
+          style={{ background: "var(--bg-panel)", borderColor: "var(--border)" }}
+          role="dialog"
+          aria-modal="true"
+          aria-label="How to use the lesson guide"
+        >
+          <p
+            className="text-[11px] font-mono font-bold uppercase tracking-wider"
+            style={{ color: "var(--accent)" }}
+          >
+            Before you start
+          </p>
+          <h2 className="mb-2 mt-1 text-[18px] font-bold" style={{ color: "var(--text-primary)" }}>
+            How to use the lesson guide
+          </h2>
+          <p className="text-[13px] leading-relaxed" style={{ color: "var(--text-secondary)" }}>
+            A small guide card will walk you through this lesson one step at a time.
+            Click <strong>Next</strong> to move forward and <strong>Back</strong> to
+            revisit the previous step. You can also press the <strong>left and right
+            arrow keys</strong> to move between steps.
+          </p>
+          <div className="mt-5 flex justify-end">
+            <button
+              type="button"
+              autoFocus
+              onClick={() => setIntroDismissed(true)}
+              className="btn-primary text-xs py-2.5 px-6"
+            >
+              <span>Got it, start the guide</span>
+              {/* btn-primary's hover animation is driven by this arrow child. */}
+              <svg
+                className="btn-arrow"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2.5}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>,
+      document.body,
+    );
+  }
 
   const isFirst = activeStep === 0;
   const isLast = activeStep === STEPS.length - 1;
