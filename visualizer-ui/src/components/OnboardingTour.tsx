@@ -277,33 +277,54 @@ export default function OnboardingTour({ isOpen, onClose, onStartWalkthrough, in
     return createPortal(
       <div className="fixed inset-0 z-[2147483000] flex items-center justify-center bg-slate-900/40 px-4">
         <div
-          className="w-[min(420px,calc(100vw-32px))] rounded-lg border px-6 py-5 shadow-lg"
+          className="w-[min(560px,calc(100vw-32px))] rounded-xl border px-6 py-6 sm:px-9 sm:py-8 shadow-xl"
           style={{ background: "var(--bg-panel)", borderColor: "var(--border)" }}
           role="dialog"
           aria-modal="true"
           aria-label="How to use the lesson guide"
         >
           <p
-            className="text-[11px] font-mono font-bold uppercase tracking-wider"
+            className="text-[12px] font-mono font-bold uppercase tracking-wider"
             style={{ color: "var(--accent)" }}
           >
             Before you start
           </p>
-          <h2 className="mb-2 mt-1 text-[18px] font-bold" style={{ color: "var(--text-primary)" }}>
+          <h2 className="mb-3 mt-1.5 text-[22px] font-bold" style={{ color: "var(--text-primary)" }}>
             How to use the lesson guide
           </h2>
-          <p className="text-[13px] leading-relaxed" style={{ color: "var(--text-secondary)" }}>
+          <p className="text-[14.5px] leading-[1.75]" style={{ color: "#000000" }}>
             A small guide card will walk you through this lesson one step at a time.
             Click <strong>Next</strong> to move forward and <strong>Back</strong> to
             revisit the previous step. You can also press the <strong>left and right
             arrow keys</strong> to move between steps.
           </p>
-          <div className="mt-5 flex justify-end">
+          <div className="mt-7 flex flex-col items-stretch justify-between gap-4 sm:flex-row sm:items-center">
+            <div
+              className="flex items-center gap-1.5"
+              aria-label="Use the left and right arrow keys to move between steps"
+            >
+              <span className="mr-1.5 text-[11px] font-semibold uppercase tracking-wide" style={{ color: "#000000" }}>
+                Navigate
+              </span>
+              {(["←", "→"] as const).map((arrow) => (
+                <kbd
+                  key={arrow}
+                  className="flex h-9 min-w-9 items-center justify-center rounded-md border px-2 font-mono text-base font-bold shadow-sm"
+                  style={{
+                    background: "var(--bg-panel-2)",
+                    borderColor: "var(--border)",
+                    color: "var(--text-primary)",
+                  }}
+                >
+                  {arrow}
+                </kbd>
+              ))}
+            </div>
             <button
               type="button"
               autoFocus
               onClick={() => setIntroDismissed(true)}
-              className="btn-primary text-xs py-2.5 px-6"
+              className="btn-primary self-end text-sm py-3 px-8"
             >
               <span>Got it, start the guide</span>
               {/* btn-primary's hover animation is driven by this arrow child. */}
@@ -387,7 +408,7 @@ export default function OnboardingTour({ isOpen, onClose, onStartWalkthrough, in
             </div>
           </div>
           <h2 className="mb-2 text-[18px] font-bold" style={{ color: "var(--text-primary)" }}>{step.title}</h2>
-          <p className="mb-5 text-[13px] leading-relaxed" style={{ color: "var(--text-secondary)" }}>{step.content}</p>
+          <p className="mb-5 text-[13px] leading-relaxed" style={{ color: "#000000" }}>{step.content}</p>
 
           <div className="flex items-center justify-between gap-4 border-t pt-3" style={{ borderColor: "var(--border)" }}>
             <div className="flex gap-1.5" aria-label={`Orientation progress: ${activeStep + 1} of ${STEPS.length}`}>
@@ -409,7 +430,7 @@ export default function OnboardingTour({ isOpen, onClose, onStartWalkthrough, in
                   type="button"
                   onClick={() => moveToStep(activeStep - 1)}
                   className="guide-nav-btn guide-nav-back border px-3 py-1.5 text-[12px] font-semibold"
-                  style={{ color: "var(--text-secondary)", borderColor: "var(--border)", background: "var(--bg-panel-2)" }}
+                  style={{ color: "#000000", borderColor: "var(--border)", background: "var(--bg-panel-2)" }}
                 >
                   <ChevronLeft size={14} aria-hidden="true" /> Back
                 </button>

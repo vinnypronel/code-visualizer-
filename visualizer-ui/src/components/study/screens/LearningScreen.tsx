@@ -90,7 +90,10 @@ export default function LearningScreen() {
       showTooltip={false}
     />
   );
-  const showTopBarBack = isAi && lessonPhase !== "intro";
+  /* Once the required lesson reaches its summary, progression is forward-only.
+   * Going back to the pre-test at that point would let participants revisit
+   * answers after completing the learning intervention. */
+  const showTopBarBack = isAi && lessonPhase !== "intro" && lessonPhase !== "complete";
 
   return (
     <StudyShell

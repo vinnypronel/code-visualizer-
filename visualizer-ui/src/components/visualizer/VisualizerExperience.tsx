@@ -2027,18 +2027,21 @@ export default function VisualizerExperience({
       const hasNewStdout = Boolean(nextStep.stdout && nextStep.stdout !== currentStepData.stdout);
 
       const targets = [
-        ...newVariableNames.map((name) => `[data-ref-source="stack-${name}"]`),
-        ...(hasNewCalculation ? ['[data-code-transfer-target="calculation"]'] : []),
+        /* A `new` expression's main result is the allocated heap object, so
+         * make that the single flying chip's destination. The new local
+         * reference and initialized fields still pulse after it lands. */
         ...newObjectIds.map((id) => `[data-ref-target="heap-${id}"]`),
+        ...(hasNewStdout ? ['[data-code-transfer-target="stdout"]'] : []),
+        ...(hasNewCalculation ? ['[data-code-transfer-target="calculation"]'] : []),
+        ...(nextStep.dataMovement ? [`[data-ref-source="${nextStep.dataMovement.to}"]`] : []),
+        ...(nextStep.spotlightHeapFields ?? []).map((field) => `[data-ref-source="heap-${field}"]`),
+        ...newVariableNames.map((name) => `[data-ref-source="stack-${name}"]`),
         ...(nextStep.spotlightStackVars ?? [])
           .filter((name) => !newVariableNames.includes(name))
           .map((name) => `[data-ref-source="stack-${name}"]`),
-        ...(nextStep.spotlightHeapFields ?? []).map((field) => `[data-ref-source="heap-${field}"]`),
         ...(nextStep.spotlightHeapObjects ?? [])
           .filter((id) => !newObjectIds.includes(id))
           .map((id) => `[data-ref-target="heap-${id}"]`),
-        ...(nextStep.dataMovement ? [`[data-ref-source="${nextStep.dataMovement.to}"]`] : []),
-        ...(hasNewStdout ? ['[data-code-transfer-target="stdout"]'] : []),
       ].filter((selector, index, selectors) => selectors.indexOf(selector) === index);
 
       const workspace = containerRef.current;
@@ -2055,7 +2058,9 @@ export default function VisualizerExperience({
         .split("\n")[Math.max(0, (nextStep.lineHighlight ?? 1) - 1)]
         ?.trim() ?? "Run highlighted line";
 
-      pendingCodeTransferRef.current = {
+      /* A dataMovement step already animates the actual value or reference.
+       * Do not cover that useful animation with a second black code chip. */
+      pendingCodeTransferRef.current = nextStep.dataMovement ? null : {
         text: executedLine,
         sourceX: sourceRect ? sourceRect.left + sourceRect.width / 2 : (codePanelRect?.left ?? 0) + (codePanelRect?.width ?? 0) / 2,
         sourceY: sourceRect ? sourceRect.top + sourceRect.height / 2 : (codePanelRect?.top ?? 0) + 120,
@@ -2106,30 +2111,34 @@ export default function VisualizerExperience({
         const workspaceScale = workspace.offsetWidth > 0
           ? workspaceRect.width / workspace.offsetWidth
           : 1;
-        const flights = pending.targetSelectors.flatMap((selector, index) => {
-          const target = workspace.querySelector<HTMLElement>(selector);
-          if (!target) return [];
-          const targetRect = target.getBoundingClientRect();
-          const sourceX = (pending.sourceX - workspaceRect.left) / workspaceScale;
-          const sourceY = (pending.sourceY - workspaceRect.top) / workspaceScale;
-          const targetX = (targetRect.left - workspaceRect.left + targetRect.width / 2) / workspaceScale;
-          const targetY = (targetRect.top - workspaceRect.top + targetRect.height / 2) / workspaceScale;
-          const travelDistance = Math.hypot(targetX - sourceX, targetY - sourceY);
-          return [{
-            ...pending,
-            id: `${currentStep}-${index}-${Date.now()}`,
-            targetSelector: selector,
-            sourceX,
-            sourceY,
-            targetX,
-            targetY,
-            /* Wide desktop layouts need more travel time. Each additional
-             * destination starts after the previous landing is readable. */
-            delay: index * 900,
-            duration: Math.min(3000, Math.max(2200, 1600 + travelDistance * 1.15)),
-          }];
-        });
-        setCodeTransferFlights(flights);
+        const primaryDestination = pending.targetSelectors
+          .map((selector) => ({
+            selector,
+            target: workspace.querySelector<HTMLElement>(selector),
+          }))
+          .find(({ target }) => target !== null);
+        if (!primaryDestination?.target) return;
+
+        const targetRect = primaryDestination.target.getBoundingClientRect();
+        const sourceX = (pending.sourceX - workspaceRect.left) / workspaceScale;
+        const sourceY = (pending.sourceY - workspaceRect.top) / workspaceScale;
+        const targetX = (targetRect.left - workspaceRect.left + targetRect.width / 2) / workspaceScale;
+        const targetY = (targetRect.top - workspaceRect.top + targetRect.height / 2) / workspaceScale;
+        const travelDistance = Math.hypot(targetX - sourceX, targetY - sourceY);
+
+        /* One Java line runs once. Fly one chip to its primary destination,
+         * then pulse every affected destination together after it lands. */
+        setCodeTransferFlights([{
+          ...pending,
+          id: `${currentStep}-${Date.now()}`,
+          targetSelector: primaryDestination.selector,
+          sourceX,
+          sourceY,
+          targetX,
+          targetY,
+          delay: 0,
+          duration: Math.min(3000, Math.max(2200, 1600 + travelDistance * 1.15)),
+        }]);
       });
     }, pending.settleDelayMs);
 
@@ -2141,16 +2150,18 @@ export default function VisualizerExperience({
 
   const finishCodeTransfer = useCallback((flight: CodeTransferFlight) => {
     setCodeTransferFlights((flights) => flights.filter((candidate) => candidate.id !== flight.id));
-    const target = containerRef.current?.querySelector<HTMLElement>(flight.targetSelector);
-    if (!target) return;
-    target.animate(
-      [
-        { boxShadow: "0 0 0 0 rgba(16, 185, 129, 0.5)" },
-        { boxShadow: "0 0 0 7px rgba(16, 185, 129, 0.18)", offset: 0.55 },
-        { boxShadow: "0 0 0 0 rgba(16, 185, 129, 0)" },
-      ],
-      { duration: 650, easing: "ease-out" },
-    );
+    flight.targetSelectors.forEach((selector) => {
+      const target = containerRef.current?.querySelector<HTMLElement>(selector);
+      if (!target) return;
+      target.animate(
+        [
+          { boxShadow: "0 0 0 0 rgba(16, 185, 129, 0.5)" },
+          { boxShadow: "0 0 0 7px rgba(16, 185, 129, 0.18)", offset: 0.55 },
+          { boxShadow: "0 0 0 0 rgba(16, 185, 129, 0)" },
+        ],
+        { duration: 650, easing: "ease-out" },
+      );
+    });
   }, []);
 
   /*

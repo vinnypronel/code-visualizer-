@@ -214,7 +214,11 @@ export default function StudyShell({
             */}
             {session.participantId && (
               <span
-                className="hidden 2xl:inline 2xl:mr-7 font-mono text-[11px] font-semibold whitespace-nowrap"
+                className={
+                  timer
+                    ? "hidden 2xl:inline 2xl:mr-7 font-mono text-[11px] font-semibold whitespace-nowrap"
+                    : "hidden 2xl:flex 2xl:absolute 2xl:left-[calc(50%+260px)] 2xl:right-[168px] 2xl:justify-center font-mono text-[11px] font-semibold whitespace-nowrap"
+                }
                 style={{ color: "var(--text-secondary)" }}
                 title="Your participant ID"
               >

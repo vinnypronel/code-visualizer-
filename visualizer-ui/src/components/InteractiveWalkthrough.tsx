@@ -95,6 +95,57 @@ function JavaSyntax({ code, className = "" }: { code: string; className?: string
   );
 }
 
+function describeAnimationMovement({
+  code,
+  line,
+  details,
+}: {
+  code: string;
+  line?: number;
+  details: string[];
+}) {
+  const source = `“${code}” moved: Line ${line ?? "?"} →`;
+  const allDetails = details.join(" ");
+  const objectIds = allDetails.match(/\[Object \d+\]/g) ?? [];
+  const objectId = objectIds[0];
+  const movedObjectId = objectIds.at(-1);
+
+  if (/\bnew\b/.test(code) && objectId) {
+    return `${source} ${objectId} in Objects. Why: Line ${line ?? "?"} created that object.`;
+  }
+  if (code.includes("System.out.println")) {
+    return `${source} Program Output. Why: println displays text.`;
+  }
+  if (code.trim().startsWith("return ")) {
+    return `${source} multiply’s result area. Why: return prepares the value sent to main.`;
+  }
+  if (allDetails.includes("new multiply box")) {
+    return `${source} the new multiply box. Why: calling a method creates that temporary Stack frame.`;
+  }
+
+  const assignmentTarget = code.split("=")[0]?.trim();
+  const assignmentSource = code.split("=")[1]?.replace(";", "").trim();
+  if (assignmentTarget?.includes(".")) {
+    return movedObjectId
+      ? `Reference ${movedObjectId} moved: ${assignmentSource} → ${assignmentTarget}. Why: the field now points to the same object as ${assignmentSource}.`
+      : `Value moved: ${assignmentSource} → ${assignmentTarget}. Why: this assignment changes that field.`;
+  }
+  if (assignmentTarget?.includes("[")) {
+    return `Value moved: ${assignmentSource} → ${assignmentTarget}. Why: that array slot receives a copy.`;
+  }
+  if (assignmentSource?.includes(".") || assignmentSource?.includes("[")) {
+    const declaredVariable = assignmentTarget?.split(/\s+/).at(-1);
+    return `Value moved: ${assignmentSource} → ${declaredVariable}. Why: the new Stack variable receives a copy.`;
+  }
+
+  const declaredVariable = assignmentTarget?.split(/\s+/).at(-1);
+  if (declaredVariable) {
+    return `${source} Stack variable “${declaredVariable}.” Why: it receives the result.`;
+  }
+
+  return `${source} the main changed location. Other affected places lit up afterward.`;
+}
+
 const CARD_WIDTH = 380;
 const OBSERVE_CARD_WIDTH = 390;
 const CARD_MAX_HEIGHT_FALLBACK = 420;
@@ -208,6 +259,43 @@ export default function InteractiveWalkthrough({
         const editorEl = document.querySelector("#onboarding-code-content");
         const editorRect = editorEl ? editorEl.getBoundingClientRect() : null;
         const margin = 24;
+
+        if (presetId === "livetrace") {
+          const stackZoneEl = document.querySelector("#onboarding-stack-zone");
+          const stackZoneRect = stackZoneEl?.getBoundingClientRect();
+          setPlacement({
+            top: Math.max(margin, window.innerHeight - cardHeight - 60),
+            left: stackZoneRect
+              ? Math.max(
+                  margin,
+                  Math.min(
+                    window.innerWidth - cardWidth - margin,
+                    stackZoneRect.right + 16,
+                  ),
+                )
+              : Math.max(margin, live?.right ?? margin),
+            side: "center",
+          });
+          return;
+        }
+
+        if (presetId === "arraylist") {
+          setPlacement({
+            top: Math.max(margin, window.innerHeight - cardHeight - 145),
+            left: editorRect
+              ? Math.max(
+                  margin,
+                  Math.min(
+                    window.innerWidth - cardWidth - margin,
+                    editorRect.left + 190,
+                  ),
+                )
+              : 190,
+            side: "center",
+          });
+          return;
+        }
+
         const targetLeft = editorRect ? editorRect.left + 88 : 88;
         const targetTop = Math.max(margin, window.innerHeight - cardHeight - 135);
 
@@ -255,7 +343,12 @@ export default function InteractiveWalkthrough({
         const isFirstResult = activeStepData.expectedLessonStep === 1;
         const isSecondResult = activeStepData.expectedLessonStep === 2;
         const isThirdResult = activeStepData.expectedLessonStep === 3;
+        const isArrayListStepEight = presetId === "arraylist" && currentIndex === 7;
+        const isArrayListStepTen = presetId === "arraylist" && currentIndex === 9;
+        const isArrayListStepTwelve = presetId === "arraylist" && currentIndex === 11;
         const isStackStepTen = presetId === "stack" && currentIndex === 9;
+        const isStackStepTwelve = presetId === "stack" && currentIndex === 11;
+        const isLiveTraceStepEight = presetId === "livetrace" && currentIndex === 7;
         const isLiveTraceStepTen = presetId === "livetrace" && currentIndex === 9;
         const isLiveTraceStepTwelve = presetId === "livetrace" && currentIndex === 11;
         const isLiveTraceStepFourteen = presetId === "livetrace" && currentIndex === 13;
@@ -284,45 +377,162 @@ export default function InteractiveWalkthrough({
           return;
         }
 
-        if (isLiveTraceStepFourteen) {
-          const editorEl = document.querySelector("#onboarding-code-content");
-          const codeRect = editorEl?.getBoundingClientRect();
+        if (isArrayListStepEight) {
+          const stackZoneEl = document.querySelector("#onboarding-stack-zone");
+          const stackZoneRect = stackZoneEl?.getBoundingClientRect();
           setPlacement({
-            top: codeRect
-              ? Math.max(margin, codeRect.top + 145)
+            top: Math.max(margin, window.innerHeight - cardHeight - 59),
+            left: stackZoneRect
+              ? Math.max(
+                  margin,
+                  Math.min(
+                    window.innerWidth - cardWidth - margin,
+                    stackZoneRect.left + 21,
+                  ),
+                )
+              : Math.max(margin, live.left + 21),
+            side: "center",
+          });
+          return;
+        }
+
+        if (isArrayListStepTen) {
+          const stackZoneEl = document.querySelector("#onboarding-stack-zone");
+          const stackZoneRect = stackZoneEl?.getBoundingClientRect();
+          setPlacement({
+            top: Math.max(margin, window.innerHeight - cardHeight - 53),
+            left: stackZoneRect
+              ? Math.max(
+                  margin,
+                  Math.min(
+                    window.innerWidth - cardWidth - margin,
+                    stackZoneRect.left + 22,
+                  ),
+                )
+              : Math.max(margin, live.left + 22),
+            side: "center",
+          });
+          return;
+        }
+
+        if (isArrayListStepTwelve) {
+          const stackZoneEl = document.querySelector("#onboarding-stack-zone");
+          const stackZoneRect = stackZoneEl?.getBoundingClientRect();
+          setPlacement({
+            top: Math.max(margin, window.innerHeight - cardHeight - 11),
+            left: stackZoneRect
+              ? Math.max(
+                  margin,
+                  Math.min(
+                    window.innerWidth - cardWidth - margin,
+                    stackZoneRect.left + 7,
+                  ),
+                )
+              : Math.max(margin, live.left + 7),
+            side: "center",
+          });
+          return;
+        }
+
+        if (isLiveTraceStepEight) {
+          const stackZoneEl = document.querySelector("#onboarding-stack-zone");
+          const stackZoneRect = stackZoneEl?.getBoundingClientRect();
+          setPlacement({
+            top: stackZoneRect
+              ? Math.max(margin, stackZoneRect.top + 74)
+              : Math.max(margin, live.top + 74),
+            left: stackZoneRect
+              ? Math.max(
+                  margin,
+                  Math.min(
+                    window.innerWidth - cardWidth - margin,
+                    stackZoneRect.right + 11,
+                  ),
+                )
+              : Math.max(margin, live.right + 11),
+            side: "center",
+          });
+          return;
+        }
+
+        if (isLiveTraceStepFourteen) {
+          const stackZoneEl = document.querySelector("#onboarding-stack-zone");
+          const stackZoneRect = stackZoneEl?.getBoundingClientRect();
+          setPlacement({
+            top: stackZoneRect
+              ? Math.max(margin, stackZoneRect.top + 80)
               : Math.max(margin, live.top + 145),
-            left: codeRect
-              ? Math.max(margin, codeRect.right - cardWidth + 2)
-              : margin,
+            left: stackZoneRect
+              ? Math.max(
+                  margin,
+                  Math.min(
+                    window.innerWidth - cardWidth - margin,
+                    stackZoneRect.right + 19,
+                  ),
+                )
+              : Math.max(margin, live.right + 19),
             side: "center",
           });
           return;
         }
 
         if (isLiveTraceStepTwelve) {
-          const editorEl = document.querySelector("#onboarding-code-content");
-          const codeRect = editorEl?.getBoundingClientRect();
+          const stackZoneEl = document.querySelector("#onboarding-stack-zone");
+          const stackZoneRect = stackZoneEl?.getBoundingClientRect();
           setPlacement({
-            top: codeRect
-              ? Math.max(margin, codeRect.top + 217)
+            top: stackZoneRect
+              ? Math.max(margin, stackZoneRect.top + 267)
               : Math.max(margin, live.top + 217),
-            left: codeRect
-              ? Math.max(margin, codeRect.right - cardWidth - 7)
-              : margin,
+            left: stackZoneRect
+              ? Math.max(
+                  margin,
+                  Math.min(
+                    window.innerWidth - cardWidth - margin,
+                    stackZoneRect.right + 12,
+                  ),
+                )
+              : Math.max(margin, live.right + 12),
             side: "center",
           });
           return;
         }
 
         if (isLiveTraceStepTen) {
+          const stackZoneEl = document.querySelector("#onboarding-stack-zone");
+          const stackZoneRect = stackZoneEl?.getBoundingClientRect();
+          setPlacement({
+            top: stackZoneRect
+              ? Math.max(margin, stackZoneRect.top + 78)
+              : Math.max(margin, live.top + 75),
+            left: stackZoneRect
+              ? Math.max(
+                  margin,
+                  Math.min(
+                    window.innerWidth - cardWidth - margin,
+                    stackZoneRect.right + 24,
+                  ),
+                )
+              : Math.max(margin, live.right + 24),
+            side: "center",
+          });
+          return;
+        }
+
+        /* LIFO guide Step 12: default to the user's tested lower-left
+         * placement. It keeps the Stack variables and all heap objects clear. */
+        if (isStackStepTwelve) {
           const editorEl = document.querySelector("#onboarding-code-content");
           const codeRect = editorEl?.getBoundingClientRect();
           setPlacement({
-            top: codeRect
-              ? Math.max(margin, codeRect.top + 75)
-              : Math.max(margin, live.top + 75),
+            top: Math.max(margin, window.innerHeight - cardHeight - 90),
             left: codeRect
-              ? Math.max(margin, codeRect.right - cardWidth - 20)
+              ? Math.max(
+                  margin,
+                  Math.min(
+                    window.innerWidth - cardWidth - margin,
+                    codeRect.right - cardWidth + 10,
+                  ),
+                )
               : margin,
             side: "center",
           });
@@ -614,7 +824,7 @@ export default function InteractiveWalkthrough({
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: placement ? 1 : 0, y: 0 }}
           transition={{ duration: reducedMotion ? 0 : 0.2, ease: [0.16, 1, 0.3, 1] }}
-          className={`fixed rounded-lg border pointer-events-auto ${isObserve ? "py-3 px-4" : "py-3.5 px-4"}`}
+          className={`fixed rounded-lg border pointer-events-auto ${isObserve ? "py-2.5 px-3.5" : "py-3.5 px-4"}`}
           role="dialog"
           aria-label={`Lesson guide, step ${guideStepNumber} of ${totalGuideSteps}: ${activeStepData.title}. Drag to move.`}
           onPointerMove={handleDragMove}
@@ -632,7 +842,7 @@ export default function InteractiveWalkthrough({
             boxShadow: "0 16px 36px rgba(23, 32, 51, 0.18)",
           }}
         >
-          <div className="flex items-center justify-between gap-2 mb-2">
+          <div className={`flex items-center justify-between gap-2 ${isObserve ? "mb-1" : "mb-2"}`}>
             <span className="text-[11px] font-bold uppercase tracking-wider font-mono" style={{ color: "var(--accent)" }}>
               Step {guideStepNumber} of {totalGuideSteps} &middot; {activeStepData.phaseLabel ?? (isObserve ? "Look at what changed" : "Run the line")}
             </span>
@@ -648,7 +858,7 @@ export default function InteractiveWalkthrough({
             </div>
           </div>
 
-          <h4 className="text-[14px] font-bold mb-2 flex items-center gap-2" style={{ color: "var(--text-primary)" }}>
+          <h4 className={`text-[14px] font-bold flex items-center gap-2 ${isObserve ? "mb-1" : "mb-2"}`} style={{ color: "var(--text-primary)" }}>
             {isFinalCard && <CheckCircle2 size={16} className="text-[#16a34a] flex-shrink-0" aria-hidden="true" />}
             {activeStepData.title}
           </h4>
@@ -690,7 +900,7 @@ export default function InteractiveWalkthrough({
           )}
 
           {(!isObserve || activeStepData.showCodeOnObserve) && activeStepData.lineNumber && activeStepData.codeSnippet && (
-            <div className="mb-2">
+            <div className={isObserve ? "mb-1.5" : "mb-2"}>
               <div className="flex items-center gap-1.5 text-[10px] font-mono text-[#16a34a] font-bold uppercase tracking-wider mb-0.5">
                 <Code2 size={12} aria-hidden="true" />
                 <span>Line {activeStepData.lineNumber}</span>
@@ -700,24 +910,34 @@ export default function InteractiveWalkthrough({
                   </span>
                 )}
               </div>
-              <div className="px-2.5 py-1.5 rounded-md bg-slate-950 border border-[#16a34a]/30 font-mono text-[11.5px] overflow-x-auto shadow-inner">
+              <div className={`px-2.5 rounded-md bg-slate-950 border border-[#16a34a]/30 font-mono text-[11.5px] overflow-x-auto shadow-inner ${isObserve ? "py-1" : "py-1.5"}`}>
                 <JavaSyntax code={activeStepData.codeSnippet} />
               </div>
             </div>
           )}
 
-          <p className="text-[11.5px] leading-relaxed mb-3" style={{ color: "var(--text-secondary)" }}>
-            {activeStepData.explanationText}
-          </p>
+          {(!isObserve || !activeStepData.animationBreakdown) && (
+            <p className={`text-[11.5px] leading-relaxed ${isObserve ? "mb-1.5" : "mb-3"}`} style={{ color: "#000000" }}>
+              {activeStepData.explanationText}
+            </p>
+          )}
 
           {isObserve && activeStepData.animationBreakdown && (
             <div
-              className="mb-2 rounded-md border px-2 py-1.5"
+              className="mb-1 rounded-md border px-2 py-1.5"
               style={{ background: "#f0f9ff", borderColor: "#bae6fd" }}
             >
-              <div className="mb-1 text-[9px] font-mono font-extrabold uppercase tracking-wider" style={{ color: "#0369a1" }}>
-                Why {activeStepData.animationBreakdown.count} animations?
+              <div className="text-[10px] font-mono font-extrabold uppercase tracking-wider" style={{ color: "#0369a1" }}>
+                What changed after this line ran?
               </div>
+              <p className="mb-1.5 mt-0.5 text-[9px] leading-snug" style={{ color: "#000000" }}>
+                <strong style={{ color: "var(--text-primary)" }}>Drag shown: </strong>
+                {describeAnimationMovement({
+                  code: activeStepData.codeSnippet ?? "highlighted code",
+                  line: activeStepData.lineNumber,
+                  details: activeStepData.animationBreakdown.items,
+                })}
+              </p>
               <ol className={`grid gap-1.5 ${
                 activeStepData.animationBreakdown.count === 1
                   ? "grid-cols-1"
@@ -726,9 +946,13 @@ export default function InteractiveWalkthrough({
                     : "grid-cols-3"
               }`}>
                 {activeStepData.animationBreakdown.items.map((item, index) => (
-                  <li key={item} className="flex items-start gap-1 text-[8.5px] leading-tight" style={{ color: "var(--text-secondary)" }}>
+                  <li
+                    key={item}
+                    className="flex items-start gap-1.5 rounded border bg-white/70 px-1.5 py-1.5 text-[9px] leading-snug"
+                    style={{ color: "#000000", borderColor: "#d7edf8" }}
+                  >
                     <span
-                      className="flex h-3.5 w-3.5 flex-shrink-0 items-center justify-center rounded-full text-[8px] font-bold"
+                      className="flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full text-[8.5px] font-bold"
                       style={{ color: "#0369a1", background: "#e0f2fe", border: "1px solid #7dd3fc" }}
                     >
                       {index + 1}
@@ -751,9 +975,9 @@ export default function InteractiveWalkthrough({
               <button
                 type="button"
                 onClick={isFirstCard ? onBackToOrientation : runBackAction}
-                className="walkthrough-back-button guide-nav-btn guide-nav-back border px-2.5 py-2 text-[11.5px] font-semibold flex-shrink-0"
+                className={`walkthrough-back-button guide-nav-btn guide-nav-back border px-2.5 text-[11.5px] font-semibold flex-shrink-0 ${isObserve ? "py-1.5" : "py-2"}`}
                 style={{
-                  color: "var(--text-secondary)",
+                  color: "#000000",
                   background: "var(--bg-panel-2)",
                   borderColor: "var(--border)",
                   cursor: "pointer",
@@ -768,7 +992,7 @@ export default function InteractiveWalkthrough({
             <button
               type="button"
               onClick={runGuideAction}
-              className="walkthrough-action-button flex items-center justify-center gap-2 rounded-md border px-4 py-2 text-[11.5px] font-semibold flex-shrink-0"
+              className={`walkthrough-action-button flex items-center justify-center gap-2 rounded-md border px-4 text-[11.5px] font-semibold flex-shrink-0 ${isObserve ? "py-1.5" : "py-2"}`}
               style={{ color: "var(--success)", background: "#e7f3ee", borderColor: "#b8dccf", cursor: "pointer" }}
             >
               <ArrowRight size={14} className="flex-shrink-0" aria-hidden="true" />
@@ -777,7 +1001,7 @@ export default function InteractiveWalkthrough({
 
           </div>
 
-          <div className="flex items-center pt-3">
+          <div className={`flex items-center ${isObserve ? "pt-1.5" : "pt-3"}`}>
             <div
               className="flex gap-1.5"
               aria-label={`Guide progress, step ${guideStepNumber} of ${totalGuideSteps}`}

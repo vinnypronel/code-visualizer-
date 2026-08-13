@@ -83,6 +83,7 @@ export default function CodeEditorPanel({
   onCodeChange,
   onRunCode,
 }: CodeEditorPanelProps) {
+  const isRunThisLine = primaryLabel === "Run This Line";
   const [copied, setCopied] = useState(false);
   const [editorReady, setEditorReady] = useState(false);
   const editorRef = useRef<MonacoEditorInstance | null>(null);
@@ -344,21 +345,23 @@ export default function CodeEditorPanel({
             </div>
 
             <div className="flex items-center gap-2">
-              <button id="onboarding-restart-button" onClick={onReset} className="icon-button" title="Restart lesson" aria-label="Restart lesson">
+              <button id="onboarding-restart-button" onClick={onReset} className="icon-button" title="Back to lesson selection" aria-label="Back to lesson selection">
                 <RotateCcw size={15} />
               </button>
               <button id="onboarding-step-back" onClick={onStepBack} disabled={!canGoBack} className="icon-button" title="Previous step" aria-label="Previous step">
                 <ChevronLeft size={16} />
               </button>
-              <button
-                id="onboarding-playback-controls"
-                onClick={onPrimary}
-                className="btn-primary min-w-[138px] justify-center"
-                aria-label={primaryAriaLabel}
-              >
-                <span>{primaryLabel}</span>
-                <ChevronRight size={16} aria-hidden="true" />
-              </button>
+              <div className={isRunThisLine ? "run-line-button-slot" : undefined}>
+                <button
+                  id="onboarding-playback-controls"
+                  onClick={onPrimary}
+                  className={`btn-primary min-w-[138px] justify-center ${isRunThisLine ? "run-line-button" : ""}`}
+                  aria-label={primaryAriaLabel}
+                >
+                  <span>{primaryLabel}</span>
+                  <ChevronRight className="btn-arrow" size={16} aria-hidden="true" />
+                </button>
+              </div>
             </div>
           </>
         )}

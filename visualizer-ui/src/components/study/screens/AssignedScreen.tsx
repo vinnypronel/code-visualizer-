@@ -141,8 +141,8 @@ export default function AssignedScreen() {
               <p className="text-[13px] mt-4 leading-relaxed max-w-md mx-auto" style={{ color: "var(--text-secondary)" }}>
                 Your answers in this app are recorded under this ID automatically. The
                 short questionnaire at the very end is hosted outside this app, and it
-                will ask you to type this ID in, so keep it somewhere handy. It is also
-                shown again on the final screen.
+                will ask you to type this ID in. It is also shown again on the final
+                screen, and on the top right of the screen.
               </p>
             </>
           )}
