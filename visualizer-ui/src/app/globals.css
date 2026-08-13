@@ -1656,3 +1656,63 @@ button:disabled, [role="button"][aria-disabled="true"] {
 @media (prefers-reduced-motion: reduce) {
   .challenge-skeleton { animation: none; }
 }
+
+/*
+ * Guide card navigation buttons.
+ *
+ * Mirrors the primary button's hover feel at the smaller size the guide cards
+ * use: the button lifts slightly and its chevron slides in the direction of
+ * travel, so Back and Next read as directional rather than as plain chips.
+ */
+.guide-nav-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 6px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 160ms ease, border-color 160ms ease,
+              color 160ms ease, transform 160ms cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 160ms ease;
+}
+
+.guide-nav-btn svg {
+  transition: transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.guide-nav-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.12);
+}
+
+.guide-nav-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+/* The chevron leads the way: forward slides right, back slides left. */
+.guide-nav-next:hover:not(:disabled) svg {
+  transform: translateX(3px);
+}
+
+.guide-nav-back:hover:not(:disabled) svg {
+  transform: translateX(-3px);
+}
+
+.guide-nav-back:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .guide-nav-btn,
+  .guide-nav-btn svg {
+    transition: none;
+  }
+  .guide-nav-btn:hover:not(:disabled) {
+    transform: none;
+  }
+  .guide-nav-next:hover:not(:disabled) svg,
+  .guide-nav-back:hover:not(:disabled) svg {
+    transform: none;
+  }
+}

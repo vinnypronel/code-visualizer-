@@ -368,7 +368,7 @@ export default function OnboardingTour({ isOpen, onClose, onStartWalkthrough, in
                 <button
                   type="button"
                   onClick={() => moveToStep(activeStep - 1)}
-                  className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-300 hover:text-white transition-colors px-2 py-0.5 rounded bg-slate-900/90 hover:bg-slate-800 border border-slate-700/60 shadow-sm"
+                  className="guide-nav-btn guide-nav-back text-[11px] font-semibold text-slate-300 hover:text-white px-2 py-0.5 bg-slate-900/90 hover:bg-slate-800 border border-slate-700/60 shadow-sm"
                   title="Go back to previous step"
                 >
                   <ChevronLeft size={13} aria-hidden="true" />
@@ -408,7 +408,7 @@ export default function OnboardingTour({ isOpen, onClose, onStartWalkthrough, in
                 <button
                   type="button"
                   onClick={() => moveToStep(activeStep - 1)}
-                  className="inline-flex items-center gap-1 rounded-md border px-3 py-1.5 text-[12px] font-semibold"
+                  className="guide-nav-btn guide-nav-back border px-3 py-1.5 text-[12px] font-semibold"
                   style={{ color: "var(--text-secondary)", borderColor: "var(--border)", background: "var(--bg-panel-2)" }}
                 >
                   <ChevronLeft size={14} aria-hidden="true" /> Back
@@ -417,7 +417,7 @@ export default function OnboardingTour({ isOpen, onClose, onStartWalkthrough, in
               <button
                 type="button"
                 onClick={isLast ? finishTour : () => moveToStep(activeStep + 1)}
-                className="inline-flex items-center gap-1 rounded-md px-4 py-1.5 text-[12px] font-bold text-white"
+                className="guide-nav-btn guide-nav-next px-4 py-1.5 text-[12px] font-bold text-white"
                 style={{ background: "var(--action)" }}
               >
                 {isLast ? "Start lesson" : "Next"} <ChevronRight size={14} aria-hidden="true" />
