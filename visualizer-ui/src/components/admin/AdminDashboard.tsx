@@ -5,7 +5,7 @@
  *
  * Rows arrive fully formed from the server component; every number on screen is
  * derived here so the condition filter recomputes without a round trip. The
- * layout goes compact study snapshot -> comparison -> flow -> per-item breakdown ->
+ * layout goes compact study snapshot -> comparison -> per-item breakdown ->
  * raw participant table, which is the order a researcher reads the study in.
  */
 
@@ -17,7 +17,6 @@ import {
   conditionLabel,
   endedByCounts,
   EXAMPLE_LABELS,
-  funnelCounts,
   itemAccuracy,
   mean,
   median,
@@ -30,7 +29,6 @@ import {
 import type { Condition } from "@/lib/studyTypes";
 import {
   Card,
-  FunnelChart,
   HBarChart,
   ItemAccuracyGrid,
   Legend,
@@ -67,10 +65,6 @@ export default function AdminDashboard({
   );
 
   const summaries = useMemo(() => CONDITIONS.map((c) => summarizeCondition(all, c)), [all]);
-  const funnels = useMemo(() => CONDITIONS.map((condition) => ({
-    condition,
-    stages: funnelCounts(all.filter((view) => view.condition === condition)),
-  })), [all]);
   const pairedViews = useMemo(() => views.filter((view) => view.gain != null), [views]);
   const preItems = useMemo(() => itemAccuracy(pairedViews, "pretest"), [pairedViews]);
   const postItems = useMemo(() => itemAccuracy(pairedViews, "posttest"), [pairedViews]);
@@ -322,20 +316,6 @@ export default function AdminDashboard({
           className="mb-5"
         >
           <GooglePairedScoreChart points={pairedScorePoints} />
-        </Card>
-
-        <Card title="Completion funnel by condition" subtitle="Stage-to-stage and overall retention; the largest loss is highlighted" actions={comparisonScope} className="mb-5">
-          <div className="grid gap-6 xl:grid-cols-2">
-            {funnels.map(({ condition, stages }) => (
-              <section key={condition} className="rounded-lg border p-3" style={{ borderColor: "#dbe4ef" }}>
-                <h3 className="mb-3 flex items-center gap-2 text-xs font-semibold" style={{ color: "var(--text-primary)" }}>
-                  <span className="h-2.5 w-2.5 rounded-sm" style={{ background: SERIES[condition] }} />
-                  {conditionLabel(condition)} · n={stages[0]?.count ?? 0}
-                </h3>
-                <FunnelChart stages={stages} color={SERIES[condition]} />
-              </section>
-            ))}
-          </div>
         </Card>
 
         <Card title="Time on each phase" subtitle="Participant-level durations with median and sample size" actions={comparisonScope} className="mb-5">
