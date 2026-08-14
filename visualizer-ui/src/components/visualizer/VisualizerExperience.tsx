@@ -1642,6 +1642,7 @@ function LessonIntro({
   onPresetChange,
   onBegin,
   backButton,
+  allowPresetSelection = true,
 }: {
   preset: Preset;
   presets: Preset[];
@@ -1655,6 +1656,7 @@ function LessonIntro({
    * back to.
    */
   backButton?: React.ReactNode;
+  allowPresetSelection?: boolean;
 }) {
   const total = Math.max(1, preset.steps.length - 1);
   const lessonVisual = LESSON_VISUALS[preset.id];
@@ -1663,7 +1665,7 @@ function LessonIntro({
     <section className="lesson-intro">
       <div className="lesson-intro-inner">
         <div className="lesson-kicker">Guided Java Lesson: Code Visualizer</div>
-        {SHOW_PRESET_SELECTOR && (
+        {SHOW_PRESET_SELECTOR && allowPresetSelection && (
           <div className="lesson-example-select">
             <span>Choose your lesson</span>
             <LessonCustomDropdown preset={preset} presets={presets} onPresetChange={onPresetChange} />
@@ -1711,7 +1713,7 @@ function LessonComplete({
 }: {
   presetId: string;
   isCustomCode: boolean;
-  onTryAnother: () => void;
+  onTryAnother?: () => void;
   onContinueToNextStage?: () => void;
 }) {
   const summary = isCustomCode ? null : LESSON_SUMMARIES[presetId];
@@ -1785,9 +1787,11 @@ function LessonComplete({
               </svg>
             </button>
           )}
-          <button type="button" className="btn-ghost lesson-try-another-button" onClick={onTryAnother}>
-            <Compass size={15} aria-hidden="true" /> Try another
-          </button>
+          {onTryAnother && (
+            <button type="button" className="btn-ghost lesson-try-another-button" onClick={onTryAnother}>
+              <Compass size={15} aria-hidden="true" /> Try another
+            </button>
+          )}
         </div>
 
       </div>
@@ -1813,6 +1817,14 @@ interface VisualizerExperienceProps {
   onLessonPhaseChange?: (phase: LessonPhase) => void;
   /* Back control rendered in the intro screen's action row. */
   introBackButton?: React.ReactNode;
+  /*
+   * The study flow allows one initial lesson choice, then locks that measured
+   * lesson until the questionnaire is finished. Review mode supplies the
+   * stored lesson ID and disables both the picker and post-lesson explorer.
+   */
+  initialPresetId?: string;
+  allowPresetSelection?: boolean;
+  allowPostLessonExploration?: boolean;
 }
 
 interface PendingCodeTransfer {
@@ -1903,12 +1915,19 @@ export default function VisualizerExperience({
   onExampleAttempt,
   onLessonPhaseChange,
   introBackButton,
+  initialPresetId,
+  allowPresetSelection = true,
+  allowPostLessonExploration = true,
 }: VisualizerExperienceProps = {}) {
   const { setSelectedLessonId } = useStudy();
   const containerRef = useRef<HTMLDivElement>(null);
   const [leftW, setLeftW]   = useState(540); // px
 
-  const [presetId, setPresetId]       = useState<string>(LESSON_PRESET_ID);
+  const [presetId, setPresetId] = useState<string>(() =>
+    initialPresetId && SIMULATION_PRESETS[initialPresetId]
+      ? initialPresetId
+      : LESSON_PRESET_ID,
+  );
   const [currentStep, setCurrentStep] = useState<number>(0);
   const [lessonPhase, setLessonPhase] = useState<LessonPhase>("intro");
   const [isTourOpen, setIsTourOpen]   = useState(false);
@@ -2363,6 +2382,7 @@ export default function VisualizerExperience({
         preset={activePreset}
         presets={Object.values(SIMULATION_PRESETS)}
         onPresetChange={handlePresetChange}
+        allowPresetSelection={allowPresetSelection}
         backButton={introBackButton}
         onBegin={() => {
           setSelectedLessonId(activePreset.id);
@@ -2381,10 +2401,10 @@ export default function VisualizerExperience({
         <LessonComplete
           presetId={presetId}
           isCustomCode={isCustomCode}
-          onTryAnother={() => setIsExploreOpen(true)}
+          onTryAnother={allowPostLessonExploration ? () => setIsExploreOpen(true) : undefined}
           onContinueToNextStage={onContinueToNextStage}
         />
-        <PostLessonExplorerModal
+        {allowPostLessonExploration && <PostLessonExplorerModal
           isOpen={isExploreOpen}
           examples={SWITCHABLE_PRESET_IDS.filter((id) => SIMULATION_PRESETS[id]).map((id) => ({
             id,
@@ -2398,7 +2418,7 @@ export default function VisualizerExperience({
             onLessonComplete?.(presetId);
             handlePresetChange(id, { inPlace: true });
           }}
-        />
+        />}
       </>
     );
   }
@@ -2534,7 +2554,7 @@ export default function VisualizerExperience({
         onHighlightedLinesChange={setWalkthroughHighlightedLines}
       />
 
-      <PostLessonExplorerModal
+      {allowPostLessonExploration && <PostLessonExplorerModal
         isOpen={isExploreOpen}
         examples={SWITCHABLE_PRESET_IDS.filter((id) => SIMULATION_PRESETS[id]).map((id) => ({
           id,
@@ -2548,7 +2568,7 @@ export default function VisualizerExperience({
           onLessonComplete?.(presetId);
           handlePresetChange(id, { inPlace: true });
         }}
-      />
+      />}
 
       {false && <>{/* Legacy developer status footer, hidden from participants. */}
       <footer

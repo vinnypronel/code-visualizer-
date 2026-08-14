@@ -174,9 +174,11 @@ function WorkedTraceTable() {
 export default function StaticMaterialsStub({
   onContinue,
   onBackToPretest,
+  reviewMode = false,
 }: {
-  onContinue: () => void;
+  onContinue?: () => void;
   onBackToPretest?: React.ReactNode;
+  reviewMode?: boolean;
 }) {
   return (
     <div className="h-full w-full overflow-y-auto panel-scroll">
@@ -415,13 +417,14 @@ Noah, 21`}</CodeBlock>
               aria-hidden="true"
             />
             <h2 className="text-[16px] font-bold text-[var(--text-primary)]">
-              Summary: Ready for the Post-Test
+              {reviewMode ? "Summary: Key ideas to remember" : "Summary: Ready for the Post-Test"}
             </h2>
           </div>
 
           <p className="text-[13px] mb-3.5 text-[var(--text-primary)]">
-            Before continuing to the post-test, keep these 4 core Java
-            object-reference takeaways in mind:
+            {reviewMode
+              ? "These are the 4 core Java object-reference ideas from your assigned material:"
+              : "Before continuing to the post-test, keep these 4 core Java object-reference takeaways in mind:"}
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 text-[12.5px]">
@@ -482,7 +485,7 @@ Noah, 21`}</CodeBlock>
           </div>
         </section>
 
-        <div
+        {!reviewMode && onContinue && <div
           className="flex flex-col items-start justify-between gap-4 border-t py-6 sm:flex-row sm:items-center"
           style={{ borderColor: "var(--border)" }}
         >
@@ -515,7 +518,7 @@ Noah, 21`}</CodeBlock>
               />
             </svg>
           </button>
-        </div>
+        </div>}
       </div>
     </div>
   );

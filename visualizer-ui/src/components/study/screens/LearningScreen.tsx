@@ -118,6 +118,7 @@ export default function LearningScreen() {
           onExampleAttempt={handleExampleAttempt}
           onLessonPhaseChange={handleLessonPhaseChange}
           introBackButton={backToPretest}
+          allowPostLessonExploration={false}
         />
       ) : (
         <StaticMaterialsStub onContinue={proceed} onBackToPretest={backToPretest} />

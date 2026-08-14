@@ -9,14 +9,17 @@
  */
 
 import { useEffect, useState } from "react";
-import { ArrowLeft, Check, CheckCircle2, Copy } from "lucide-react";
+import { ArrowLeft, BookOpen, Check, CheckCircle2, Copy } from "lucide-react";
 import StudyShell from "@/components/study/StudyShell";
 import { useStudy } from "@/components/study/StudyProvider";
+import StaticMaterialsStub from "@/components/study/StaticMaterialsStub";
+import VisualizerExperience from "@/components/visualizer/VisualizerExperience";
 import {
   DEV_THANK_YOU_EVENT,
   DEV_THANK_YOU_STORAGE_KEY,
   MSFORMS_URL,
   QUESTIONNAIRE_MINUTES,
+  LESSON_PRESET_ID,
 } from "@/lib/studyConfig";
 
 export default function HandoffScreen() {
@@ -24,6 +27,7 @@ export default function HandoffScreen() {
   const participantId = session.participantId ?? "----";
   const [copied, setCopied] = useState(false);
   const [questionnaireOpened, setQuestionnaireOpened] = useState(false);
+  const [reviewingLearning, setReviewingLearning] = useState(false);
 
   useEffect(() => {
     void logEvent("questionnaire_shown");
@@ -58,6 +62,42 @@ export default function HandoffScreen() {
     window.setTimeout(() => setQuestionnaireOpened(true), 0);
   };
 
+  if (reviewingLearning) {
+    const returnToQuestionnaire = (
+      <button
+        type="button"
+        onClick={() => setReviewingLearning(false)}
+        className="inline-flex items-center gap-1.5 rounded-md border px-3 py-2 text-[12px] font-semibold"
+        style={{
+          background: "var(--bg-panel)",
+          borderColor: "var(--border)",
+          color: "var(--text-primary)",
+        }}
+      >
+        <ArrowLeft size={14} aria-hidden="true" />
+        Return to questionnaire
+      </button>
+    );
+
+    return (
+      <StudyShell
+        stageIndex={4}
+        fluid
+        headerLeftAction={returnToQuestionnaire}
+      >
+        {session.condition === "static" ? (
+          <StaticMaterialsStub reviewMode />
+        ) : (
+          <VisualizerExperience
+            initialPresetId={session.selectedLessonId ?? LESSON_PRESET_ID}
+            allowPresetSelection={false}
+            allowPostLessonExploration={false}
+          />
+        )}
+      </StudyShell>
+    );
+  }
+
   if (questionnaireOpened) {
     return (
       <StudyShell stageIndex={4} noScroll>
@@ -89,7 +129,8 @@ export default function HandoffScreen() {
           >
             Your pre-test, learning activity, and post-test have all been
             recorded. One short questionnaire is open in the other tab. Fill it
-            in, submit it, and you are completely done.
+            in, submit it, and you are completely done. If a question asks about
+            the learning activity, you may review the same material you used.
           </p>
 
           <div
@@ -130,6 +171,19 @@ export default function HandoffScreen() {
               </button>
               <button
                 type="button"
+                onClick={() => setReviewingLearning(true)}
+                className="inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-[12px] font-semibold"
+                style={{
+                  background: "var(--bg-panel-2)",
+                  borderColor: "var(--border)",
+                  color: "var(--text-primary)",
+                }}
+              >
+                <BookOpen size={14} aria-hidden="true" />
+                Review your learning material
+              </button>
+              <button
+                type="button"
                 onClick={returnToConsent}
                 className="inline-flex items-center gap-1.5 text-[12px] px-3 py-1 rounded-md border"
                 style={{
@@ -149,8 +203,10 @@ export default function HandoffScreen() {
             style={{ color: "var(--text-secondary)" }}
           >
             You can leave this tab open until you have submitted the
-            questionnaire, in case you need to check the ID again. After that
-            you can close both tabs.
+            questionnaire. Use the review button above whenever you need to look
+            back at your assigned material; it will not let you switch to a
+            different condition or lesson. After submitting, you can close both
+            tabs.
           </p>
 
           <p
@@ -265,11 +321,11 @@ export default function HandoffScreen() {
           </ol>
           <p className="text-[11px] mt-1.5" style={{ color: "#000000" }}>
             The questionnaire opens in a new tab, so this page stays open if you
-            need to check your ID again.
+            need to check your ID or review the same learning material again.
           </p>
         </div>
 
-        <div className="flex justify-center mb-4">
+        <div className="flex flex-wrap justify-center gap-3 mb-4">
           {MSFORMS_URL ? (
             <a
               className="btn-primary text-xs py-2.5 px-6"
@@ -301,6 +357,14 @@ export default function HandoffScreen() {
               Questionnaire link not set. Define NEXT_PUBLIC_MSFORMS_URL.
             </span>
           )}
+          <button
+            type="button"
+            onClick={() => setReviewingLearning(true)}
+            className="btn-ghost inline-flex items-center gap-2 text-xs py-2.5 px-5"
+          >
+            <BookOpen size={15} aria-hidden="true" />
+            Review your learning material
+          </button>
         </div>
 
         <p

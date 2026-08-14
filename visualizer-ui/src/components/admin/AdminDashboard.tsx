@@ -599,7 +599,10 @@ function TestResponseReview({
   const responseByKey = new Map(score?.items.map((item) => [item.key, item]));
 
   return (
-    <section className="mb-6 overflow-hidden rounded-xl border" style={{ borderColor: "#dbe4ef" }}>
+    <section
+      className="mb-6 shrink-0 overflow-hidden rounded-xl border"
+      style={{ borderColor: "#dbe4ef" }}
+    >
       <header className="flex items-center justify-between gap-3 border-b px-4 py-3" style={{ background: "#f8fafc", borderColor: "#dbe4ef" }}>
         <div>
           <h3 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>{title}</h3>
