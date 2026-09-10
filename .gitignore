@@ -37,3 +37,6 @@ target/
 Thumbs.db
 desktop.ini
 *.pem
+
+# Abandoned duplicate of java-jail-spike (local only)
+java-trace-spike/
