@@ -42,9 +42,9 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# Temporary Antigravity Debugging
-*.sql
+# study data exports: participant data never goes in git
 *.csv
-*.json
-*.svg
-*-lock.json
+
+# local agent tooling
+.claude/
+AGENTS.md
