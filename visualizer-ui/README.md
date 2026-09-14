@@ -40,10 +40,9 @@ git clone https://github.com/vinnypronel/code-visualizer-.git
 cd code-visualizer-\visualizer-ui
 ```
 
-If the repo is already on your computer:
+If the repo is already on your computer, run this from the repository root:
 
 ```powershell
-cd "C:\Users\vinny\OneDrive\Desktop\UR2PhD SUmmer REU\Visualizer-UI\visualizer-ui"
 git pull origin main
 ```
 
@@ -90,12 +89,13 @@ secret keys or legacy service role keys.
 
 ## Supabase Setup
 
-In the Supabase SQL editor, run:
+In the Supabase SQL editor, run the contents of each migration in order:
 
-```sql
--- Main study schema
--- Use the contents of:
--- supabase/migrations/0001_study_harness.sql
+```text
+supabase/migrations/0001_study_harness.sql
+supabase/migrations/0002_example_attempts.sql
+supabase/migrations/0003_study_integrity.sql
+supabase/migrations/0004_event_abuse_limits.sql
 ```
 
 ## Run Locally
@@ -246,13 +246,3 @@ git push origin main
 ```
 
 Do not add `.env.local` or service keys to git.
-
-## Current Remaining Checks
-
-Before real participants, the team should:
-
-- Run one full live test and confirm the Supabase row is complete.
-- Decide whether to delete/reset test participant rows.
-- Add the real Microsoft Forms link to `NEXT_PUBLIC_MSFORMS_URL`.
-- Have the professor review the static reading materials for study fairness.
-- Deploy the app somewhere participants can access it.
