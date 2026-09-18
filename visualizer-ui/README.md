@@ -20,9 +20,9 @@ The actual Next.js app is in this folder:
 visualizer-ui
 ```
 
-The folders at the repository root, such as `parser-spike`,
-`java-jail-spike`, and `java-trace-spike`, are research spike/prototype folders.
-They are not needed to run the current study app.
+`parser-spike` at the repository root is a research prototype and is not needed
+to run the study app. The optional java_jail tracer setup is described in the
+root README.
 
 ## Tech Stack
 
