@@ -40,3 +40,6 @@ desktop.ini
 
 # Abandoned duplicate of java-jail-spike (local only)
 java-trace-spike/
+
+# java_jail tracer (GPL, cloned locally, see README)
+java-jail-spike/
