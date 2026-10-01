@@ -1708,6 +1708,15 @@ button:disabled, [role="button"][aria-disabled="true"] {
   background: #334155;
 }
 
+/* Hides the scrollbar visually while keeping the area scrollable. */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 /* ─── Developer jump controls ─── */
 .dev-jump-option,
 .dev-jump-toggle,

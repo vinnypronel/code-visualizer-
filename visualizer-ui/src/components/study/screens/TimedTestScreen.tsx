@@ -96,7 +96,7 @@ export default function TimedTestScreen({
   finishEvent,
   nextPhase,
 }: TimedTestScreenProps) {
-  const { session, setResponse, logEvent, goTo, returnToConsent } = useStudy();
+  const { session, setResponse, logEvent, goTo } = useStudy();
   // Anchor the timer to a single start moment, captured once.
   const [startAtMs] = useState(() => Date.now());
   const finishedRef = useRef(false);
@@ -167,23 +167,7 @@ export default function TimedTestScreen({
       }
       footer={
         <>
-          {which === "pretest" ? (
-            <BackButtonWithTooltip
-              label="Back to Home"
-              onClick={returnToConsent}
-              position="left"
-              tooltipText="Going back will reset your assigned Participant ID and answers."
-              confirmText="This erases your answers and your participant ID, and it cannot be undone. Are you sure you want to start over?"
-            />
-          ) : (
-            /*
-             * The post-test deliberately has no way back to the learning
-             * activity. Leaving mid-test to re-study inflated the post-test
-             * score, and only participants bold enough to try it benefited,
-             * which made the pre-test and post-test measure different things.
-             */
-            <span aria-hidden="true" />
-          )}
+          <span aria-hidden="true" />
 
           <span
             id={`${which}-completion-progress`}

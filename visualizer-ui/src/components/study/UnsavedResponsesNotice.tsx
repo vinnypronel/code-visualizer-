@@ -9,12 +9,14 @@
  * them, instead of being discovered weeks later during analysis.
  */
 
+import { useState } from "react";
 import { useStudy } from "./StudyProvider";
 
 export default function UnsavedResponsesNotice() {
   const { unsavedCritical, downloadUnsavedResponses } = useStudy();
+  const [dismissed, setDismissed] = useState(false);
 
-  if (!unsavedCritical) return null;
+  if (!unsavedCritical || dismissed) return null;
 
   return (
     <div
@@ -38,6 +40,23 @@ export default function UnsavedResponsesNotice() {
         style={{ color: "var(--text-secondary)" }}
       >
         Download my responses
+      </button>
+      <button
+        type="button"
+        onClick={() => setDismissed(true)}
+        aria-label="Dismiss notice"
+        className="flex-shrink-0 -mr-0.5 -mt-0.5 p-1 rounded hover:bg-black/5 transition-colors"
+        style={{ color: "var(--text-secondary)" }}
+      >
+        <svg
+          className="w-3.5 h-3.5"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={2.5}
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+        </svg>
       </button>
     </div>
   );

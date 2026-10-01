@@ -40,7 +40,10 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="h-full flex flex-col overflow-hidden">
+      <body
+        className="h-full flex flex-col overflow-hidden"
+        suppressHydrationWarning
+      >
         <BrowserInspectionDeterrent />
         <StudyProvider>{children}</StudyProvider>
       </body>

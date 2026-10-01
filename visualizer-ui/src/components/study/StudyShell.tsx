@@ -49,6 +49,10 @@ interface StudyShellProps {
    * Disables vertical scrolling on the page content and locks it to the viewport height.
    */
   noScroll?: boolean;
+  /*
+   * Keeps the page content scrollable but hides the page-level scrollbar.
+   */
+  hideScrollbar?: boolean;
 }
 
 export default function StudyShell({
@@ -61,8 +65,9 @@ export default function StudyShell({
   footer,
   fluid = false,
   noScroll = false,
+  hideScrollbar = false,
 }: StudyShellProps) {
-  const { session, returnToConsent } = useStudy();
+  const { session } = useStudy();
   const isStatic = session.condition === "static";
 
   return (
@@ -78,25 +83,16 @@ export default function StudyShell({
         <div className="relative w-full px-4 sm:px-6 py-1.5 flex items-center justify-between gap-4 min-h-[46px] 2xl:grid 2xl:grid-cols-[minmax(0,1fr)_520px_minmax(0,1fr)] 2xl:gap-6">
           {/* Left: branding plus an optional phase-specific action. */}
           <div className="flex min-w-0 items-center gap-3 flex-shrink-0 2xl:justify-self-start">
-            <div
-              onClick={returnToConsent}
-              role="button"
-              tabIndex={0}
-              title="Back to Home"
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") returnToConsent();
-              }}
-              className="flex items-center gap-2.5 flex-shrink-0 cursor-pointer group"
-            >
+            <div className="flex items-center gap-2.5 flex-shrink-0 select-none">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/kean-logo.png"
                 alt="Kean University"
-                className="h-10 sm:h-12 w-auto object-contain flex-shrink-0 transition-transform group-hover:scale-105"
+                className="h-10 sm:h-12 w-auto object-contain flex-shrink-0"
               />
               <div className="flex flex-col">
               <span
-                className="text-xs sm:text-sm font-mono uppercase tracking-wider font-extrabold whitespace-nowrap hidden lg:inline group-hover:text-[var(--accent)] transition-colors"
+                className="text-xs sm:text-sm font-mono uppercase tracking-wider font-extrabold whitespace-nowrap hidden lg:inline"
                 style={{ color: "var(--text-primary)" }}
               >
                 Code Visualizer Study
@@ -236,7 +232,7 @@ export default function StudyShell({
       {fluid ? (
         <main className="flex-1 min-h-0 overflow-hidden">{children}</main>
       ) : (
-        <main className={`flex-1 min-h-0 ${noScroll ? "overflow-hidden flex flex-col items-center justify-center" : "overflow-y-auto panel-scroll"}`}>
+        <main className={`flex-1 min-h-0 ${noScroll ? "overflow-hidden flex flex-col items-center justify-center" : hideScrollbar ? "overflow-y-auto no-scrollbar" : "overflow-y-auto panel-scroll"}`}>
           <div className={`w-full max-w-[1440px] ${noScroll ? "px-4 sm:px-6 py-2 flex-1 flex flex-col justify-center items-center mx-auto" : "mx-auto px-6 lg:px-12 py-5 sm:py-6"}`}>
             {heading && <h1 className="text-xl font-bold mb-1">{heading}</h1>}
             {subheading && (

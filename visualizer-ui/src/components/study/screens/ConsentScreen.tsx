@@ -1,31 +1,72 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import StudyShell from "@/components/study/StudyShell";
 import { useStudy } from "@/components/study/StudyProvider";
-import { ConsentBody, CONSENT_META } from "@/content/consent";
+// Consent form content and metadata (renamed from consent.tsx to bust a stale dev chunk).
+import { ConsentBody, CONSENT_META } from "@/content/consentForm";
 import AssignmentChallenge from "@/components/study/AssignmentChallenge";
+import { useSmoothScroll } from "@/lib/useSmoothScroll";
 
 export default function ConsentScreen() {
   const { acceptConsent, declineConsent, isAssigning, assignError } = useStudy();
   const [choice, setChoice] = useState<"agree" | "disagree" | null>(null);
   const [challengeToken, setChallengeToken] = useState<string | null>(null);
   const [challengeReady, setChallengeReady] = useState(false);
+  const [showClickPopup, setShowClickPopup] = useState(false);
+  const [isHoveringButton, setIsHoveringButton] = useState(false);
+  const clickPopupTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const consentScrollRef = useRef<HTMLDivElement | null>(null);
+
+  // Inertial smooth scrolling for the consent text box.
+  useSmoothScroll(consentScrollRef);
+
   const challengeRequired = process.env.NODE_ENV === "production" || Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY);
   const challengePassed = !challengeRequired || (challengeReady && Boolean(challengeToken));
   const handleChallenge = useCallback((token: string | null) => setChallengeToken(token), []);
   const handleChallengeReady = useCallback((ready: boolean) => setChallengeReady(ready), []);
 
-  const continueBlockedReason =
+  const toggleChoice = useCallback((key: "agree" | "disagree") => {
+    setChoice((current) => (current === key ? null : key));
+    setChallengeToken(null);
+    setChallengeReady(false);
+    setShowClickPopup(false);
+  }, []);
+
+  const triggerClickPopup = useCallback(() => {
+    if (clickPopupTimerRef.current) clearTimeout(clickPopupTimerRef.current);
+    setShowClickPopup(true);
+    clickPopupTimerRef.current = setTimeout(() => {
+      setShowClickPopup(false);
+    }, 2500);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (clickPopupTimerRef.current) clearTimeout(clickPopupTimerRef.current);
+    };
+  }, []);
+
+  const isBlocked = choice === null || (choice === "agree" && !challengePassed) || isAssigning;
+  const popupText =
     choice === null
-      ? "Select an option above to continue."
+      ? "Select yes or no before continuing"
       : choice === "agree" && !challengePassed
-        ? "Complete the verification box to continue."
+        ? "Complete the verification box above"
         : null;
 
-  const onContinue = () => {
+  const isPopupVisible = Boolean(popupText && (isHoveringButton || showClickPopup));
+
+  const handleButtonClick = () => {
+    if (choice === null) {
+      triggerClickPopup();
+      return;
+    }
     if (choice === "agree") {
-      if (!challengePassed) return;
+      if (!challengePassed) {
+        triggerClickPopup();
+        return;
+      }
       void acceptConsent(challengeToken ?? undefined);
     } else if (choice === "disagree") {
       declineConsent();
@@ -37,6 +78,7 @@ export default function ConsentScreen() {
       stageIndex={0}
       heading={CONSENT_META.title}
       subheading="Please read the following before deciding whether to take part."
+      hideScrollbar
     >
       {/*
         Keep the desktop arrangement on laptop-sized viewports, including when
@@ -54,6 +96,7 @@ export default function ConsentScreen() {
           }}
         >
           <div
+            ref={consentScrollRef}
             className="p-5 overflow-y-auto panel-scroll
               h-[min(590px,calc(100dvh-165px))]
               min-[1600px]:h-[min(590px,calc(100dvh/1.12-165px))]
@@ -66,7 +109,48 @@ export default function ConsentScreen() {
         </div>
 
         {/* Agreement Question & Continue Group Moved Left Next to Consent Box */}
-        <div className="w-full min-[1100px]:w-auto min-[1100px]:min-w-0 min-[1100px]:flex-1 max-w-[680px] flex flex-col justify-end self-stretch pb-1">
+        <div className="w-full min-[1100px]:w-auto min-[1100px]:min-w-0 min-[1100px]:flex-1 max-w-[680px] flex flex-col self-stretch pb-1">
+          {/* Key Points Summary Card (fills the empty space beside the consent form) */}
+          <div
+            className="w-full rounded-xl shadow-sm p-5 mb-4"
+            style={{ background: "#ffffff", border: "1.5px solid #64748b" }}
+          >
+            <div className="flex items-center gap-2 mb-3">
+              <span className="w-1.5 h-4 rounded-full bg-blue-600 flex-shrink-0" />
+              <h3 className="font-bold text-[14px] text-slate-900 tracking-tight">
+                Key Points at a Glance
+              </h3>
+            </div>
+            <p className="text-[12px] text-slate-600 mb-3">
+              A quick summary of the consent form. Please still read the full form on the left before deciding.
+            </p>
+            <ul className="space-y-2.5 text-[12.5px] text-slate-700">
+              {[
+                "Takes about 45 minutes, completed entirely online at a time and place of your choosing.",
+                "You take a short pre-test, study materials or use the AI visualization tool, then take a post-test and short questionnaire.",
+                "Eligibility: 18 or older, currently a Kean University student, and have completed CPS 2231.",
+                "Participation is completely voluntary. You may withdraw at any time with no penalty.",
+                "Minimal risk. No audio or video recordings are collected.",
+                "You are assigned an anonymous participant ID. Data is kept confidential and reported only in aggregate.",
+                "No compensation and no financial obligation for taking part.",
+                "Your choice will not affect your grades, academic standing, or relationship with Kean University.",
+              ].map((point, i) => (
+                <li key={i} className="flex items-start gap-2.5">
+                  <svg
+                    className="w-4 h-4 flex-shrink-0 mt-0.5 text-blue-600"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2.5}
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                  </svg>
+                  <span className="leading-snug">{point}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
           <div className="flex flex-col sm:flex-row items-start sm:items-end justify-start gap-4 w-full mt-auto">
             {/* Agreement Question & Option Boxes */}
             <fieldset className="space-y-2.5 w-full max-w-[440px] min-w-0">
@@ -90,9 +174,19 @@ export default function ConsentScreen() {
                 const isSelected = choice === opt.key;
                 const isAgree = opt.key === "agree";
                 return (
-                  <label
+                  <div
                     key={opt.key}
-                    className="flex items-center gap-3 rounded-lg px-4 py-2.5 cursor-pointer transition-all shadow-sm w-full"
+                    role="radio"
+                    aria-checked={isSelected}
+                    tabIndex={0}
+                    onClick={() => toggleChoice(opt.key)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        toggleChoice(opt.key);
+                      }
+                    }}
+                    className="flex items-center gap-3 rounded-lg px-4 py-2.5 cursor-pointer transition-all shadow-sm w-full select-none"
                     style={{
                       background: isSelected
                         ? isAgree
@@ -116,71 +210,78 @@ export default function ConsentScreen() {
                       name="consent"
                       value={opt.key}
                       checked={isSelected}
-                      onChange={() => {
-                        setChoice(opt.key);
-                        setChallengeToken(null);
-                        setChallengeReady(false);
-                      }}
-                      className={`w-4 h-4 flex-shrink-0 ${isAgree ? "accent-emerald-600" : "accent-red-600"}`}
+                      readOnly
+                      tabIndex={-1}
+                      className={`w-4 h-4 flex-shrink-0 pointer-events-none ${isAgree ? "accent-emerald-600" : "accent-red-600"}`}
                     />
                     <span className="text-[12.5px] font-semibold leading-snug">{opt.label}</span>
-                  </label>
+                  </div>
                 );
               })}
             </fieldset>
 
-            {/* Continue Button Joined Right Next to Options */}
-            <div className="flex flex-col items-start gap-2 flex-shrink-0 self-end pb-0.5 ml-2">
-              {/*
-                A greyed-out Continue with no explanation left participants
-                stuck, especially since the verification box only appears once
-                "Yes" is chosen. This says what is still outstanding.
-              */}
-              {continueBlockedReason && (
-                <span className="text-[12px]" style={{ color: "var(--text-secondary)" }}>
-                  {continueBlockedReason}
-                </span>
+            {/* Continue Button and Verification Group */}
+            <div className="flex flex-col items-start gap-2.5 flex-shrink-0 self-end pb-0.5 ml-2">
+              {/* Cloudflare Verification Widget placed ABOVE Continue button */}
+              {choice === "agree" && (
+                <div className="flex-shrink-0 mb-1">
+                  <AssignmentChallenge
+                    onToken={handleChallenge}
+                    onReadyChange={handleChallengeReady}
+                  />
+                </div>
               )}
+
               {assignError && (
                 <span className="text-[12px]" style={{ color: "var(--danger)" }}>
                   {assignError}
                 </span>
               )}
-              <button
-                className="btn-primary text-xs py-2.5 px-6 shadow-lg"
-                disabled={choice === null || isAssigning || (choice === "agree" && !challengePassed)}
-                style={{
-                  opacity: choice === null || isAssigning || (choice === "agree" && !challengePassed) ? 0.5 : 1,
-                  cursor: choice === null || isAssigning || (choice === "agree" && !challengePassed) ? "not-allowed" : "pointer",
-                }}
-                onClick={onContinue}
+
+              {/* Continue Button with Pop-up Message */}
+              <div
+                className="relative inline-flex flex-col items-center"
+                onMouseEnter={() => setIsHoveringButton(true)}
+                onMouseLeave={() => setIsHoveringButton(false)}
               >
-                <span>{isAssigning ? "Please wait..." : "Continue"}</span>
-                {!isAssigning && (
-                  <svg
-                    className="btn-arrow"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={2.5}
+                {/* Pop-up Message on hover or click */}
+                {isPopupVisible && (
+                  <div
+                    role="tooltip"
+                    className="absolute bottom-[calc(100%+8px)] left-1/2 -translate-x-1/2 z-30 pointer-events-none transition-all duration-150 ease-out"
                   >
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-                  </svg>
+                    <div className="bg-slate-900 text-white text-[12px] font-semibold px-3 py-1.5 rounded-lg shadow-xl border border-slate-700 whitespace-nowrap flex items-center gap-1.5">
+                      <span className="text-amber-400">⚠️</span>
+                      <span>{popupText}</span>
+                    </div>
+                    <div className="w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-slate-900 mx-auto" />
+                  </div>
                 )}
-              </button>
-              {/*
-                Rendered directly, with no animated wrapper. A collapsing slot
-                was tried here and broke consent in production: Turnstile
-                refuses to render into a clipped, zero-height container, so the
-                widget never appeared and nobody could get past this screen.
-                The skeleton inside the component covers the loading gap.
-              */}
-              {choice === "agree" && (
-                <AssignmentChallenge
-                  onToken={handleChallenge}
-                  onReadyChange={handleChallengeReady}
-                />
-              )}
+
+                <button
+                  type="button"
+                  className="btn-primary text-xs py-2.5 px-6 shadow-lg transition-opacity"
+                  aria-disabled={isBlocked}
+                  style={{
+                    opacity: isBlocked ? 0.6 : 1,
+                    cursor: isBlocked ? "not-allowed" : "pointer",
+                  }}
+                  onClick={handleButtonClick}
+                >
+                  <span>{isAssigning ? "Please wait..." : "Continue"}</span>
+                  {!isAssigning && (
+                    <svg
+                      className="btn-arrow"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2.5}
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                    </svg>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>

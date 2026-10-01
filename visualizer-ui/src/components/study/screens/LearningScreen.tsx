@@ -15,8 +15,6 @@ import StaticMaterialsStub from "@/components/study/StaticMaterialsStub";
 import VisualizerExperience from "@/components/visualizer/VisualizerExperience";
 import type { LessonPhase } from "@/components/visualizer/VisualizerExperience";
 
-import { BackButtonWithTooltip } from "@/components/study/screens/TimedTestScreen";
-
 /* Advisory only. Nothing happens when it elapses. */
 const LEARNING_RECOMMENDED_SECONDS = 900;
 
@@ -25,13 +23,11 @@ export default function LearningScreen() {
   const [startAtMs] = useState(() => Date.now());
   const isAi = session.condition !== "static"; // default to AI if unset
 
-  const [lessonPhase, setLessonPhase] = useState<LessonPhase>("intro");
   const [visualizerStartMs, setVisualizerStartMs] = useState<number | null>(
     () => (isAi ? null : startAtMs),
   );
 
   const handleLessonPhaseChange = useCallback((phase: LessonPhase) => {
-    setLessonPhase(phase);
     if (phase !== "intro") {
       setVisualizerStartMs((current) => current ?? Date.now());
     }
@@ -83,24 +79,11 @@ export default function LearningScreen() {
     goTo("posttest");
   }, [goTo, logEvent, startAtMs, visualizerStartMs]);
 
-  const backToPretest = (
-    <BackButtonWithTooltip
-      label="Back to Pre-test"
-      onClick={() => goTo("pretest")}
-      showTooltip={false}
-    />
-  );
-  /* Once the required lesson reaches its summary, progression is forward-only.
-   * Going back to the pre-test at that point would let participants revisit
-   * answers after completing the learning intervention. */
-  const showTopBarBack = isAi && lessonPhase !== "intro" && lessonPhase !== "complete";
-
   return (
     <StudyShell
       stageIndex={2}
       heading="Learning"
       fluid
-      headerLeftAction={showTopBarBack ? backToPretest : undefined}
       timer={
         <div className="flex items-center">
           <TimerChip
@@ -117,11 +100,10 @@ export default function LearningScreen() {
           onContinueToNextStage={proceed}
           onExampleAttempt={handleExampleAttempt}
           onLessonPhaseChange={handleLessonPhaseChange}
-          introBackButton={backToPretest}
           allowPostLessonExploration={false}
         />
       ) : (
-        <StaticMaterialsStub onContinue={proceed} onBackToPretest={backToPretest} />
+        <StaticMaterialsStub onContinue={proceed} />
       )}
     </StudyShell>
   );

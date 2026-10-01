@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import StudyShell from "@/components/study/StudyShell";
 import { useStudy } from "@/components/study/StudyProvider";
-import { BackButtonWithTooltip } from "@/components/study/screens/TimedTestScreen";
 
 /* Typewriter text animation component anchored left-to-right */
 function TypewriterText({
@@ -50,7 +49,7 @@ function TypewriterText({
 
 /* Shows the freshly minted participant ID centered on screen with typewriter text effect. */
 export default function AssignedScreen() {
-  const { session, isAssigning, assignError, goTo, returnToConsent } = useStudy();
+  const { session, isAssigning, assignError, goTo } = useStudy();
   const isLoading = isAssigning || !session.participantId;
 
   return (
@@ -59,16 +58,9 @@ export default function AssignedScreen() {
       heading=""
       noScroll
       footer={
-        <div className="w-full flex items-center justify-between gap-3">
-          <BackButtonWithTooltip
-            label="Back to Home"
-            onClick={returnToConsent}
-            position="left"
-            tooltipText="Going back will reset your assigned Participant ID."
-            confirmText="This erases your participant ID and you would start over from consent. Are you sure?"
-          />
+        <div className="w-full flex items-center justify-end gap-3">
           <button
-            className="btn-primary min-w-[180px] text-xs py-2.5 px-6"
+            className="btn-primary min-w-[180px] text-xs py-2.5 px-6 ml-auto"
             disabled={isLoading}
             style={{
               opacity: isLoading ? 0.6 : 1,

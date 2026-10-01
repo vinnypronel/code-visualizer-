@@ -92,6 +92,16 @@ interface StudyContextValue {
 
 const StudyContext = createContext<StudyContextValue | null>(null);
 
+const PHASE_ORDER: Record<Phase, number> = {
+  consent: 0,
+  declined: 0,
+  assigned: 1,
+  pretest: 2,
+  learning: 3,
+  posttest: 4,
+  handoff: 5,
+};
+
 const INITIAL_SESSION: SessionState = {
   participantId: null,
   sessionToken: null,
@@ -172,9 +182,44 @@ export function StudyProvider({ children }: { children: React.ReactNode }) {
     }
   }, [sessionRef]);
 
-  const goTo = useCallback((phase: Phase) => {
-    setSession((s) => ({ ...s, phase }));
+  const goTo = useCallback((targetPhase: Phase) => {
+    setSession((s) => {
+      const currentRank = PHASE_ORDER[s.phase] ?? 0;
+      const targetRank = PHASE_ORDER[targetPhase] ?? 0;
+      // Disallow navigating backward in the study flow
+      if (targetRank < currentRank) {
+        return s;
+      }
+      return { ...s, phase: targetPhase };
+    });
   }, []);
+
+  // Prevent navigating backwards via browser Back button or leaving mid-study
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (session.phase === "consent" || session.phase === "declined") return;
+
+    window.history.pushState(null, "", window.location.href);
+
+    const handlePopState = () => {
+      window.history.pushState(null, "", window.location.href);
+    };
+
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (session.phase !== "handoff") {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [session.phase]);
 
   const setSelectedLessonId = useCallback((lessonId: string) => {
     setSession((s) => ({ ...s, selectedLessonId: lessonId }));
