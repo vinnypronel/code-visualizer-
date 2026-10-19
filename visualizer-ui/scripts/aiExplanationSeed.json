@@ -1,0 +1,28 @@
+{
+  "_note": "Source context for scripts/generate-ai-explanations.mjs. One entry per study lesson. steps[] are in the order the lesson walks through the code. On the first real generation run, confirm the produced step indices line up with what the visualizer shows for each step, and adjust if the lesson has a leading intro step before the first code line.",
+  "lessons": {
+    "linkedlist": {
+      "name": "Linked List: Insertion & Linking",
+      "overview": "This program creates two separate Node objects, connects them into a chain, and reads a value from the first Node. The variables point to the objects; they do not contain the objects themselves.",
+      "keyRule": "Object variables and next fields copy references. An int variable copies the number itself.",
+      "steps": [
+        { "code": "Node head = new Node(10);", "action": "Create the first Node; head points to it." },
+        { "code": "Node temp = new Node(20);", "action": "Create a second Node; temp points to it." },
+        { "code": "head.next = temp;", "action": "Connect the first Node to the second Node." },
+        { "code": "int value = head.value;", "action": "Copy 10 from the first Node into value." }
+      ]
+    },
+    "stack": {
+      "name": "Stack: LIFO Stack Push Operations",
+      "overview": "This program pushes two values onto a linked stack. Each push places a new Node at the top while keeping a link to the older Node underneath it.",
+      "keyRule": "Link the new Node to the old top before moving top. A stack is last in, first out (LIFO).",
+      "steps": [
+        { "code": "MyStack s = new MyStack();", "action": "Create an empty stack with top = null." },
+        { "code": "Node n1 = new Node(42);  s.top = n1;", "action": "Make 42 the first top value." },
+        { "code": "Node n2 = new Node(84);", "action": "Create the next Node to push." },
+        { "code": "n2.next = s.top;", "action": "Link 84 to the previous top, 42." },
+        { "code": "s.top = n2;", "action": "Move top to 84 and finish the push." }
+      ]
+    }
+  }
+}

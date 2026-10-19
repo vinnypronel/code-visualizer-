@@ -76,6 +76,18 @@ export async function POST(request: Request) {
         });
         break;
       } catch (error) {
+        // Enrollment is full: terminal, do not retry. The client shows a
+        // closed-study message rather than a "try again" error.
+        if (error instanceof Error && error.message.includes("study full")) {
+          return Response.json(
+            {
+              error:
+                "This study has reached its maximum number of participants. Thank you for your interest.",
+              full: true,
+            },
+            { status: 409, headers: noStoreHeaders() },
+          );
+        }
         lastError = error;
         if (attempt < ASSIGN_ATTEMPTS - 1) {
           await new Promise((resolve) => setTimeout(resolve, 150 * 2 ** attempt));

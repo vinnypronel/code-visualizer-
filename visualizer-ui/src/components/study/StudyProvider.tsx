@@ -53,6 +53,8 @@ const BASE_BACKOFF_MS = 500;
 interface StudyContextValue {
   session: SessionState;
   assignError: string | null;
+  /* True when enrollment is full, so no new participant can be assigned. */
+  studyFull: boolean;
   isAssigning: boolean;
   /*
    * True only while an event carrying the participant's answers is still
@@ -119,6 +121,7 @@ export function StudyProvider({ children }: { children: React.ReactNode }) {
     () => readStoredSession() ?? INITIAL_SESSION,
   );
   const [assignError, setAssignError] = useState<string | null>(null);
+  const [studyFull, setStudyFull] = useState(false);
   const [isAssigning, setIsAssigning] = useState(false);
   const [outbox, setOutbox] = useState<OutboxItem[]>(readOutbox);
   const [isFlushing, setIsFlushing] = useState(false);
@@ -141,6 +144,7 @@ export function StudyProvider({ children }: { children: React.ReactNode }) {
     const sessionToken = sessionRef.current.sessionToken ?? makeUuid();
     setIsAssigning(true);
     setAssignError(null);
+    setStudyFull(false);
     setSession((s) => ({
       ...s,
       phase: "assigned",
@@ -158,6 +162,17 @@ export function StudyProvider({ children }: { children: React.ReactNode }) {
           turnstile_token: assignmentChallengeRef.current,
         }),
       });
+      if (res.status === 409) {
+        // Enrollment is full. Keep the participant on the consent screen with a
+        // clear closed-study message instead of a retryable error.
+        const body = (await res.json().catch(() => null)) as { error?: string } | null;
+        setStudyFull(true);
+        setAssignError(
+          body?.error ?? "This study is no longer accepting participants.",
+        );
+        setSession((s) => ({ ...s, phase: "consent" }));
+        return;
+      }
       if (!res.ok) {
         throw new Error(`assign failed with status ${res.status}`);
       }
@@ -345,6 +360,7 @@ export function StudyProvider({ children }: { children: React.ReactNode }) {
     () => ({
       session,
       assignError,
+      studyFull,
       isAssigning,
       unsavedCritical,
       downloadUnsavedResponses,
@@ -360,6 +376,7 @@ export function StudyProvider({ children }: { children: React.ReactNode }) {
     [
       session,
       assignError,
+      studyFull,
       isAssigning,
       unsavedCritical,
       downloadUnsavedResponses,

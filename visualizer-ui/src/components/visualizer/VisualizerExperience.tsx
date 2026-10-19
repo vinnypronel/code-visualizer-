@@ -13,9 +13,12 @@ import {
   LESSON_PRESET_ID,
   SWITCHABLE_PRESET_IDS,
   SHOW_PRESET_SELECTOR,
+  STUDY_MODE,
+  STUDY_LESSON_IDS,
   TRACE_REQUEST_TIMEOUT_MS,
   hasGuidedWalkthrough,
 } from "@/lib/studyConfig";
+import { getAiExplanation } from "@/data/aiExplanations";
 import type { RunState } from "@/components/CodeEditorPanel";
 import type { BananaDiagram, ActiveBlock, ExecutionStep, Preset } from "@/types/visualizer";
 
@@ -1262,13 +1265,14 @@ function resolveStepExplanation(
   step: number,
   fallbackExplanation: string,
 ): string {
-  // TODO(ai-seam): swap this for a real generated explanation source.
-  void presetId;
-  void step;
-  return fallbackExplanation;
+  // Reviewed Gemini text when we have it for this step, scripted text otherwise.
+  return getAiExplanation(presetId, step)?.explanation ?? fallbackExplanation;
 }
 
 function getWhyItMatters(presetId: string, step: number, fallback: string): string {
+  const ai = getAiExplanation(presetId, step);
+  if (ai) return ai.whyItMatters;
+
   if (presetId !== "linkedlist") return fallback;
 
   return [
@@ -2380,7 +2384,9 @@ export default function VisualizerExperience({
     return (
       <LessonIntro
         preset={activePreset}
-        presets={Object.values(SIMULATION_PRESETS)}
+        presets={Object.values(SIMULATION_PRESETS).filter(
+          (p) => !STUDY_MODE || STUDY_LESSON_IDS.includes(p.id)
+        )}
         onPresetChange={handlePresetChange}
         allowPresetSelection={allowPresetSelection}
         backButton={introBackButton}
@@ -2515,6 +2521,7 @@ export default function VisualizerExperience({
         showResult={showResult}
         readyPrompt={isCustomCode ? "Watch the Variables and Objects areas for the marked change." : getReadyPrompt(presetId, lessonStep)}
         whyItMatters={isCustomCode ? stepDiagram.description : getWhyItMatters(presetId, focusStepIndex, stepDiagram.description)}
+        isAiGenerated={!isCustomCode && Boolean(getAiExplanation(presetId, focusStepIndex))}
       />
 
       {isTourOpen && (

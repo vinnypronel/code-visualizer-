@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { BookOpen, ChevronDown, ChevronUp, Info } from "lucide-react";
+import GeminiLogo from "@/components/icons/GeminiLogo";
 import type { BananaDiagram } from "@/types/visualizer";
 
 interface AiExplanationPanelProps {
@@ -12,6 +13,8 @@ interface AiExplanationPanelProps {
   showResult: boolean;
   readyPrompt: string;
   whyItMatters: string;
+  /* True when the text on screen is reviewed Gemini output, not scripted copy. */
+  isAiGenerated?: boolean;
 }
 
 export default function AiExplanationPanel({
@@ -22,6 +25,7 @@ export default function AiExplanationPanel({
   showResult,
   readyPrompt,
   whyItMatters,
+  isAiGenerated = false,
 }: AiExplanationPanelProps) {
   const [detailsOpen, setDetailsOpen] = useState(false);
   /* Collapsed by default. Collapsing stays available as a manual choice and
@@ -56,15 +60,16 @@ export default function AiExplanationPanel({
           onClick={() => setIsCollapsed((prev) => !prev)}
         >
           {/*
-            * Deliberately NOT the Gemini mark. These explanations are authored
-            * text, not model output, so branding the panel with a model vendor
-            * would tell participants something untrue about what they are
-            * looking at. The questionnaire asks them about the explanations, so
-            * the label has to match reality. Restore the Gemini mark when the
-            * explanations are actually generated (the component still exists at
-            * components/icons/GeminiLogo).
+            * The mark has to match reality, because the questionnaire asks
+            * participants about the explanations. Show the Gemini mark only when
+            * the text really is reviewed Gemini output for this step; otherwise
+            * the neutral book icon, since scripted copy is not model output.
             */}
-          <BookOpen size={14} className="text-[var(--accent)]" aria-hidden="true" />
+          {isAiGenerated ? (
+            <GeminiLogo className="w-3.5 h-3.5" />
+          ) : (
+            <BookOpen size={14} className="text-[var(--accent)]" aria-hidden="true" />
+          )}
           {/* Named for what it does rather than for what it is. "Step
             * Explanation" told a participant nothing about why the strip was
             * there, and this panel is the whole difference between the two

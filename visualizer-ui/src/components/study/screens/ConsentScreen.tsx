@@ -9,7 +9,7 @@ import AssignmentChallenge from "@/components/study/AssignmentChallenge";
 import { useSmoothScroll } from "@/lib/useSmoothScroll";
 
 export default function ConsentScreen() {
-  const { acceptConsent, declineConsent, isAssigning, assignError } = useStudy();
+  const { acceptConsent, declineConsent, isAssigning, assignError, studyFull } = useStudy();
   const [choice, setChoice] = useState<"agree" | "disagree" | null>(null);
   const [challengeToken, setChallengeToken] = useState<string | null>(null);
   const [challengeReady, setChallengeReady] = useState(false);
@@ -47,7 +47,7 @@ export default function ConsentScreen() {
     };
   }, []);
 
-  const isBlocked = choice === null || (choice === "agree" && !challengePassed) || isAssigning;
+  const isBlocked = studyFull || choice === null || (choice === "agree" && !challengePassed) || isAssigning;
   const popupText =
     choice === null
       ? "Select yes or no before continuing"
@@ -80,6 +80,24 @@ export default function ConsentScreen() {
       subheading="Please read the following before deciding whether to take part."
       hideScrollbar
     >
+      {studyFull && (
+        <div
+          role="status"
+          className="w-full max-w-[1360px] mb-4 rounded-xl px-5 py-4 flex items-start gap-3"
+          style={{ background: "#eff6ff", border: "1.5px solid #3b82f6", color: "#1e3a8a" }}
+        >
+          <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <div>
+            <div className="font-bold text-[14px]">This study is no longer accepting participants</div>
+            <div className="text-[13px] mt-0.5">
+              We have reached the maximum number of participants. Thank you for your interest.
+            </div>
+          </div>
+        </div>
+      )}
+
       {/*
         Keep the desktop arrangement on laptop-sized viewports, including when
         browser zoom reduces the CSS viewport. Between 1100px and the full

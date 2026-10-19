@@ -27,6 +27,7 @@ import {
   type SessionRow,
 } from "@/lib/adminMetrics";
 import type { Condition } from "@/lib/studyTypes";
+import { ENROLLMENT_TARGET_PER_CONDITION } from "@/lib/studyConfig";
 import {
   Card,
   HBarChart,
@@ -296,6 +297,15 @@ export default function AdminDashboard({
                   <strong className="tabular-nums" style={{ color: "var(--text-primary)" }}>{pct(summary.gainMean, " pp")}</strong>
                 </div>
                 <p className="mt-1 text-[11px]" style={{ color: "var(--text-muted)" }}>{summary.scoredPairs} paired participant{summary.scoredPairs === 1 ? "" : "s"}</p>
+                <div className="mt-2 flex items-center justify-between border-t pt-2 text-xs" style={{ borderColor: "#dbe4ef" }}>
+                  <span style={{ color: "var(--text-secondary)" }}>Enrollment</span>
+                  <strong
+                    className="tabular-nums"
+                    style={{ color: summary.completed >= ENROLLMENT_TARGET_PER_CONDITION ? "#16815f" : "var(--text-primary)" }}
+                  >
+                    {summary.completed} / {ENROLLMENT_TARGET_PER_CONDITION} completed
+                  </strong>
+                </div>
               </section>
             ))}
 

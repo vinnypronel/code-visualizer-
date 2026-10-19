@@ -38,10 +38,25 @@ export const LEARNING_RECOMMENDED_MINUTES = 15;
 export const LESSON_PRESET_ID = "linkedlist";
 
 /*
- * Every AI-condition participant chooses one of the four fully guided lessons
- * before beginning. The choice is recorded when Begin Lesson is selected.
+ * Every AI-condition participant chooses one of the two guided lessons before
+ * beginning. The choice is recorded when Begin Lesson is selected.
  */
 export const SHOW_PRESET_SELECTOR = true;
+
+/*
+ * The only lessons a study participant can pick or switch to. Stack and linked
+ * list both teach reference/aliasing, which is what the pre/post test measures.
+ * Array list and live trace still exist as presets but are kept out of the
+ * study so everyone learns the same concept the test checks.
+ */
+export const STUDY_LESSON_IDS: readonly string[] = ["linkedlist", "stack"];
+
+/*
+ * Target completed sessions per condition (20 ai + 20 static = 40). Enforced in
+ * the database (assign_participant, migration 0005); this constant is for the
+ * admin dashboard display only, so keep the two in sync if the target changes.
+ */
+export const ENROLLMENT_TARGET_PER_CONDITION = 20;
 
 /* Development-only escape hatches must remain unavailable to participants. */
 const SHOW_DEVELOPER_LESSON_TOOLS = process.env.NODE_ENV !== "production";
@@ -81,18 +96,10 @@ export const WALKTHROUGH_PRESET_IDS: readonly string[] = [
 ];
 
 /*
- * Examples a participant may switch to after finishing the lesson.
- *
- * Every example listed here has a matching required walkthrough. Live Trace is
- * included after its raw JDI events are condensed into meaningful Java actions
- * in the visualizer preset.
+ * Examples a participant may switch to after finishing the lesson. Limited to
+ * the study lessons so the session never surfaces an off-study example.
  */
-export const SWITCHABLE_PRESET_IDS: readonly string[] = [
-  "linkedlist",
-  "arraylist",
-  "stack",
-  "livetrace",
-];
+export const SWITCHABLE_PRESET_IDS: readonly string[] = [...STUDY_LESSON_IDS];
 
 /*
  * Whether the guided walkthrough has content for this preset. Code the
